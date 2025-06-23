@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Личный кабинет</h2>
+<p>Имя: {{ user.name }}</p>
+<p>Email: {{ user.email }}</p>
+<p>Родной язык: {{ user.native_lang }}</p>
+<p>Изучаемые языки: {{ user.learning_langs }}</p>
+<a href="{{ url_for('edit_profile') }}">Редактировать профиль</a>
+{% endblock %}

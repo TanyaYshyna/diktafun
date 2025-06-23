@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" preserveAspectRatio="xMinYMin" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <bx:guide x="9.54" y="-12.232" angle="90"/>
+  </defs>
+  <rect x="3.283" y="114.778" width="0.4" height="13.999" style="stroke-linejoin: round; fill-rule: nonzero; fill: rgb(244, 31, 31); paint-order: stroke; stroke: rgb(252, 0, 0);" transform="matrix(0.999944, -0.010572, 0, 1.000056, 3.717184, -113.745491)"/>
+  <rect x="3.283" y="114.778" width="0.4" height="13.999" style="stroke-linejoin: round; fill-rule: nonzero; fill: rgb(244, 31, 31); paint-order: stroke; stroke: rgb(252, 0, 0); stroke-width: 1;" transform="matrix(0.999944, -0.010572, 0, 1.000056, 12.717184, -113.745491)"/>
+  <rect x="3.283" y="65.596" width="0.4" height="8" style="stroke-linejoin: round; fill-rule: nonzero; fill: rgb(244, 31, 31); paint-order: stroke; stroke: rgb(252, 0, 0); stroke-width: 1;" transform="matrix(0.999944, -0.010572, 0, 1.000056, 5.953539, -61.560009)"/>
+  <rect x="3.283" y="65.596" width="0.4" height="8" style="stroke-linejoin: round; fill-rule: nonzero; fill: rgb(244, 31, 31); paint-order: stroke; stroke: rgb(252, 0, 0); stroke-width: 1;" transform="matrix(0.999944, -0.010572, 0, 1.000056, 1.417184, -61.560738)"/>
+  <rect x="3.283" y="65.596" width="0.4" height="8" style="stroke-linejoin: round; fill-rule: nonzero; fill: rgb(244, 31, 31); paint-order: stroke; stroke: rgb(252, 0, 0); stroke-width: 1;" transform="matrix(0.999944, -0.010572, 0, 1.000056, 10.441788, -61.560738)"/>
+  <rect x="3.283" y="65.596" width="0.4" height="8" style="stroke-linejoin: round; fill-rule: nonzero; fill: rgb(244, 31, 31); paint-order: stroke; stroke: rgb(252, 0, 0); stroke-width: 1;" transform="matrix(0.999944, -0.010572, 0, 1.000056, 15.104901, -61.560738)"/>
+  <rect x="3.283" y="16.397" width="0.4" height="2" style="stroke-linejoin: round; fill-rule: nonzero; fill: rgb(244, 31, 31); paint-order: stroke; stroke: rgb(252, 0, 0); stroke-width: 1;" transform="matrix(0.999944, -0.010572, 0, 1.000056, 8.11023, -9.359062)"/>
+  <rect x="3.283" y="16.397" width="0.4" height="2" style="stroke-linejoin: round; fill-rule: nonzero; fill: rgb(244, 31, 31); paint-order: stroke; stroke: rgb(252, 0, 0); stroke-width: 1;" transform="matrix(0.999944, -0.010572, 0, 1.000056, -0.866264, -9.359062)"/>
+  <rect x="3.283" y="16.397" width="0.4" height="2" style="stroke-linejoin: round; fill-rule: nonzero; fill: rgb(244, 31, 31); paint-order: stroke; stroke: rgb(252, 0, 0); stroke-width: 1;" transform="matrix(0.999944, -0.010572, 0, 1.000056, 17.494749, -9.359062)"/>
+</svg>

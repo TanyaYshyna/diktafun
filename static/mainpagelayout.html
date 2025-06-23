@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Главная — Диктанты</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            background-color: #f9f9f9;
+        }
+        .topbar {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .topbar h1 {
+            font-size: 20px;
+            margin: 0;
+        }
+        .main {
+            padding: 20px;
+        }
+        .dictation-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+        .dictation-card {
+            background: white;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .dictation-card h3 {
+            margin-top: 0;
+        }
+        .dictation-card a {
+            text-decoration: none;
+            color: #3498db;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="topbar">
+        <h1>DikteApp</h1>
+        <div>
+            <!-- В будущем: Кнопки входа / регистрации -->
+            <span>Пользователь</span>
+        </div>
+    </div>
+
+    <div class="main">
+        <h2>Список диктантов</h2>
+        <div class="dictation-list">
+            {% for d in dictations %}
+            <div class="dictation-card">
+                <h3>{{ d.title }}</h3>
+                <p>Язык: {{ d.language }}</p>
+                <p>Уровень: {{ d.level }}</p>
+                <a href="{{ url_for('show_dictation', language=d.language, level=d.level, topic=d.slug) }}">Перейти →</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,37 @@
+{
+    "id": "dicta_1750624983449",
+    "language": "en",
+    "meta": {
+        "title_en": "Word list 09",
+        "title_ru": "Список слов 09",
+        "languages": [
+            "en",
+            "ru"
+        ],
+        "level": "A1",
+        "category_path": []
+    },
+    "sentences": [
+        {
+            "id": "001",
+            "text_en": "against",
+            "audio_en": "en_001.mp3",
+            "text_ru": "против",
+            "audio_ru": "ru_001.mp3"
+        },
+        {
+            "id": "002",
+            "text_en": "To be against something is to be touching it or opposed to it",
+            "audio_en": "en_002.mp3",
+            "text_ru": "Быть против чего -то - значит прикоснуться к этому или противостоять этому",
+            "audio_ru": "ru_002.mp3"
+        },
+        {
+            "id": "003",
+            "text_en": "They both leaned against the wall",
+            "audio_en": "en_003.mp3",
+            "text_ru": "Они оба прислонились к стене",
+            "audio_ru": "ru_003.mp3"
+        }
+    ]
+}

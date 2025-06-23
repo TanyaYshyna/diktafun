@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Главная — Диктанты</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="topbar">
+        <div class="logo-section">
+            <h1>DikteApp</h1>
+        </div>
+        <div class="user-panel">
+            <!-- Выбор языка -->
+            <div class="language-selector">
+                <button id="language-toggle" class="language-btn">
+                    <img src="{{ url_for('static', filename='flags/ru.svg') }}" alt="Русский" width="20">
+                    <span>RU</span>
+                </button>
+                <div class="language-dropdown">
+                    <a href="#" data-lang="ru">
+                        <img src="{{ url_for('static', filename='flags/ru.svg') }}" alt="Русский" width="20">
+                        Русский
+                    </a>
+                    <a href="#" data-lang="uk">
+                        <img src="{{ url_for('static', filename='flags/ua.svg') }}" alt="Українська" width="20">
+                        Українська
+                    </a>
+                    <a href="#" data-lang="tr">
+                        <img src="{{ url_for('static', filename='flags/tr.svg') }}" alt="Türkçe" width="20">
+                        Türkçe
+                    </a>
+                    <a href="#" data-lang="ar">
+                        <img src="{{ url_for('static', filename='flags/sa.svg') }}" alt="العربية" width="20">
+                        العربية
+                    </a>
+                </div>
+            </div>
+            <!-- Пользователь -->
+            <span class="username">Пользователь</span>
+            <!-- <a href="{{ url_for('register') }}">Авторизоваться</a> -->
+            <a href="{{ url_for('register') }}">Регистрация</a>
+            <!-- <a href="{{ url_for('profile') }}">Пользователь</a> -->
+        </div>
+    </div>
+
+    <div class="panel">
+        <a href="{{ url_for('dictation_generator.dictation_generator') }}">
+            <button>+ Новый диктант</button>
+        </a>
+    </div>
+
+    <div class="main">
+        <h2>Список диктантов</h2>
+        <div class="dictation-tree">
+            {% set current_h1 = "" %}
+            {% set current_h2 = "" %}
+
+            {% for d in dictations|sort(attribute='H1') %}
+            {% if d.H1 != current_h1 %}
+            <div class="h1-group">
+                <h3>{{ d.H1 }}</h3>
+                {% set current_h1 = d.H1 %}
+                {% set current_h2 = "" %}
+            </div>
+            {% endif %}
+
+            {% if d.H2 != current_h2 %}
+            <div class="h2-group">
+                <h4>{{ d.H2 }}</h4>
+                {% set current_h2 = d.H2 %}
+            </div>
+            {% endif %}
+
+            <div class="dictation-card">
+                <h5>{{ d.title }}</h5>
+                <p>Язык: {{ d.language }}</p>
+                <p>Уровень: {{ d.level }}</p>
+                <a href="{{ url_for('dictation.show_dictation', dictation_id=d.id, num_sentence=0) }}">
+                    Перейти →
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        // Обработчик выбора языка
+        document.querySelectorAll('.language-dropdown a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const lang = link.getAttribute('data-lang');
+                localStorage.setItem('appLanguage', lang);
+
+                // Обновляем отображение выбранного языка
+                const toggle = document.getElementById('language-toggle');
+                toggle.innerHTML = `
+                    <img src="${link.querySelector('img').src}" 
+                         alt="${link.querySelector('img').alt}" 
+                         width="20">
+                    <span>${lang.toUpperCase()}</span>
+                `;
+
+                // Здесь можно добавить логику смены языка интерфейса
+                alert(`Язык изменен на ${lang}. В реальном приложении здесь будет перевод!`);
+            });
+        });
+
+        // Загрузка сохраненного языка
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('appLanguage') || 'ru';
+            const langLink = document.querySelector(`.language-dropdown a[data-lang="${savedLang}"]`);
+            if (langLink) {
+                document.getElementById('language-toggle').innerHTML = `
+                    <img src="${langLink.querySelector('img').src}" 
+                         alt="${langLink.querySelector('img').alt}" 
+                         width="20">
+                    <span>${savedLang.toUpperCase()}</span>
+                `;
+            }
+        });
+    </script>
+</body>
+
+</html>

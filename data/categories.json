@@ -1,0 +1,17 @@
+{
+    "languages": ["en", "ru", "tr"],
+    "categories": [
+        {
+            "name_ru": "Книга 1",
+            "name_en": "Book 1",
+            "name_tr": "Kitap 1",
+            "categories": [
+                {
+                    "name_ru": "Глава 1",
+                    "name_en": "Chapter 1",
+                    "name_tr": "Bölüm 1"
+                }
+            ]
+        }
+    ]
+}

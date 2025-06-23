@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dikte</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="topbar">
+        <h1>DikteApp</h1>
+        <div class="user-panel">
+            <button id="language-toggle">
+                <img src="{{ url_for('static', filename='flags/ru.svg') }}" width="20">
+                <span>RU</span>
+            </button>
+            <span>Пользователь</span>
+        </div>
+    </div>
+    <div class="panel">
+        <h2>Диктант</h2>
+        <!-- Счетчик предложений -->
+        <div class="sentence-counter">
+            Предложение {{ current_sentence + 1 }}/{{ total_sentences }}
+        </div>
+
+        <audio id="audio" controls>
+            <!-- Источник будет установлен через JS -->
+            Ваш браузер не поддерживает аудио!
+        </audio>
+
+        <div id="userInput" contenteditable="true" class="text-input"></div>
+
+        <button id="checkBtn" onclick="checkText()">Проверить</button>
+
+        <div class="button-group">
+            <button id="checkRepit" onclick="clearText()">Повторить</button>
+            <button id="checkNext" onclick="nextSentence()">Следующий</button>
+        </div>
+
+        <!-- Поле с правильной подсказкой -->
+        <div id="correctAnswer" class="text-output"></div>
+
+        <!-- Перевод — показывать только при 100% правильности -->
+        <div id="translation" style="margin-top:10px; display:none;"></div>
+
+    </div>
+
+    <!-- СКРИПТ В КОНЦЕ -->
+    <script>
+        // Передаем данные из Flask в JS
+        const sentenceData = {
+            language: "{{ language }}",
+            topic: "{{ topic }}",
+            currentSentence: parseInt("{{ current_sentence }}"),
+            totalSentences: parseInt("{{ total_sentences }}"),
+            text: "{{ sentence_text | safe }}",
+            translation: "{{ translation | safe }}",
+            audio: "{{ url_for('static', filename=audio_path) }}",
+            start: parseFloat("{{ start_time | default(0) }}"),
+            end: parseFloat("{{ end_time | default(0) }}")
+        };
+
+    </script>
+    <script src="{{ url_for('static', filename='script_dictation.js') }}"></script>
+    <!-- <script>
+        const inputField = document.getElementById('userInput');
+
+        // Проверка при нажатии Enter
+        inputField.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // Не добавлять перевод строки
+                checkText(); // Вызов проверки
+            }
+        });
+    </script> -->
+
+</body>
+
+</html>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" preserveAspectRatio="xMinYMin" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <bx:guide x="9.54" y="-12.232" angle="90"/>
+  </defs>
+  <rect x="3.283" y="114.778" width="0.4" height="13.999" style="stroke-linejoin: round; fill-rule: nonzero; fill: rgb(244, 31, 31); paint-order: stroke; stroke: rgb(252, 0, 0); transform-box: fill-box; transform-origin: 50% 50%;" transform="matrix(0.707054, 0.70716, -0.714635, 0.699577, 7.972018, -113.775398)"/>
+  <rect x="3.283" y="114.778" width="0.4" height="13.999" style="stroke-linejoin: round; fill-rule: nonzero; fill: rgb(244, 31, 31); paint-order: stroke; stroke: rgb(252, 0, 0); stroke-width: 1; transform-origin: 3.417px 121.768px;" transform="matrix(0.70716, -0.707054, 0.699577, 0.714635, 7.907827, -113.58944)"/>
+</svg>

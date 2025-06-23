@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Генератор диктантов</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="topbar">
+        <h1>DikteApp</h1>
+        <div class="user-panel">
+            <button id="language-toggle">
+                <img src="{{ url_for('static', filename='flags/ru.svg') }}" width="20">
+                <span>RU</span>
+            </button>
+            <span>Пользователь</span>
+        </div>
+    </div>
+
+
+
+
+    <div class="container">
+        <h1 id="dictation-id">Новый диктант</h1>
+
+
+        <div class="form-group">
+            <label>Title (English):</label>
+            <input type="text" id="title" required>
+        </div>
+        <div class="form-group">
+            <label>Title (Russian):</label>
+            <input type="text" id="title_translation" required>
+        </div>
+
+        <div class="tree-selector">
+            <label for="category-path">Расположение документа:</label>
+            <div class="path-display" id="current-path">/</div>
+            <div class="selector-container">
+                <select id="category-selector" class="form-control">
+                    <option value="">-- Выберите ветку --</option>
+                    <!-- Опции будут заполнены через JS -->
+                </select>
+                <button id="new-folder-btn" class="btn btn-secondary">Новая папка</button>
+            </div>
+            <!-- <input type="text" id="new-folder-name" class="form-control" placeholder="Название новой папки"
+                style="display: none;">
+            <button id="confirm-new-folder" class="btn btn-primary" style="display: none;">Создать</button> -->
+            <div id="new-folder-ui" class="hidden">
+                <input type="text" id="new-folder-name" placeholder="Название папки">
+                <button id="confirm-new-folder">Создать</button>
+            </div>
+        </div>
+
+
+
+        <div class="form-group">
+            <label>Текст (по предложениям):</label>
+            <textarea id="text" rows="10"></textarea>
+        </div>
+
+        
+        <div class="settings">
+            <select id="language">
+                <option value="en">en</option>
+                <option value="tr">tr</option>
+            </select>
+            <button id="split-btn">Разбить на предложения</button>
+        </div>
+
+        <table id="sentences-table">
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Предложение (оригинал/перевод)</th>
+                    <th>Аудио</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Строки будут добавляться через JavaScript -->
+            </tbody>
+        </table>
+
+        <button id="save-btn" onclick="saveDictation()">Сохранить JSON + MP3</button>
+    </div>
+
+    <script src="{{ url_for('static', filename='script_dictation_generator.js') }}"></script>
+</body>
+
+</html>
