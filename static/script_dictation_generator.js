@@ -421,3 +421,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupButtons();
 });
+
+
+// /static/js/dictation_generator.js
+
+let categoriesData = null;
+let selectedNode = null;
+
+async function fetchCategories() {
+  try {
+    const response = await fetch('/data/categories.json');
+    categoriesData = await response.json();
+    renderTreeNavigation(categoriesData);
+  } catch (error) {
+    console.error('Error loading categories:', error);
+  }
+}
+
+function renderTreeNavigation(data) {
+  const container = document.getElementById("treeNavigation");
+  container.innerHTML = "";
+
+  function walk(nodes, level = 0) {
+    nodes.forEach(node => {
+      const div = document.createElement("div");
+      div.style.marginLeft = `${level * 20}px`;
+      div.textContent = `${level > 0 ? '/ ' : ''}${node.name_en}`;
+      div.style.cursor = 'pointer';
+      div.onclick = () => selectNode(node, div);
+      container.appendChild(div);
+      if (node.categories) {
+        walk(node.categories, level + 1);
+      }
+    });
+  }
+
+  walk(data.categories);
+}
+
+function selectNode(node, element) {
+  selectedNode = node;
+  document.querySelectorAll("#treeNavigation div").forEach(div => div.style.background = "");
+  element.style.background = "#eef";
+}
+
+function openTreeDialog() {
+  document.getElementById("treeDialog").style.display = "block";
+  fetchCategories();
+}
+
+function closeTreeDialog() {
+  document.getElementById("treeDialog").style.display = "none";
+}
+
+function createBranch() {
+  if (!selectedNode.categories) selectedNode.categories = [];
+  const newId = Date.now().toString();
+  const newNode = { id: newId, name_en: "New Branch", categories: [] };
+  selectedNode.categories.push(newNode);
+  renderTreeNavigation(categoriesData);
+}
+
+function deleteBranch() {
+  if (!selectedNode) return;
+  function removeNode(nodes) {
+    return nodes.filter(n => {
+      if (n.id === selectedNode.id) return false;
+      if (n.categories) n.categories = removeNode(n.categories);
+      return true;
+    });
+  }
+  categoriesData.categories = removeNode(categoriesData.categories);
+  selectedNode = null;
+  renderTreeNavigation(categoriesData);
+}
+
+// Назначаем обработчики
+window.onload = function() {
+  document.getElementById("openTreeDialogBtn").onclick = openTreeDialog;
+  document.getElementById("closeTreeDialogBtn").onclick = closeTreeDialog;
+  document.getElementById("createBranchBtn").onclick = createBranch;
+  document.getElementById("deleteBranchBtn").onclick = deleteBranch;
+}

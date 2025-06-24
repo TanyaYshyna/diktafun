@@ -34,24 +34,26 @@
             <input type="text" id="title_translation" required>
         </div>
 
-        <div class="tree-selector">
-            <label for="category-path">Расположение документа:</label>
-            <div class="path-display" id="current-path">/</div>
-            <div class="selector-container">
-                <select id="category-selector" class="form-control">
-                    <option value="">-- Выберите ветку --</option>
-                    <!-- Опции будут заполнены через JS -->
-                </select>
-                <button id="new-folder-btn" class="btn btn-secondary">Новая папка</button>
-            </div>
-            <!-- <input type="text" id="new-folder-name" class="form-control" placeholder="Название новой папки"
-                style="display: none;">
-            <button id="confirm-new-folder" class="btn btn-primary" style="display: none;">Создать</button> -->
-            <div id="new-folder-ui" class="hidden">
-                <input type="text" id="new-folder-name" placeholder="Название папки">
-                <button id="confirm-new-folder">Создать</button>
+
+        <div id="modal">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="openTreeDialogBtn">⋯</button>
+                <h3 id="modalTitle">tree branch</h3>
             </div>
         </div>
+
+        <!-- Диалоговое окно для работы с деревом -->
+        <div id="treeDialog"
+            style="display:none; padding: 20px; border: 1px solid #ccc; background: #fff; position: fixed; top: 20%; left: 50%; transform: translateX(-50%); box-shadow: 0 0 10px rgba(0,0,0,0.3);">
+            <h4>Выберите ветку</h4>
+            <div id="treeNavigation">
+                <!-- Здесь динамически появится дерево -->
+            </div>
+            <button id="createBranchBtn">Новая ветка</button>
+            <button id="deleteBranchBtn">Удалить ветку</button>
+            <button id="closeTreeDialogBtn">Закрыть</button>
+        </div>
+
 
 
 
@@ -60,7 +62,7 @@
             <textarea id="text" rows="10"></textarea>
         </div>
 
-        
+
         <div class="settings">
             <select id="language">
                 <option value="en">en</option>

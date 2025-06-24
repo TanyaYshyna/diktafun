@@ -2,11 +2,13 @@
     "languages": ["en", "ru", "tr"],
     "categories": [
         {
+            "id": "0000000001",
             "name_ru": "Книга 1",
             "name_en": "Book 1",
             "name_tr": "Kitap 1",
             "categories": [
                 {
+                    "id": "0000000002",
                     "name_ru": "Глава 1",
                     "name_en": "Chapter 1",
                     "name_tr": "Bölüm 1"
