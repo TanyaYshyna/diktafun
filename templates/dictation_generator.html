@@ -44,42 +44,35 @@
                     <div class="tooltip-text">Выбрать категорию</div> <!-- подсказка -->
                 </div>
                 <h3 id="modalTitle">tree branch</h3>
+                <!-- Диалоговое окно для работы с деревом -->
+                <div id="treeDialog"
+                    style="display:none; padding: 20px; border: 1px solid #ccc; background: #fff; position: fixed; top: 20%; left: 50%; transform: translateX(-50%); box-shadow: 0 0 10px rgba(0,0,0,0.3);">
+                    <h4>Выберите ветку</h4>
+                    <div id="treeContainer"></div>
+
+                    <div class="tooltip-wrapper">
+                        <button id="addFolderBtn"> + </button>
+                        <div class="tooltip-text">Новая ветка</div> <!-- подсказка -->
+                    </div>
+
+                    <div class="tooltip-wrapper">
+                        <button id="deleteFolderBtn"> -- </button>
+                        <div class="tooltip-text">Удалить ветку</div> <!-- подсказка -->
+                    </div>
+
+                    <div class="tooltip-wrapper">
+                        <button id="cancelBtn"> X </button>
+                        <div class="tooltip-text">Закрыть без сохранения</div> <!-- подсказка -->
+                    </div>
+
+                    <div class="tooltip-wrapper">
+                        <button id="saveBtn"> V </button>
+                        <div class="tooltip-text">Выбрать и закрыть</div> <!-- подсказка -->
+                    </div>
+                </div>
+                <!-- онокнчание ---- Диалогового окна для работы с деревом -->
             </div>
         </div>
-
-        <!-- Диалоговое окно для работы с деревом -->
-        <div id="treeDialog"
-            style="display:none; padding: 20px; border: 1px solid #ccc; background: #fff; position: fixed; top: 20%; left: 50%; transform: translateX(-50%); box-shadow: 0 0 10px rgba(0,0,0,0.3);">
-            <h4>Выберите ветку</h4>
-            <div id="tree-container"></div>
-
-
-
-            <div id="treeNavigation">
-                <!-- Здесь динамически появится дерево -->
-            </div>
-
-            <div class="tooltip-wrapper">
-                <button id="createBranchBtn"> + </button>
-                <div class="tooltip-text">Новая ветка</div> <!-- подсказка -->
-            </div>
-
-            <div class="tooltip-wrapper">
-                <button id="deleteBranchBtn"> -- </button>
-                <div class="tooltip-text">Удалить ветку</div> <!-- подсказка -->
-            </div>
-
-            <div class="tooltip-wrapper">
-                <button id="closeTreeDialogBtn"> X </button>
-                <div class="tooltip-text">Закрыть без сохранения</div> <!-- подсказка -->
-            </div>
-
-            <div class="tooltip-wrapper">
-                <button id="choiceCloseTreeDialogBtn"> V </button>
-                <div class="tooltip-text">Выбрать и закрыть</div> <!-- подсказка -->
-            </div>
-        </div>
-        <!-- онокнчание ---- Диалогового окна для работы с деревом -->
 
 
         <div class="form-group">

@@ -1,5 +1,8 @@
 // Хранилище для аудио-элементов
 const audioPlayers = {};
+const openBtn = document.getElementById('openTreeDialogBtn');
+const modal = document.getElementById('modal');
+
 let currentDictation = {
     id: '', // ID текущего диктанта
     isNew: true, // Флаг - новый это диктант или существующий
@@ -11,6 +14,9 @@ let currentDictation = {
 };
 let currentPath = []; // Текущий путь (например, ["Книга 2", "Раздел 1"])
 let currentLevel = null; // Текущий уровень вложенности
+
+let data = [];
+let selectedCategory = null;
 
 
 // Функция генерации аудио с обработкой ошибок
@@ -331,74 +337,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ================дерево========================
-let treeData = null;
-let currentNode = null; // имя выбранной ветки
-let currentLanguage = 'ru'; // Язык по умолчанию
+openBtn.addEventListener('click', openTreeDialog);
 
-// Загружаем ОДИН общий файл categories.json
-function loadTreeData() {
-    fetch('data/categories.json')
-        .then(response => response.json())
-        .then(data => {
-            treeData = data;
-            renderTreeNavigation(); // Рендерим с учётом currentLanguage
-        })
-        .catch(error => console.error("Ошибка загрузки дерева:", error));
+async function openTreeDialog() {
+  const res = await fetch('/static/data/categories.json');
+  data = await res.json();
+  renderTree();
+  modal.classList.add('visible');
 }
 
-
-// Рендер дерева в диалоге
-function renderTreeNavigation() {
-    const container = document.getElementById("treeNavigation");
-    container.innerHTML = ""; // очистка
-    const ul = document.createElement("ul");
-    renderNode(treeData, ul);
-    container.appendChild(ul);
-}
-
-
-// Закрытие диалога
-function closeTreeDialog() {
-    document.getElementById("treeDialog").style.display = "none";
-}
-
-// Открытие диалога
-function openTreeDialog() {
-    // document.getElementById("treeDialog").style.display = "block";
-    // renderTreeNavigation();
-    document.getElementById("openTreeModalBtn").addEventListener("click", function () {
-        document.getElementById("treeModal").style.display = "block";
-        loadDictationTree(); // 💡 Загружаем дерево только при открытии!
+function renderTree() {
+  const html = data.map(cat => `<li data-id="${cat.id}">${cat.title}</li>`).join('');
+  document.getElementById('treeContainer').innerHTML = `<ul>${html}</ul>`;
+  document.querySelectorAll('#treeContainer li').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('#treeContainer li').forEach(i => i.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedCategory = { id: el.dataset.id, title: el.textContent };
     });
+  });
 }
 
-// Привязка кнопок
-document.getElementById("createBranchBtn").addEventListener("click", createBranch);
-document.getElementById("deleteBranchBtn").addEventListener("click", deleteBranch);
-document.getElementById("closeTreeDialogBtn").addEventListener("click", closeTreeDialog);
-document.getElementById("choiceCloseTreeDialogBtn").addEventListener("click", choicecСloseTreeDialog);
+document.getElementById('addFolderBtn').addEventListener('click', () => {
+  const title = prompt('Название новой папки');
+  if (!title) return;
+  const newId = Date.now();
+  data.push({ id: newId, title });
+  renderTree();
+});
 
-//----------------------------------
-function loadDictationTree() {
-    $.getJSON("/data/categories.json", function (data) {
-        const treeData = convertToJsTreeFormat(data);
-        $('#tree-container').jstree('destroy');  // если дерево уже инициализировалось — удалим
-        $('#tree-container').jstree({
-            'core': {
-                'data': treeData
-            }
-        });
-    });
-}
+document.getElementById('deleteFolderBtn').addEventListener('click', () => {
+  if (!selectedCategory) return alert('Сначала выберите папку');
+  data = data.filter(cat => cat.id != selectedCategory.id);
+  selectedCategory = null;
+  renderTree();
+});
 
-function convertToJsTreeFormat(data, parentId = '') {
-    return data.map((item, index) => {
-        const nodeId = (parentId ? parentId + '_' : '') + index;
-        return {
-            id: nodeId,
-            text: item.name,
-            children: item.children ? convertToJsTreeFormat(item.children, nodeId) : []
-        };
-    });
-}
+document.getElementById('cancelBtn').addEventListener('click', () => {
+  modal.classList.remove('visible');
+});
 
+document.getElementById('saveBtn').addEventListener('click', () => {
+  if (selectedCategory) {
+    document.getElementById('modalTitle').textContent = selectedCategory.title;
+  }
+  modal.classList.remove('visible');
+});
