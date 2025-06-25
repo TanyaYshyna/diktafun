@@ -485,19 +485,3 @@ button:hover {
   visibility: visible;
   opacity: 1;
 }
-
-
-<div class="tooltip-wrapper">
-  <button>Кнопка 1</button>
-  <div class="tooltip-text">Подсказка 1</div>
-</div>
-
-<div class="tooltip-wrapper">
-  <button>Кнопка 2</button>
-  <div class="tooltip-text">Подсказка 2</div>
-</div>
-
-<div class="tooltip-wrapper">
-  <button>Кнопка 3</button>
-  <div class="tooltip-text">И ещё одна</div>
-</div>
