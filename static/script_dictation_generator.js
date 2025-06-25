@@ -302,7 +302,7 @@ function setupButtons() {
 
     // Обработчик кликов по кнопкам воспроизведения аудио
     document.addEventListener('click', function (e) {
-        loadTreeData(); // Инициализация дерева при загрузке
+        //loadTreeData(); // Инициализация дерева при загрузке
 
         const playBtn = e.target.closest('.play-audio, .play-audio-tr');
         if (!playBtn || playBtn.disabled) return;
@@ -340,7 +340,8 @@ document.addEventListener('DOMContentLoaded', () => {
 openBtn.addEventListener('click', openTreeDialog);
 
 async function openTreeDialog() {
-  const res = await fetch('/static/data/categories.json');
+  //const res = await fetch('/static/data/categories.json');
+  const res = await fetch('/data/categories.json');
   data = await res.json();
   renderTree();
   modal.classList.add('visible');
