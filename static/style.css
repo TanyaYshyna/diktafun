@@ -1,3 +1,11 @@
+/* variables.css */
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --background-color: #f3f9fc;
+  --text-color: #333333;
+}
+
 
 .container {
     max-width: 800px;
@@ -46,7 +54,7 @@ button:disabled:not(.error) .status-text {
 
 /* Фон всей страницы */
 body {
-  background: linear-gradient(135deg, #f3f9fc 0%, #f3f9fc 100%);
+  background: var(--background-color) ;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
   margin: 0;
@@ -448,3 +456,48 @@ button:hover {
     display: flex;
     gap: 10px;
 }
+
+/*  --------------- всплывающие подсказки --------------- */
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+  margin: 10px;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  position: absolute;
+  background-color: #333;
+  color: #fff;
+  padding: 5px 8px;
+  border-radius: 4px;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 1;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.tooltip-wrapper:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+
+<div class="tooltip-wrapper">
+  <button>Кнопка 1</button>
+  <div class="tooltip-text">Подсказка 1</div>
+</div>
+
+<div class="tooltip-wrapper">
+  <button>Кнопка 2</button>
+  <div class="tooltip-text">Подсказка 2</div>
+</div>
+
+<div class="tooltip-wrapper">
+  <button>Кнопка 3</button>
+  <div class="tooltip-text">И ещё одна</div>
+</div>

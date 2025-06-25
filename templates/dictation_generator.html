@@ -18,11 +18,59 @@
         </div>
     </div>
 
+    <div class="container" style="display: flex">
+        <div class="settings">
+            <select id="language">
+                <option value="en">en</option>
+                <option value="tr">tr</option>
+            </select>
+        </div>
+        <h1 id="dictation-id">Новый диктант</h1>
+    </div>
 
 
 
     <div class="container">
-        <h1 id="dictation-id">Новый диктант</h1>
+        <div id="modal">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="tooltip-wrapper">
+                    <button id="openTreeDialogBtn" onclick="openTreeDialog()">⋯</button>
+                    <div class="tooltip-text">Выбрать категорию</div> <!-- подсказка -->
+                </div>
+                <h3 id="modalTitle">tree branch</h3>
+            </div>
+        </div>
+
+
+        <!-- Диалоговое окно для работы с деревом -->
+        <div id="treeDialog"
+            style="display:none; padding: 20px; border: 1px solid #ccc; background: #fff; position: fixed; top: 20%; left: 50%; transform: translateX(-50%); box-shadow: 0 0 10px rgba(0,0,0,0.3);">
+            <h4>Выберите ветку</h4>
+            <div id="treeNavigation">
+                <!-- Здесь динамически появится дерево -->
+            </div>
+
+            <div class="tooltip-wrapper">
+                <button id="createBranchBtn"> + </button>
+                <div class="tooltip-text">Новая ветка</div> <!-- подсказка -->
+            </div>
+
+            <div class="tooltip-wrapper">
+                <button id="deleteBranchBtn"> -- </button>
+                <div class="tooltip-text">Удалить ветку</div> <!-- подсказка -->
+            </div>
+
+            <div class="tooltip-wrapper">
+                <button id="closeTreeDialogBtn"> X </button>
+                <div class="tooltip-text">Закрыть без сохранения</div> <!-- подсказка -->
+            </div>
+
+            <div class="tooltip-wrapper">
+                <button id="choiceCloseTreeDialogBtn"> V </button>
+                <div class="tooltip-text">Выбрать и закрыть</div> <!-- подсказка -->
+            </div>
+        </div>
+       <!-- онокнчание ---- Диалогового окна для работы с деревом -->
 
 
         <div class="form-group">
@@ -35,41 +83,14 @@
         </div>
 
 
-        <div id="modal">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <button id="openTreeDialogBtn">⋯</button>
-                <h3 id="modalTitle">tree branch</h3>
-            </div>
-        </div>
-
-        <!-- Диалоговое окно для работы с деревом -->
-        <div id="treeDialog"
-            style="display:none; padding: 20px; border: 1px solid #ccc; background: #fff; position: fixed; top: 20%; left: 50%; transform: translateX(-50%); box-shadow: 0 0 10px rgba(0,0,0,0.3);">
-            <h4>Выберите ветку</h4>
-            <div id="treeNavigation">
-                <!-- Здесь динамически появится дерево -->
-            </div>
-            <button id="createBranchBtn">Новая ветка</button>
-            <button id="deleteBranchBtn">Удалить ветку</button>
-            <button id="closeTreeDialogBtn">Закрыть</button>
-        </div>
-
-
-
 
         <div class="form-group">
             <label>Текст (по предложениям):</label>
             <textarea id="text" rows="10"></textarea>
         </div>
+        <button id="split-btn">Разбить на предложения</button>
 
 
-        <div class="settings">
-            <select id="language">
-                <option value="en">en</option>
-                <option value="tr">tr</option>
-            </select>
-            <button id="split-btn">Разбить на предложения</button>
-        </div>
 
         <table id="sentences-table">
             <thead>
