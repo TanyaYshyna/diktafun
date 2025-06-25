@@ -4,6 +4,12 @@
 <head>
     <title>Генератор диктантов</title>
     <link rel="stylesheet" href="/static/style.css">
+    <!-- jQuery (обязателен для jsTree) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- jsTree CSS и JS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
 </head>
 
 <body>
@@ -41,11 +47,14 @@
             </div>
         </div>
 
-
         <!-- Диалоговое окно для работы с деревом -->
         <div id="treeDialog"
             style="display:none; padding: 20px; border: 1px solid #ccc; background: #fff; position: fixed; top: 20%; left: 50%; transform: translateX(-50%); box-shadow: 0 0 10px rgba(0,0,0,0.3);">
             <h4>Выберите ветку</h4>
+            <div id="tree-container"></div>
+
+
+
             <div id="treeNavigation">
                 <!-- Здесь динамически появится дерево -->
             </div>
@@ -70,7 +79,7 @@
                 <div class="tooltip-text">Выбрать и закрыть</div> <!-- подсказка -->
             </div>
         </div>
-       <!-- онокнчание ---- Диалогового окна для работы с деревом -->
+        <!-- онокнчание ---- Диалогового окна для работы с деревом -->
 
 
         <div class="form-group">

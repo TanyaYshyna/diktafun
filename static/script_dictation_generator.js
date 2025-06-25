@@ -356,111 +356,6 @@ function renderTreeNavigation() {
     container.appendChild(ul);
 }
 
-// Рекурсивно рисуем дерево
-function renderNode(node, parentElement) {
-    const li = document.createElement("li");
-
-    // Берём название на текущем языке (например, name_ru, name_en)
-    const localizedName = node[`name_${currentLanguage}`] || node.name_ru || 'Unnamed';
-    li.textContent = localizedName;
-    li.dataset.branchId = node.id; // Сохраняем ID ветки
-
-    li.addEventListener("click", (e) => {
-        e.stopPropagation();
-        currentNode = node;
-        highlightSelectedBranch(li);
-    });
-
-    parentElement.appendChild(li);
-
-    // Рекурсивно рендерим дочерние элементы
-    if (node.categories && node.categories.length > 0) {
-        const ul = document.createElement("ul");
-        node.categories.forEach(child => renderNode(child, ul));
-        parentElement.appendChild(ul);
-    }
-}
-
-// Обработчик смены языка
-document.getElementById('language').addEventListener('change', (e) => {
-    currentLanguage = e.target.value;
-    if (treeData) {
-        renderTreeNavigation(); // Перерисовываем дерево без перезагрузки файла
-    }
-});
-
-// Подсветка выбранной ветки
-function highlightSelectedBranch(selectedLi) {
-    document.querySelectorAll("#treeNavigation li").forEach(li => {
-        li.style.background = "";
-    });
-    selectedLi.style.background = "#eef";
-}
-
-// Создание ветки
-function createBranch() {
-    if (!currentNode) {
-        alert("Сначала выберите ветку!");
-        return;
-    }
-    const newName = prompt("Введите имя новой ветки");
-    if (!newName) return;
-
-    const parent = findNodeByName(treeData, currentNode);
-    if (parent) {
-        parent.categories.push({
-            name: newName,
-            categories: []
-        });
-        renderTreeNavigation();
-    } else {
-        alert("Ошибка: родительская ветка не найдена");
-    }
-}
-
-// Удаление ветки
-function deleteBranch() {
-    if (!currentNode || currentNode === "Корень") {
-        alert("Нельзя удалить корень или ничего не выбрано!");
-        return;
-    }
-
-    const confirmed = confirm(`Удалить ветку ${currentNode}?`);
-    if (!confirmed) return;
-
-    const success = deleteNodeByName(treeData, currentNode);
-    if (success) {
-        currentNode = null;
-        renderTreeNavigation();
-    } else {
-        alert("Ошибка удаления");
-    }
-}
-
-// Удаление узла по имени
-function deleteNodeByName(node, name) {
-    if (!node.categories) return false;
-    const index = node.categories.findIndex(child => child.name === name);
-    if (index !== -1) {
-        node.categories.splice(index, 1);
-        return true;
-    }
-    // Ищем глубже
-    for (const child of node.categories) {
-        if (deleteNodeByName(child, name)) return true;
-    }
-    return false;
-}
-
-// Поиск узла
-function findNodeByName(node, name) {
-    if (node.name === name) return node;
-    for (const child of node.categories) {
-        const result = findNodeByName(child, name);
-        if (result) return result;
-    }
-    return null;
-}
 
 // Закрытие диалога
 function closeTreeDialog() {
@@ -469,11 +364,41 @@ function closeTreeDialog() {
 
 // Открытие диалога
 function openTreeDialog() {
-    document.getElementById("treeDialog").style.display = "block";
-    renderTreeNavigation();
+    // document.getElementById("treeDialog").style.display = "block";
+    // renderTreeNavigation();
+    document.getElementById("openTreeModalBtn").addEventListener("click", function () {
+        document.getElementById("treeModal").style.display = "block";
+        loadDictationTree(); // 💡 Загружаем дерево только при открытии!
+    });
 }
 
 // Привязка кнопок
 document.getElementById("createBranchBtn").addEventListener("click", createBranch);
 document.getElementById("deleteBranchBtn").addEventListener("click", deleteBranch);
 document.getElementById("closeTreeDialogBtn").addEventListener("click", closeTreeDialog);
+document.getElementById("choiceCloseTreeDialogBtn").addEventListener("click", choicecСloseTreeDialog);
+
+//----------------------------------
+function loadDictationTree() {
+    $.getJSON("/data/categories.json", function (data) {
+        const treeData = convertToJsTreeFormat(data);
+        $('#tree-container').jstree('destroy');  // если дерево уже инициализировалось — удалим
+        $('#tree-container').jstree({
+            'core': {
+                'data': treeData
+            }
+        });
+    });
+}
+
+function convertToJsTreeFormat(data, parentId = '') {
+    return data.map((item, index) => {
+        const nodeId = (parentId ? parentId + '_' : '') + index;
+        return {
+            id: nodeId,
+            text: item.name,
+            children: item.children ? convertToJsTreeFormat(item.children, nodeId) : []
+        };
+    });
+}
+
