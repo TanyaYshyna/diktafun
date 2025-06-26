@@ -1,17 +1,70 @@
 {
-    "languages": ["en", "ru", "tr"],
+    "id": "0000000000",
+    "language": "ru",
+    "name": "Каталог",
     "categories": [
         {
             "id": "0000000001",
-            "name_ru": "Книга 1",
-            "name_en": "Book 1",
-            "name_tr": "Kitap 1",
+            "language": "ru",
+            "name": "Про спорт",
             "categories": [
                 {
                     "id": "0000000002",
-                    "name_ru": "Глава 1",
-                    "name_en": "Chapter 1",
-                    "name_tr": "Bölüm 1"
+                    "language": "ru",
+                    "name": "Баскетбол",
+                    "categories": [
+                        {
+                            "id": "0000000003",
+                            "language": "en",
+                            "name": "Книга 1",
+                            "categories": [
+                                {
+                                    "id": "0000000004",
+                                    "language": "en",
+                                    "name": "Chapter 1",
+                                    "categories": []
+                                },
+                                {
+                                    "id": "0000000005",
+                                    "language": "en",
+                                    "name": "Chapter 2",
+                                    "categories": []
+                                },
+                                {
+                                    "id": "0000000006",
+                                    "language": "en",
+                                    "name": "Chapter 3",
+                                    "categories": []
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "0000000007",
+            "language": "ru",
+            "name": "Про Балет",
+            "categories": [
+                {
+                    "id": "0000000009",
+                    "language": "en",
+                    "name": "Книга 2 Maya Plisetskaya",
+                    "categories": [
+                        {
+                            "id": "0000000010",
+                            "language": "en",
+                            "name": "Chapter 1",
+                            "categories": []
+                        },
+                        {
+                            "id": "0000000012",
+                            "language": "en",
+                            "name": "Chapter 3",
+                            "categories": []
+                        }
+                    ]
                 }
             ]
         }

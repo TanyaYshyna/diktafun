@@ -2,6 +2,9 @@
 const audioPlayers = {};
 const openBtn = document.getElementById('openTreeDialogBtn');
 const modal = document.getElementById('modal');
+const saveBtn = document.getElementById('saveBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const titleField = document.getElementById('modalTitle');
 
 let currentDictation = {
     id: '', // ID текущего диктанта
@@ -239,7 +242,10 @@ function initNewDictation() {
     document.getElementById('text').value = '';
     document.querySelector('#sentences-table tbody').innerHTML = '';
 
-    document.getElementById('dictation-id').textContent = `Диктант ${currentDictation.id}`;
+    document.getElementById('dictation-id').textContent = `Новый диктант`;
+    document.getElementById('modalTitle').textContent = 'Каталог / \n   ' + currentDictation.id; // пока заглушка, сюда надо будет записывать путь где находится пользователь при открытии
+
+    //    document.getElementById('dictation-id').textContent = `Диктант ${currentDictation.id}`;
 }
 
 // Загрузка существующего диктанта
@@ -338,49 +344,114 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ================дерево========================
 openBtn.addEventListener('click', openTreeDialog);
+cancelBtn.addEventListener('click', () => modal.style.display = 'none');
+saveBtn.addEventListener('click', () => {
+    const selected = $('#treeContainer').jstree().get_selected(true)[0];
+    if (selected) {
+        titleField.textContent = selected.text;
+    }
+    modal.style.display = 'none';
+});
 
-async function openTreeDialog() {
-  //const res = await fetch('/static/data/categories.json');
-  const res = await fetch('/data/categories.json');
-  data = await res.json();
-  renderTree();
-  modal.classList.add('visible');
-}
-
-function renderTree() {
-  const html = data.map(cat => `<li data-id="${cat.id}">${cat.title}</li>`).join('');
-  document.getElementById('treeContainer').innerHTML = `<ul>${html}</ul>`;
-  document.querySelectorAll('#treeContainer li').forEach(el => {
-    el.addEventListener('click', () => {
-      document.querySelectorAll('#treeContainer li').forEach(i => i.classList.remove('selected'));
-      el.classList.add('selected');
-      selectedCategory = { id: el.dataset.id, title: el.textContent };
+function convertToJsTreeFormat(obj, parentId = '') {
+    return Object.entries(obj).map(([key, value], index) => {
+        const id = parentId + '_' + index + '_' + key;
+        return {
+            id,
+            text: key,
+            children: typeof value === 'object' ? convertToJsTreeFormat(value, id) : []
+        };
     });
-  });
 }
 
-document.getElementById('addFolderBtn').addEventListener('click', () => {
-  const title = prompt('Название новой папки');
-  if (!title) return;
-  const newId = Date.now();
-  data.push({ id: newId, title });
-  renderTree();
-});
+// Открытие модального окна и инициализация дерева jstree
+async function openTreeDialog() {
+    // Загружаем JSON-файл с категориями
+    const res = await fetch('/data/categories.json');
+    const rawData = await res.json();
 
-document.getElementById('deleteFolderBtn').addEventListener('click', () => {
-  if (!selectedCategory) return alert('Сначала выберите папку');
-  data = data.filter(cat => cat.id != selectedCategory.id);
-  selectedCategory = null;
-  renderTree();
-});
+    // Преобразуем JSON в формат, подходящий для jstree
+    const treeData = [convertToJsTreeFormat(rawData)];
 
-document.getElementById('cancelBtn').addEventListener('click', () => {
-  modal.classList.remove('visible');
-});
+
+    // Удаляем старое дерево, если оно уже было отрисовано
+    $('#treeContainer').jstree('destroy');
+
+    // Создаём новое дерево
+    $('#treeContainer').jstree({
+        core: {
+            data: treeData,          // данные для отображения дерева
+            check_callback: true     // разрешить создание/удаление узлов
+        },
+        plugins: ['contextmenu'],     // подключаем плагин контекстного меню (ПКМ)
+        contextmenu: {
+            items: function (node) {
+                return {
+                    create: {
+                        label: "Создать папку",
+                        action: function () {
+                            // создаём новый узел внутри выбранного
+                            const newNode = $('#treeContainer').jstree().create_node(node, { text: "Новая папка" });
+                            // включаем редактирование названия сразу после создания
+                            $('#treeContainer').jstree().edit(newNode);
+                        }
+                    },
+                    delete: {
+                        label: "Удалить папку",
+                        action: function () {
+                            // удаляем выбранный узел
+                            $('#treeContainer').jstree().delete_node(node);
+                        }
+                    }
+                };
+            }
+        }
+    });
+
+    // Показываем модальное окно и затемнение
+    modal.style.display = 'block';
+    document.getElementById('modalOverlay').style.display = 'block';
+}
+
+// Рекурсивно преобразует структуру категорий в формат jstree
+function convertToJsTreeFormat(node) {
+    // Преобразуем текущую категорию
+    const jsTreeNode = {
+        id: node.id,
+        text: node.name,
+        children: []
+    };
+
+    // Если есть подкатегории — рекурсивно преобразуем каждую
+    if (Array.isArray(node.categories) && node.categories.length > 0) {
+        jsTreeNode.children = node.categories.map(convertToJsTreeFormat);
+    }
+
+    return jsTreeNode;
+}
 
 document.getElementById('saveBtn').addEventListener('click', () => {
-  if (selectedCategory) {
-    document.getElementById('modalTitle').textContent = selectedCategory.title;
-  }
-  modal.classList.remove('visible');
+    const tree = $('#treeContainer').jstree(true);
+    const selected = tree.get_selected(true)[0];
+
+    if (selected) {
+        const pathParts = tree.get_path(selected, null); // массив: ["Каталог", "Про спорт", ...]
+        let indent = '';
+        const fullPath = pathParts.map(part => {
+            const line = indent + part + '/ ';
+            indent += '  '; // увеличиваем отступ каждый уровень
+            return line;
+        }).join('\n');
+
+        document.getElementById('modalTitle').textContent = fullPath + '\n  ' + currentDictation.id;
+    }
+
+    modal.style.display = 'none';
+    document.getElementById('modalOverlay').style.display = 'none';
+});
+
+
+document.getElementById('modalOverlay').addEventListener('click', () => {
+    modal.style.display = 'none';
+    document.getElementById('modalOverlay').style.display = 'none';
 });

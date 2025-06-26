@@ -4,6 +4,7 @@
 <head>
     <title>Генератор диктантов</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_dictation_generator.css') }}">
     <!-- jQuery (обязателен для jsTree) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -37,78 +38,67 @@
 
 
     <div class="container">
-        <div id="modal">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div class="tooltip-wrapper">
-                    <button id="openTreeDialogBtn" onclick="openTreeDialog()">⋯</button>
-                    <div class="tooltip-text">Выбрать категорию</div> <!-- подсказка -->
-                </div>
-                <h3 id="modalTitle">tree branch</h3>
-                <!-- Диалоговое окно для работы с деревом -->
-                <div id="treeDialog"
-                    style="display:none; padding: 20px; border: 1px solid #ccc; background: #fff; position: fixed; top: 20%; left: 50%; transform: translateX(-50%); box-shadow: 0 0 10px rgba(0,0,0,0.3);">
-                    <h4>Выберите ветку</h4>
-                    <div id="treeContainer"></div>
-
-                    <div class="tooltip-wrapper">
-                        <button id="addFolderBtn"> + </button>
-                        <div class="tooltip-text">Новая ветка</div> <!-- подсказка -->
-                    </div>
-
-                    <div class="tooltip-wrapper">
-                        <button id="deleteFolderBtn"> -- </button>
-                        <div class="tooltip-text">Удалить ветку</div> <!-- подсказка -->
-                    </div>
-
-                    <div class="tooltip-wrapper">
-                        <button id="cancelBtn"> X </button>
-                        <div class="tooltip-text">Закрыть без сохранения</div> <!-- подсказка -->
-                    </div>
-
-                    <div class="tooltip-wrapper">
-                        <button id="saveBtn"> V </button>
-                        <div class="tooltip-text">Выбрать и закрыть</div> <!-- подсказка -->
-                    </div>
-                </div>
-                <!-- онокнчание ---- Диалогового окна для работы с деревом -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="tooltip-wrapper">
+                <button id="openTreeDialogBtn" onclick="openTreeDialog()">⋯</button>
+                <pre class="tooltip-text">Выбрать категорию</pre> <!-- подсказка -->
             </div>
+            <pre id="modalTitle">ни входит ни в одну группу</pre>
+            <!-- Диалоговое окно для работы с деревом -->
+            <div id="modalOverlay" class="modal-overlay"></div>
+            <div id="modal" class="modal" style="display:none;">
+                <h4>Выберите ветку</h4>
+                <div id="treeContainer"></div>
+
+                <div class="tooltip-wrapper">
+                    <button id="cancelBtn"> X </button>
+                    <div class="tooltip-text">Закрыть без сохранения</div> <!-- подсказка -->
+                </div>
+
+                <div class="tooltip-wrapper">
+                    <button id="saveBtn"> V </button>
+                    <div class="tooltip-text">Выбрать и закрыть</div> <!-- подсказка -->
+                </div>
+            </div>
+            <!-- онокнчание ---- Диалогового окна для работы с деревом -->
         </div>
-
-
-        <div class="form-group">
-            <label>Title (English):</label>
-            <input type="text" id="title" required>
-        </div>
-        <div class="form-group">
-            <label>Title (Russian):</label>
-            <input type="text" id="title_translation" required>
-        </div>
-
-
-
-        <div class="form-group">
-            <label>Текст (по предложениям):</label>
-            <textarea id="text" rows="10"></textarea>
-        </div>
-        <button id="split-btn">Разбить на предложения</button>
-
-
-
-        <table id="sentences-table">
-            <thead>
-                <tr>
-                    <th>№</th>
-                    <th>Предложение (оригинал/перевод)</th>
-                    <th>Аудио</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Строки будут добавляться через JavaScript -->
-            </tbody>
-        </table>
-
-        <button id="save-btn" onclick="saveDictation()">Сохранить JSON + MP3</button>
     </div>
+
+
+    <div class="form-group">
+        <label>Title (English):</label>
+        <input type="text" id="title" required>
+    </div>
+    <div class="form-group">
+        <label>Title (Russian):</label>
+        <input type="text" id="title_translation" required>
+    </div>
+
+
+
+    <div class="form-group">
+        <label>Текст (по предложениям):</label>
+        <textarea id="text" rows="10"></textarea>
+    </div>
+    <button id="split-btn">Разбить на предложения</button>
+
+
+
+    <table id="sentences-table">
+        <thead>
+            <tr>
+                <th>№</th>
+                <th>Предложение (оригинал/перевод)</th>
+                <th>Аудио</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Строки будут добавляться через JavaScript -->
+        </tbody>
+    </table>
+
+    <button id="save-btn" onclick="saveDictation()">Сохранить JSON + MP3</button>
+
 
     <script src="{{ url_for('static', filename='script_dictation_generator.js') }}"></script>
 </body>
