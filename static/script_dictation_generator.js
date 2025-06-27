@@ -441,3 +441,65 @@ document.getElementById('modalOverlay').addEventListener('click', () => {
     modal.style.display = 'none';
     document.getElementById('modalOverlay').style.display = 'none';
 });
+
+// ================ дерево FancyTree ========================
+$(document).ready(function () {
+
+  function initFancyTree(currentParentKey = null) {
+    $.getJSON("/static/data/categories.json", function (data) {
+      $("#treeContainer").fancytree({
+        extensions: ["dnd5", "edit"],
+        source: data,
+        activate: function (event, data) {
+          const node = data.node;
+          console.log("Вы выбрали:", node.title);
+          $('#modalTitle').text("Выбрано: " + node.getPath(false));
+        },
+        init: function (event, data) {
+          if (currentParentKey) {
+            const node = data.tree.getNodeByKey(currentParentKey);
+            if (node) {
+              node.setActive();
+              node.makeVisible();
+            }
+          }
+        }
+      });
+    });
+  }
+
+  // Привязка обработчиков кнопок
+  $('#btnAddNode').on('click', function () {
+    const tree = $.ui.fancytree.getTree("#treeContainer");
+    const node = tree.getActiveNode();
+    if (node) {
+      const newNode = node.addChildren({
+        title: "Новый элемент",
+        key: Date.now().toString()
+      });
+      node.setExpanded(true);
+      newNode[0].setActive(); // выделяем только что добавленный узел
+    }
+  });
+
+  $('#btnDeleteNode').on('click', function () {
+    const node = $.ui.fancytree.getTree("#treeContainer").getActiveNode();
+    if (node && !node.isRoot()) {
+      node.remove();
+    } else {
+      alert("Нельзя удалить корень");
+    }
+  });
+
+  // делай initFancyTree(parentKey) при открытии модалки
+  window.openCategoryModal = function (parentKey) {
+    initFancyTree(parentKey);
+    $('#categoryModal').show(); // или как у тебя открывается модалка
+  };
+});
+
+// Вспомогательная функция — можно вставить под initFancyTree()
+function getParentPathByKey(tree, key) {
+  const node = tree.getNodeByKey(key);
+  return node ? node.getPath(false) : "Не найдено";
+}
