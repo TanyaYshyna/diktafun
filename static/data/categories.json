@@ -1,83 +1,57 @@
-{
-  "id": "0000000000",
-  "text": "",
-  "icon": true,
-  "li_attr": {
-    "id": "0000000000"
-  },
-  "a_attr": {
-    "href": "#",
-    "id": "0000000000_anchor"
-  },
-  "state": {
-    "loaded": true,
-    "opened": true,
-    "selected": false,
-    "disabled": false
-  },
-  "data": {},
-  "children": [
-    {
-      "id": "j2_2",
-      "text": "Kаталог",
-      "icon": true,
-      "li_attr": {
-        "id": "j2_2"
+[
+  {
+    "title": "en",
+    "key": "k1",
+    "folder": true,
+    "expanded": true,
+    "children": [
+      {
+        "title": "Book 1",
+        "key": "k1.1",
+        "selected": true
       },
-      "a_attr": {
-        "href": "#",
-        "id": "j2_2_anchor"
+      {
+        "title": "Book 2",
+        "key": "k1.2",
+        "children": [
+          {
+            "title": "Unit 1",
+            "key": "k1.2.1"
+          },
+          {
+            "title": "Unit 2",
+            "key": "k1.2.2"
+          },
+          {
+            "title": "Unit 3",
+            "key": "k1.2.3"
+          },
+          {
+            "title": "Unit 24",
+            "key": "k1.2.4"
+          },
+          {
+            "title": "Unit 5",
+            "key": "k1.2.5"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "tr",
+    "key": "k2",
+    "folder": true,
+    "expanded": true,
+    "children": [
+      {
+        "title": "Kitap 1",
+        "key": "k2.1"
       },
-      "state": {
-        "loaded": true,
-        "opened": true,
-        "selected": false,
-        "disabled": false
-      },
-      "data": {},
-      "children": [
-        {
-          "id": "j2_3",
-          "text": "Спорт",
-          "icon": true,
-          "li_attr": {
-            "id": "j2_3"
-          },
-          "a_attr": {
-            "href": "#",
-            "id": "j2_3_anchor"
-          },
-          "state": {
-            "loaded": true,
-            "opened": true,
-            "selected": false,
-            "disabled": false
-          },
-          "data": {},
-          "children": [
-            {
-              "id": "j2_4",
-              "text": "Книга 1",
-              "icon": true,
-              "li_attr": {
-                "id": "j2_4"
-              },
-              "a_attr": {
-                "href": "#",
-                "id": "j2_4_anchor"
-              },
-              "state": {
-                "loaded": true,
-                "opened": false,
-                "selected": true,
-                "disabled": false
-              },
-              "data": {},
-              "children": []
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
+      {
+        "title": "Kitap 2",
+        "key": "k2.2"
+      }
+    ]
+  }
+]

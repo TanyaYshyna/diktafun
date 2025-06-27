@@ -346,10 +346,10 @@ document.addEventListener('DOMContentLoaded', () => {
 openBtn.addEventListener('click', openTreeDialog);
 cancelBtn.addEventListener('click', () => modal.style.display = 'none');
 saveBtn.addEventListener('click', () => {
-    const selected = $('#treeContainer').jstree().get_selected(true)[0];
-    if (selected) {
-        titleField.textContent = selected.text;
-    }
+    // const selected = $('#treeContainer').jstree().get_selected(true)[0];
+    // if (selected) {
+    //     titleField.textContent = selected.text;
+    // }
     modal.style.display = 'none';
 });
 
@@ -375,38 +375,9 @@ async function openTreeDialog() {
 
 
     // Удаляем старое дерево, если оно уже было отрисовано
-    $('#treeContainer').jstree('destroy');
+    // $('#treeContainer').jstree('destroy');
 
     // Создаём новое дерево
-    $('#treeContainer').jstree({
-        core: {
-            data: treeData,          // данные для отображения дерева
-            check_callback: true     // разрешить создание/удаление узлов
-        },
-        plugins: ['contextmenu'],     // подключаем плагин контекстного меню (ПКМ)
-        contextmenu: {
-            items: function (node) {
-                return {
-                    create: {
-                        label: "Создать папку",
-                        action: function () {
-                            // создаём новый узел внутри выбранного
-                            const newNode = $('#treeContainer').jstree().create_node(node, { text: "Новая папка" });
-                            // включаем редактирование названия сразу после создания
-                            $('#treeContainer').jstree().edit(newNode);
-                        }
-                    },
-                    delete: {
-                        label: "Удалить папку",
-                        action: function () {
-                            // удаляем выбранный узел
-                            $('#treeContainer').jstree().delete_node(node);
-                        }
-                    }
-                };
-            }
-        }
-    });
 
     // Показываем модальное окно и затемнение
     modal.style.display = 'block';
@@ -431,38 +402,38 @@ function convertToJsTreeFormat(node) {
 }
 
 document.getElementById('saveBtn').addEventListener('click', () => {
-    const tree = $('#treeContainer').jstree(true);
-    const selected = tree.get_selected(true)[0];
+    // const tree = $('#treeContainer').jstree(true);
+    // const selected = tree.get_selected(true)[0];
 
-    if (selected) {
-        const pathParts = tree.get_path(selected, null); // массив: ["Каталог", "Про спорт", ...]
-        let indent = '';
-        const fullPath = pathParts.map(part => {
-            const line = indent + part + '/ ';
-            indent += '  '; // увеличиваем отступ каждый уровень
-            return line;
-        }).join('\n');
+    // if (selected) {
+    //     const pathParts = tree.get_path(selected, null); // массив: ["Каталог", "Про спорт", ...]
+    //     let indent = '';
+    //     const fullPath = pathParts.map(part => {
+    //         const line = indent + part + '/ ';
+    //         indent += '  '; // увеличиваем отступ каждый уровень
+    //         return line;
+    //     }).join('\n');
 
-        document.getElementById('modalTitle').textContent = fullPath + '\n  ' + currentDictation.id;
-    }
+    //     document.getElementById('modalTitle').textContent = fullPath + '\n  ' + currentDictation.id;
+    // }
 
-    modal.style.display = 'none';
-    document.getElementById('modalOverlay').style.display = 'none';
-     const fullTree = tree.get_json('#', { flat: false });
+    // modal.style.display = 'none';
+    // document.getElementById('modalOverlay').style.display = 'none';
+    //  const fullTree = tree.get_json('#', { flat: false });
 
     // Отправляем дерево на сервер для сохранения
-    fetch('/save_categories', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ tree: fullTree })
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log('Сохранено:', data.status);
-    })
-    .catch(err => console.error('Ошибка сохранения:', err));
+    // fetch('/save_categories', {
+    //     method: 'POST',
+    //     headers: {
+    //         'Content-Type': 'application/json'
+    //     },
+    //     body: JSON.stringify({ tree: fullTree })
+    // })
+    // .then(res => res.json())
+    // .then(data => {
+    //     console.log('Сохранено:', data.status);
+    // })
+    // .catch(err => console.error('Ошибка сохранения:', err));
 });
 
 
