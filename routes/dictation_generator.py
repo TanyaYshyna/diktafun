@@ -1,4 +1,5 @@
 import json
+from flask import request, jsonify
 import os
 import re
 import shutil
@@ -57,7 +58,7 @@ def generate_audio():
         lang = data.get('language')
 
         # Создаем базовую директорию для хранения аудио
-        base_dir = current_app.config.get('AUDIO_BASE_DIR', 'data/dictations')
+        base_dir = current_app.config.get('AUDIO_BASE_DIR', 'static/data/dictations')
         audio_dir = os.path.join(base_dir, dictation_id, lang)
         
         # Проверяем и создаем директории
@@ -142,17 +143,23 @@ def process_dictation():
 
 @generator_bp.route('/save_categories', methods=['POST'])
 def save_categories():
-    data = request.get_json()
-    tree = data.get('tree')
+    try:
+        # Включаем логирование
+        logger.info("Начало сохранения категорий")
 
-    if not tree:
-        return jsonify({'status': 'error', 'message': 'Нет данных'})
-
-    # path = os.path.join(generator_bp.root_path, 'static', 'data', 'categories.json')
-    # Переход из /routes/ в корень проекта
-    project_root = pathlib.Path(__file__).resolve().parent.parent
-    path = project_root / 'static' / 'data' / 'categories.json'
-    with open(path, 'w', encoding='utf-8') as f:
-        json.dump(tree[0], f, ensure_ascii=False, indent=2)
-
-    return jsonify({'status': 'ok'})
+        data = request.json
+        
+        # Путь к файлу категорий
+        base_dir = current_app.root_path
+        categories_path = os.path.join(base_dir, 'static', 'data', 'categories.json')
+        
+        # Сохраняем данные в файл
+        with open(categories_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"Категории успешно сохранены в {categories_path}")
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        logger.error(f"Ошибка сохранения категорий: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})

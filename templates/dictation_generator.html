@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>Генератор диктантов</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style_dictation_generator.css') }}">
-    <!-- fancytree CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery.fancytree@2/dist/skin-lion/ui.fancytree.min.css">
+  <title>Генератор диктантов</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style_dictation_generator.css">
+  
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-    <!-- fancytree  JS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jquery-ui-dist/jquery-ui.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jquery.fancytree@2/dist/jquery.fancytree-all-deps.min.js"></script>
+  <!-- FancyTree -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery.fancytree@2/dist/skin-lion/ui.fancytree.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/jquery.fancytree@2.38.2/dist/jquery.fancytree-all-deps.min.js"></script>
 </head>
 
 <body>
@@ -41,24 +40,34 @@
     <div class="container">
         <div style="display: flex; align-items: center; gap: 10px;">
             <div class="tooltip-wrapper">
-                <button id="openTreeDialogBtn" onclick="openTreeDialog()">⋯</button>
+                <button id="openTreeDialogBtn" onclick="openCategoryModal('root')">⋯</button>
                 <pre class="tooltip-text">Выбрать категорию</pre> <!-- подсказка -->
             </div>
-            <pre id="modalTitle">ни входит ни в одну группу</pre>
+            <pre id="modalTitle">Категория: </pre>
             <!-- Диалоговое окно для работы с деревом -->
             <div id="modalOverlay" class="modal-overlay"></div>
-            <div id="modal" class="modal" style="display:none;">
+            <div id="categoryModal" class="modal" style="display:none;">
                 <h4>Выберите ветку</h4>
                 <div id="treeContainer"></div>
 
                 <div class="tooltip-wrapper">
-                    <button id="btnAddNode">  ➕ </button>
+                    <button id="btnAddNode"> ➕ </button>
                     <div class="tooltip-text">Новый элемент</div> <!-- подсказка -->
                 </div>
 
                 <div class="tooltip-wrapper">
                     <button id="btnDeleteNode"> 🗑️ </button>
                     <div class="tooltip-text">Удалить элемент</div> <!-- подсказка -->
+                </div>
+
+                <div class="tooltip-wrapper">
+                    <button id="btnCancelCategory">❌ </button>
+                    <div class="tooltip-text">Отмена</div> <!-- подсказка -->
+                </div>
+
+                <div class="tooltip-wrapper">
+                    <button id="btnSelectCategory">✅ </button>
+                    <div class="tooltip-text">Выбрать</div> <!-- подсказка -->
                 </div>
             </div>
             <!-- онокнчание ---- Диалогового окна для работы с деревом -->

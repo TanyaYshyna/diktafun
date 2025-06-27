@@ -1,10 +1,11 @@
 // Хранилище для аудио-элементов
 const audioPlayers = {};
-const openBtn = document.getElementById('openTreeDialogBtn');
+
+// для дерева и модального окна к нему
 const modal = document.getElementById('modal');
-const saveBtn = document.getElementById('saveBtn');
-const cancelBtn = document.getElementById('cancelBtn');
 const titleField = document.getElementById('modalTitle');
+
+let selectedCategory = null; // ← вот сюда!
 
 let currentDictation = {
     id: '', // ID текущего диктанта
@@ -19,7 +20,7 @@ let currentPath = []; // Текущий путь (например, ["Книга
 let currentLevel = null; // Текущий уровень вложенности
 
 let data = [];
-let selectedCategory = null;
+
 
 
 // Функция генерации аудио с обработкой ошибок
@@ -136,7 +137,7 @@ async function createSentenceRow(index, sentence, translation) {
     const originalSuccess = await handleAudioGeneration(index, sentence, language);
     if (originalSuccess) {
         playBtn.disabled = false;
-        playBtn.querySelector('.status-text').textContent = 'Готово';
+        playBtn.querySelector('.status-text').textContent = language;
     } else {
         playBtn.disabled = true;
         playBtn.querySelector('.status-text').textContent = 'Ошибка';
@@ -147,7 +148,7 @@ async function createSentenceRow(index, sentence, translation) {
     const translationSuccess = await handleAudioGeneration(index, translation, 'ru');
     if (translationSuccess) {
         playBtnTr.disabled = false;
-        playBtnTr.querySelector('.status-text').textContent = 'Готово';
+        playBtnTr.querySelector('.status-text').textContent = 'ru';
     } else {
         playBtnTr.disabled = true;
         playBtnTr.querySelector('.status-text').textContent = 'Ошибка';
@@ -198,7 +199,7 @@ async function saveDictation() {
             [title_tr]: title_translation,
             languages: [language, "ru"],
             level: "A1",
-            category_path: []
+            category_path: selectedCategory ? [selectedCategory.path] : []
         },
         sentences: sentences
     };
@@ -243,7 +244,7 @@ function initNewDictation() {
     document.querySelector('#sentences-table tbody').innerHTML = '';
 
     document.getElementById('dictation-id').textContent = `Новый диктант`;
-    document.getElementById('modalTitle').textContent = 'Каталог / \n   ' + currentDictation.id; // пока заглушка, сюда надо будет записывать путь где находится пользователь при открытии
+    document.getElementById('modalTitle').textContent = 'Категория /  ___ получим категорию с главной страницы ___ '; // пока заглушка, сюда надо будет записывать путь где находится пользователь при открытии
 
     //    document.getElementById('dictation-id').textContent = `Диктант ${currentDictation.id}`;
 }
@@ -288,7 +289,7 @@ function setupButtons() {
             return;
         }
 
-        const sentences = text.split(/[.!?]+/)
+        const sentences = text.split(/[.!?\n]+/)
             .map(s => s.trim())
             .filter(s => s.length > 0);
 
@@ -343,99 +344,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ================дерево========================
-openBtn.addEventListener('click', openTreeDialog);
-cancelBtn.addEventListener('click', () => modal.style.display = 'none');
-saveBtn.addEventListener('click', () => {
-    // const selected = $('#treeContainer').jstree().get_selected(true)[0];
-    // if (selected) {
-    //     titleField.textContent = selected.text;
-    // }
-    modal.style.display = 'none';
-});
-
-function convertToJsTreeFormat(obj, parentId = '') {
-    return Object.entries(obj).map(([key, value], index) => {
-        const id = parentId + '_' + index + '_' + key;
-        return {
-            id,
-            text: key,
-            children: typeof value === 'object' ? convertToJsTreeFormat(value, id) : []
-        };
-    });
-}
-
-// Открытие модального окна и инициализация дерева jstree
-async function openTreeDialog() {
-    // Загружаем JSON-файл с категориями
-    const res = await fetch('/static/data/categories.json');
-    const rawData = await res.json();
-
-    // Преобразуем JSON в формат, подходящий для jstree
-    const treeData = [convertToJsTreeFormat(rawData)];
-
-
-    // Удаляем старое дерево, если оно уже было отрисовано
-    // $('#treeContainer').jstree('destroy');
-
-    // Создаём новое дерево
-
-    // Показываем модальное окно и затемнение
-    modal.style.display = 'block';
-    document.getElementById('modalOverlay').style.display = 'block';
-}
-
-// Рекурсивно преобразует структуру категорий в формат jstree
-function convertToJsTreeFormat(node) {
-    // Преобразуем текущую категорию
-    const jsTreeNode = {
-        id: node.id,
-        text: node.name,
-        children: []
-    };
-
-    // Если есть подкатегории — рекурсивно преобразуем каждую
-    if (Array.isArray(node.categories) && node.categories.length > 0) {
-        jsTreeNode.children = node.categories.map(convertToJsTreeFormat);
-    }
-
-    return jsTreeNode;
-}
-
-document.getElementById('saveBtn').addEventListener('click', () => {
-    // const tree = $('#treeContainer').jstree(true);
-    // const selected = tree.get_selected(true)[0];
-
-    // if (selected) {
-    //     const pathParts = tree.get_path(selected, null); // массив: ["Каталог", "Про спорт", ...]
-    //     let indent = '';
-    //     const fullPath = pathParts.map(part => {
-    //         const line = indent + part + '/ ';
-    //         indent += '  '; // увеличиваем отступ каждый уровень
-    //         return line;
-    //     }).join('\n');
-
-    //     document.getElementById('modalTitle').textContent = fullPath + '\n  ' + currentDictation.id;
-    // }
-
-    // modal.style.display = 'none';
-    // document.getElementById('modalOverlay').style.display = 'none';
-    //  const fullTree = tree.get_json('#', { flat: false });
-
-    // Отправляем дерево на сервер для сохранения
-    // fetch('/save_categories', {
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'application/json'
-    //     },
-    //     body: JSON.stringify({ tree: fullTree })
-    // })
-    // .then(res => res.json())
-    // .then(data => {
-    //     console.log('Сохранено:', data.status);
-    // })
-    // .catch(err => console.error('Ошибка сохранения:', err));
-});
-
 
 document.getElementById('modalOverlay').addEventListener('click', () => {
     modal.style.display = 'none';
@@ -443,63 +351,196 @@ document.getElementById('modalOverlay').addEventListener('click', () => {
 });
 
 // ================ дерево FancyTree ========================
+let originalSelectedCategory = null;
+
+window.openCategoryModal = function (parentKey) {
+    originalSelectedCategory = selectedCategory; // Сохраняем исходное значение
+    $('#categoryModal').show();
+    $('#modalOverlay').show();
+
+    initFancyTree(parentKey);
+};
+
+function buildSelectedCategoryFromKey(key) {
+    const tree = $.ui.fancytree.getTree("#treeContainer");
+    const node = tree.getNodeByKey(key);
+
+    if (!node) return null;
+
+    const pathKeys = node.getParentList(false).map(n => n.key).concat(node.key);
+    const pathTitles = node.getParentList(false).map(n => n.title).concat(node.title);
+
+    return {
+        key: node.key,
+        path: pathKeys,
+        display: pathTitles.join(" / ")
+    };
+}
+
+function destroyFancyTree() {
+    const tree = $.ui.fancytree.getTree("#treeContainer");
+    if (tree) {
+        tree.destroy();
+    }
+}
+
 $(document).ready(function () {
 
-  function initFancyTree(currentParentKey = null) {
-    $.getJSON("/static/data/categories.json", function (data) {
-      $("#treeContainer").fancytree({
-        extensions: ["dnd5", "edit"],
-        source: data,
-        activate: function (event, data) {
-          const node = data.node;
-          console.log("Вы выбрали:", node.title);
-          $('#modalTitle').text("Выбрано: " + node.getPath(false));
-        },
-        init: function (event, data) {
-          if (currentParentKey) {
-            const node = data.tree.getNodeByKey(currentParentKey);
-            if (node) {
-              node.setActive();
-              node.makeVisible();
-            }
-          }
+    function initFancyTree(currentParentKey = null) {
+        destroyFancyTree(); // Уничтожаем старое дерево перед созданием нового
+
+        $.getJSON("/static/data/categories.json", function (data) {
+            $("#treeContainer").fancytree({
+                extensions: ["dnd5", "edit"],
+                source: data,
+                // ... остальные настройки ...
+                edit: {
+                    triggerStart: ["f2", "mac+enter", "shift+click", "dblclick"],
+                    beforeEdit: function (event, data) {
+                        return true;
+                    },
+                    edit: function (event, data) {
+                        console.log("Editing", data.node);
+                    },
+                    beforeClose: function (event, data) {
+                        // Важная проверка перед закрытием редактора
+                        return typeof data.save === "boolean";
+                    },
+                    close: function (event, data) {
+                        if (data.save) {
+                            const newValue = data.input ? data.input.val().trim() : data.node.title;
+                            if (!newValue) {
+                                alert("Название не может быть пустым!");
+                                return false;
+                            }
+                            data.node.setTitle(newValue);
+                        }
+                        return true;
+                    }
+                }
+            });
+        });
+    }
+
+    $('#btnAddNode').on('click', function () {
+        const tree = $.ui.fancytree.getTree("#treeContainer");
+        if (!tree) return;
+
+        const node = tree.getActiveNode();
+        if (!node) return;
+
+        const newNode = node.addChildren({
+            title: "Новый элемент",
+            key: Date.now().toString()
+        });
+
+        node.setExpanded(true);
+
+        if (Array.isArray(newNode)) {
+            newNode[0].setActive(true);
+            setTimeout(() => newNode[0].editStart(), 100);
+        } else {
+            newNode.setActive(true);
+            setTimeout(() => newNode.editStart(), 100);
         }
-      });
     });
-  }
 
-  // Привязка обработчиков кнопок
-  $('#btnAddNode').on('click', function () {
-    const tree = $.ui.fancytree.getTree("#treeContainer");
-    const node = tree.getActiveNode();
-    if (node) {
-      const newNode = node.addChildren({
-        title: "Новый элемент",
-        key: Date.now().toString()
-      });
-      node.setExpanded(true);
-      newNode[0].setActive(); // выделяем только что добавленный узел
-    }
-  });
+    $('#btnDeleteNode').on('click', function () {
+        const node = $.ui.fancytree.getTree("#treeContainer").getActiveNode();
+        if (node && !node.isRoot()) {
+            node.remove();
+        } else {
+            alert("Нельзя удалить корень");
+        }
+    });
 
-  $('#btnDeleteNode').on('click', function () {
-    const node = $.ui.fancytree.getTree("#treeContainer").getActiveNode();
-    if (node && !node.isRoot()) {
-      node.remove();
-    } else {
-      alert("Нельзя удалить корень");
-    }
-  });
+    $('#btnCancelCategory').on('click', function () {
+        selectedCategory = originalSelectedCategory; // Восстанавливаем исходное значение
+        $('#categoryModal').hide();
+        $('#modalOverlay').hide();
+        destroyFancyTree(); // Уничтожаем текущее дерево
+    });
 
-  // делай initFancyTree(parentKey) при открытии модалки
-  window.openCategoryModal = function (parentKey) {
-    initFancyTree(parentKey);
-    $('#categoryModal').show(); // или как у тебя открывается модалка
-  };
+    $('#btnSelectCategory').on('click', async function () {
+        try {
+            const tree = $.ui.fancytree.getTree("#treeContainer");
+            if (!tree) return;
+
+            const node = tree.getActiveNode();
+            if (!node) {
+                alert("Выберите ветку!");
+                return;
+            }
+
+            // Сохраняем дерево перед закрытием
+            const saveSuccess = await saveTreeData();
+            if (!saveSuccess) {
+                alert("Не удалось сохранить изменения дерева!");
+                return;
+            }
+
+            selectedCategory = buildSelectedCategoryFromKey(node.key);
+            $('#modalTitle').text("Выбрано: " + selectedCategory.display);
+
+            destroyFancyTree(); // Уничтожаем текущее дерево
+            $('#categoryModal').hide();
+            $('#modalOverlay').hide();
+
+        } catch (error) {
+            console.error("Ошибка при сохранении категории:", error);
+            alert("Произошла ошибка: " + error.message);
+        }
+    });
+
+
+    window.openCategoryModal = function (parentKey) {
+        $('#categoryModal').show(); // или как у тебя открывается модалка
+
+        setTimeout(function () {
+            initFancyTree(parentKey); // потом инициализируй дерево
+        }, 50); // небольшая пауза даёт DOM "встать"
+
+
+    };
 });
 
 // Вспомогательная функция — можно вставить под initFancyTree()
 function getParentPathByKey(tree, key) {
-  const node = tree.getNodeByKey(key);
-  return node ? node.getPath(false) : "Не найдено";
+    const node = tree.getNodeByKey(key);
+    return node ? node.getPath(false) : "Не найдено";
+}
+
+async function saveTreeData() {
+    const tree = $.ui.fancytree.getTree("#treeContainer");
+    if (!tree) return false;
+
+    try {
+        const fullTree = tree.toDict(true); // Получаем полное дерево
+        console.log("Отправка запроса на save_categories");
+
+        // Показываем индикатор загрузки
+        $('#btnSelectCategory').prop('disabled', true).text('Сохранение...');
+
+        const response = await fetch('/save_categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fullTree)
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || 'Ошибка сохранения');
+        }
+
+        return true;
+
+    } catch (error) {
+        console.error("Ошибка сохранения дерева:", error);
+        alert("Ошибка сохранения: " + error.message);
+        return false;
+
+    } finally {
+        $('#btnSelectCategory').prop('disabled', false).text('✅ Выбрать');
+    }
 }
