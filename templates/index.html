@@ -4,7 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Главная — Диктанты</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/style_index.css">
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- FancyTree -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery.fancytree@2/dist/skin-lion/ui.fancytree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery.fancytree@2.38.2/dist/jquery.fancytree-all-deps.min.js"></script>
+
 </head>
 
 <body>
@@ -47,81 +56,70 @@
     </div>
 
     <div class="panel">
+        <h2>Список диктантов</h2>
         <a href="{{ url_for('dictation_generator.dictation_generator') }}">
             <button>+ Новый диктант</button>
         </a>
-    </div>
 
-    <div class="main">
-        <h2>Список диктантов</h2>
-        <div class="dictation-tree">
-            {% set current_h1 = "" %}
-            {% set current_h2 = "" %}
+        <div class="tooltip-wrapper">
+            <button id="btnAddNode"> ➕ </button>
+            <div class="tooltip-text">Новый элемент</div> <!-- подсказка -->
+        </div>
 
-            {% for d in dictations|sort(attribute='H1') %}
-            {% if d.H1 != current_h1 %}
-            <div class="h1-group">
-                <h3>{{ d.H1 }}</h3>
-                {% set current_h1 = d.H1 %}
-                {% set current_h2 = "" %}
+        <div class="tooltip-wrapper">
+            <button id="btnDeleteNode"> 🗑️ </button>
+            <div class="tooltip-text">Удалить элемент</div> <!-- подсказка -->
+        </div>
+
+
+        <div id="container">
+            <div id="leftPanel">
+                <div class="tree-header">
+                    <!-- <h3>Категории</h3> -->
+                    <!-- <div class="tree-actions">
+                        <button id="btnAddNode" title="Добавить">+</button>
+                        <button id="btnDeleteNode" title="Удалить">×</button>
+                    </div> -->
+                </div>
+                <div id="treeContainer"></div>
             </div>
-            {% endif %}
 
-            {% if d.H2 != current_h2 %}
-            <div class="h2-group">
-                <h4>{{ d.H2 }}</h4>
-                {% set current_h2 = d.H2 %}
-            </div>
-            {% endif %}
+            <div id="resizer"></div>
 
-            <div class="dictation-card">
-                <h5>{{ d.title }}</h5>
-                <p>Язык: {{ d.language }}</p>
-                <p>Уровень: {{ d.level }}</p>
-                <a href="{{ url_for('dictation.show_dictation', dictation_id=d.id, num_sentence=0) }}">
-                    Перейти →
-                </a>
+            <div id="rightPanel">
+                <!-- Содержимое правой панели -->
+                <div id="content">
+                    <p>Выберите категорию для просмотра документов</p>
+                </div>
             </div>
-            {% endfor %}
         </div>
     </div>
 
-    <script>
-        // Обработчик выбора языка
-        document.querySelectorAll('.language-dropdown a').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const lang = link.getAttribute('data-lang');
-                localStorage.setItem('appLanguage', lang);
+    <!-- <div id="container">
+            <div id="leftPanel">
+                <div id="treeContainer"></div>
+            </div>
+            <div id="resizer"></div>
+            <div id="rightPanel">
+                <p id="tree-branch">📁 Здесь будет дерево</p>
 
-                // Обновляем отображение выбранного языка
-                const toggle = document.getElementById('language-toggle');
-                toggle.innerHTML = `
-                    <img src="${link.querySelector('img').src}" 
-                         alt="${link.querySelector('img').alt}" 
-                         width="20">
-                    <span>${lang.toUpperCase()}</span>
-                `;
+                <div class="dictation-tree">
+                    {% for d in dictations|sort(attribute='parent_key') %}
+                    <div class="dictation-card">
+                        <h5>{{ d.meta.title_en }}</h5>
+                        <p>Язык: {{ d.language }}</p>
+                        <p>Уровень: {{ d.level }}</p>
+                        <a href="{{ url_for('dictation.show_dictation', dictation_id=d.id, num_sentence=0) }}">
+                            Перейти →
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div> -->
 
-                // Здесь можно добавить логику смены языка интерфейса
-                alert(`Язык изменен на ${lang}. В реальном приложении здесь будет перевод!`);
-            });
-        });
 
-        // Загрузка сохраненного языка
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedLang = localStorage.getItem('appLanguage') || 'ru';
-            const langLink = document.querySelector(`.language-dropdown a[data-lang="${savedLang}"]`);
-            if (langLink) {
-                document.getElementById('language-toggle').innerHTML = `
-                    <img src="${langLink.querySelector('img').src}" 
-                         alt="${langLink.querySelector('img').alt}" 
-                         width="20">
-                    <span>${savedLang.toUpperCase()}</span>
-                `;
-            }
-        });
-    </script>
+    <script src="{{ url_for('static', filename='script_index.js') }}"></script>
 </body>
 
 </html>

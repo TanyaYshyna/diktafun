@@ -1,17 +1,17 @@
 {
     "id": "dicta_1750624983449",
+    "parent_key": "k1.1",
+    "title": "Word list 09",
     "language": "en",
-    "meta": {
-        "title_en": "Word list 09",
-        "title_ru": "Список слов 09",
-        "languages": [
-            "en",
-            "ru"
-        ],
-        "level": "A1",
-        "category_path": [],
-        "category_parent_id": ""
-    },
+    "languages": [
+        "ru"
+    ],
+    "translation": [
+        {
+            "ru": "Список слов 09"
+        }
+    ],
+    "level": "A1",
     "sentences": [
         {
             "id": "001",

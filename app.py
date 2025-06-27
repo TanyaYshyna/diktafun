@@ -33,6 +33,21 @@ from forms import LoginForm  # Добавьте если отсутствует
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+# @app.route('/')
+# def index():
+#     # Загружаем данные для дерева (если нужно)
+#     dictations = []  # Здесь можно загрузить данные из БД
+    
+#     # Проверяем существование файла категорий
+#     categories_path = os.path.join('static', 'data', 'categories.json')
+#     if not os.path.exists(categories_path):
+#         # Создаем базовую структуру, если файла нет
+#         os.makedirs(os.path.dirname(categories_path), exist_ok=True)
+#         with open(categories_path, 'w') as f:
+#             json.dump({"title": "root", "children": []}, f)
+    
+#     return render_template('index.html', dictations=dictations)
+
 # Добавьте этот маршрут
 @app.route('/data/<path:filename>')
 def serve_data(filename):

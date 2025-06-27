@@ -1,22 +1,17 @@
 {
     "id": "dicta_1751035945217",
+    "parent_key": "k1.1",
+    "title": "money money money",
     "language": "en",
-    "meta": {
-        "title_en": "money money money",
-        "title_ru": "",
-        "languages": [
-            "en",
-            "ru"
-        ],
-        "level": "A1",
-        "category_path": [
-            [
-                "k1",
-                "k1.1",
-                "1751036520609"
-            ]
-        ]
-    },
+    "languages": [
+        "ru"
+    ],
+    "translation": [
+        {
+            "ru": "деньги деньги деньги"
+        }
+    ],
+    "level": "A1",
     "sentences": [
         {
             "id": "001",
