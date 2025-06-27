@@ -367,7 +367,7 @@ function convertToJsTreeFormat(obj, parentId = '') {
 // Открытие модального окна и инициализация дерева jstree
 async function openTreeDialog() {
     // Загружаем JSON-файл с категориями
-    const res = await fetch('/data/categories.json');
+    const res = await fetch('/static/data/categories.json');
     const rawData = await res.json();
 
     // Преобразуем JSON в формат, подходящий для jstree
@@ -448,6 +448,21 @@ document.getElementById('saveBtn').addEventListener('click', () => {
 
     modal.style.display = 'none';
     document.getElementById('modalOverlay').style.display = 'none';
+     const fullTree = tree.get_json('#', { flat: false });
+
+    // Отправляем дерево на сервер для сохранения
+    fetch('/save_categories', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tree: fullTree })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('Сохранено:', data.status);
+    })
+    .catch(err => console.error('Ошибка сохранения:', err));
 });
 
 

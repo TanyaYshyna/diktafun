@@ -1,0 +1,83 @@
+{
+  "id": "0000000000",
+  "text": "",
+  "icon": true,
+  "li_attr": {
+    "id": "0000000000"
+  },
+  "a_attr": {
+    "href": "#",
+    "id": "0000000000_anchor"
+  },
+  "state": {
+    "loaded": true,
+    "opened": true,
+    "selected": false,
+    "disabled": false
+  },
+  "data": {},
+  "children": [
+    {
+      "id": "j2_2",
+      "text": "Kаталог",
+      "icon": true,
+      "li_attr": {
+        "id": "j2_2"
+      },
+      "a_attr": {
+        "href": "#",
+        "id": "j2_2_anchor"
+      },
+      "state": {
+        "loaded": true,
+        "opened": true,
+        "selected": false,
+        "disabled": false
+      },
+      "data": {},
+      "children": [
+        {
+          "id": "j2_3",
+          "text": "Спорт",
+          "icon": true,
+          "li_attr": {
+            "id": "j2_3"
+          },
+          "a_attr": {
+            "href": "#",
+            "id": "j2_3_anchor"
+          },
+          "state": {
+            "loaded": true,
+            "opened": true,
+            "selected": false,
+            "disabled": false
+          },
+          "data": {},
+          "children": [
+            {
+              "id": "j2_4",
+              "text": "Книга 1",
+              "icon": true,
+              "li_attr": {
+                "id": "j2_4"
+              },
+              "a_attr": {
+                "href": "#",
+                "id": "j2_4_anchor"
+              },
+              "state": {
+                "loaded": true,
+                "opened": false,
+                "selected": true,
+                "disabled": false
+              },
+              "data": {},
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

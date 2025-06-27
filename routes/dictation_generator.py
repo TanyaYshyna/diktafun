@@ -2,6 +2,7 @@ import json
 import os
 import re
 import shutil
+import pathlib
 
 from flask import Blueprint, jsonify, logging, render_template, request, send_file, url_for
 from googletrans import Translator
@@ -113,9 +114,9 @@ def translate_text():
         return jsonify({"error": str(e)}), 500
     
 
-@generator_bp.route('/data/temp/audio/<lang>/<filename>')
+@generator_bp.route('/static/data/temp/audio/<lang>/<filename>')
 def serve_temp_audio(lang, filename):
-    audio_path = os.path.join('data', 'temp', 'audio', lang, filename)
+    audio_path = os.path.join('static','data', 'temp', 'audio', lang, filename)
     return send_file(audio_path, mimetype='audio/mpeg')
 
 
@@ -130,10 +131,28 @@ def process_dictation():
             return jsonify({"success": False, "message": "Неверный формат данных"}), 400
 
         # Сохранение JSON в файл
-        os.makedirs(f'data/dictations/{title_folder}', exist_ok=True)
-        with open(f'data/dictations/{title_folder}/info.json', 'w', encoding='utf-8') as f:
+        os.makedirs(f'static/data/dictations/{title_folder}', exist_ok=True)
+        with open(f'static/data/dictations/{title_folder}/info.json', 'w', encoding='utf-8') as f:
             json.dump(json_structure, f, ensure_ascii=False, indent=4)
 
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+    
+
+@generator_bp.route('/save_categories', methods=['POST'])
+def save_categories():
+    data = request.get_json()
+    tree = data.get('tree')
+
+    if not tree:
+        return jsonify({'status': 'error', 'message': 'Нет данных'})
+
+    # path = os.path.join(generator_bp.root_path, 'static', 'data', 'categories.json')
+    # Переход из /routes/ в корень проекта
+    project_root = pathlib.Path(__file__).resolve().parent.parent
+    path = project_root / 'static' / 'data' / 'categories.json'
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(tree[0], f, ensure_ascii=False, indent=2)
+
+    return jsonify({'status': 'ok'})
