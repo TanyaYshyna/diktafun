@@ -1,0 +1,70 @@
+#container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+.osn_panel {
+  height: 60px;
+  background: #b2e5fb;
+  display: flex;
+}
+
+#leftPanel {
+  width: 30%;
+  min-width: 200px;
+  max-width: 50%;
+  display: flex;
+  flex-direction: column;
+  background: #f4f4f4;
+  overflow: hidden; /* Важно для корректного ресайза */
+}
+
+
+#resizer {
+  width: 10px;
+  background: #aaa;
+  cursor: ew-resize;
+  flex-shrink: 0;
+}
+
+#rightPanel {
+  flex: 1;
+  min-width: 300px;
+  overflow: auto;
+  padding: 20px;
+  background: #fff;
+}
+
+/* Добавьте в style_index.css */
+#treeContainer {
+  width: 100%;
+  height: calc(100% - 60px); /* Учитываем заголовок и кнопки */
+  overflow: auto;
+}
+
+.fancytree-container {
+  font-family: inherit;
+  background: transparent;
+}
+
+.fancytree-node {
+  padding: 4px 0;
+}
+
+.folder-item {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.fancytree-active .fancytree-title {
+  background-color: #e0f7fa;
+}
+
+html, body {
+  margin: 0;
+  height: 100%; /* важно для 100vh в #container */
+}
+
+#leftPanel {
+  height: 100%; /* <--- вот это критично! */
+}

@@ -31,3 +31,30 @@ def index():
     except Exception as e:
         current_app.logger.error(f"Ошибка загрузки главной страницы: {str(e)}")
         abort(500)
+
+
+@index_bp.route("/dictations-list")
+def dictations_list():
+    base_path = os.path.join(current_app.static_folder, "data", "dictations")
+    result = []
+
+    for folder in os.listdir(base_path):
+        folder_path = os.path.join(base_path, folder)
+        info_path = os.path.join(folder_path, "info.json")
+
+        if os.path.isdir(folder_path) and os.path.isfile(info_path):
+            try:
+                with open(info_path, "r", encoding="utf-8") as f:
+                    info = json.load(f)
+                    result.append({
+                        "id": info.get("id"),
+                        "title": info.get("title"),
+                        "parent_key": info.get("parent_key"),
+                        "language": info.get("language"),
+                        "languages": info.get("languages"),
+                        "level": info.get("level")
+                    })
+            except Exception as e:
+                print(f"⚠️ Ошибка при чтении {info_path}: {e}")
+
+    return jsonify(result)      
