@@ -33,20 +33,6 @@ from forms import LoginForm  # Добавьте если отсутствует
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# @app.route('/')
-# def index():
-#     # Загружаем данные для дерева (если нужно)
-#     dictations = []  # Здесь можно загрузить данные из БД
-    
-#     # Проверяем существование файла категорий
-#     categories_path = os.path.join('static', 'data', 'categories.json')
-#     if not os.path.exists(categories_path):
-#         # Создаем базовую структуру, если файла нет
-#         os.makedirs(os.path.dirname(categories_path), exist_ok=True)
-#         with open(categories_path, 'w') as f:
-#             json.dump({"title": "root", "children": []}, f)
-    
-#     return render_template('index.html', dictations=dictations)
 
 # Добавьте этот маршрут
 @app.route('/data/<path:filename>')
@@ -54,14 +40,11 @@ def serve_data(filename):
     return send_from_directory('data', filename)
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-
 @app.route('/data/dictations/<path:filename>')
 def serve_dictation_audio(filename):
     return send_from_directory('data/dictations', filename)
+
+
 
 
 @app.route('/profile')
@@ -86,6 +69,11 @@ def register():
         flash('Регистрация успешна!')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -123,32 +111,6 @@ def test_db():
 
 
 
-
-# ==============================================================
-# Форма написания деиктантов
-@app.route('/dictation/<language>/<topic>/<int:num_sentence>')
-def show_dictation(language, topic, num_sentence):
-    info_path = os.path.join('static', 'data', language, topic, 'info.json')
-    
-    with open(info_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    
-    # Проверка, чтобы номер предложения был в допустимых пределах
-    if num_sentence >= len(data['sentences']):
-        abort(404, description="Предложение не найдено")
-    
-    sentence = data['sentences'][num_sentence]
-    return render_template(
-        "dictation.html",
-        language=language,
-        topic=topic,
-        current_sentence=num_sentence,  # Текущий номер предложения
-        total_sentences=len(data['sentences']),  # Общее количество предложений
-        sentence_text=sentence['text'],
-        translation=sentence['text_ru'],
-        audio_path=f"data/{language}/{topic}/audio/{sentence['audio']}", # адрес где лежит аудио
-        audiotranslation_path=f"data/{language}/{topic}/audio/{sentence['audio_ru']}" # адрес где лежит аудио
-    )
 
 
 
