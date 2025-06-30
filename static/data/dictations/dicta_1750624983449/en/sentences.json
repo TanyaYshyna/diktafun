@@ -1,0 +1,21 @@
+{
+    "language": "en",
+    "speaker": "autotranslation",
+    "sentences": [
+        {
+            "key": "001",
+            "text": "against",
+            "audio": "en_001.mp3"
+        },
+        {
+            "key": "002",
+            "text": "To be against something is to be touching it or opposed to it",
+            "audio": "en_002.mp3"
+       },
+        {
+            "key": "003",
+            "text": "They both leaned against the wall",
+            "audio": "en_003.mp3"
+        }
+    ]
+}

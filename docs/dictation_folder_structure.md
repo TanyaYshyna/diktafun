@@ -121,6 +121,89 @@ static/
 * `folder` — если `true`, отображается как папка
 * `expanded` — пока не знаю зачем (билиотека его создала)
 
+> первый уровень дерева это языки которые изучаются, тут ни один диктант подвязан не может быть для каждого диктанта важна пара "оригинал - перевод"
+
+[
+  {
+    "key": "diktafun",
+    "title": "Dikta Fun",
+    "language_original": "en",
+    "language_translation": "",
+    "folder": true,
+    "expanded": true,
+    "children": []
+  },
+  {
+    "key": "tr",
+    "title": "tr",
+    "language_original": "tr",
+    "language_translation": "",
+    "folder": true,
+    "expanded": true,
+    "children": []
+  },
+  {
+    "key": "ar",
+    "title": "ar",
+    "language_original": "ar",
+    "language_translation": "",
+    "folder": true,
+    "expanded": true,
+    "children": []
+  }
+]
+
+> второй уровень это уже корень ветки оригинал=>перевод
+на этом уровене показываем все дитктанты которые остались сиротками без родителей (они есть в папке диктанты но не прописаны в файле categories.json)
+пример:
+ ...{
+    "key": "ar",
+    "title": "ar",
+    "language_original": "ar",
+    "language_translation": "",
+    "folder": true,
+    "expanded": true,
+    "children": [
+      {
+        "key": "arru",
+        "title": "ar=>ru",
+        "language_original": "ar",
+        "language_translation": "ru",
+        "folder": true,
+        "expanded": true,
+        "children": [...
+
+> и начиная с третьего уровня появляется елемент  "dictations": [] в котором массив с названиями папок с диктантами
+
+[
+  {
+    "key": "diktafun",
+    "title": "Dikta Fun",
+    "language_original": "en",
+    "language_translation": "",
+    "folder": true,
+    "expanded": true,
+    "children": [
+      {
+        "key": "enru",
+        "title": "en=>ru",
+        "language_original": "en",
+        "language_translation": "ru",
+        "folder": true,
+        "expanded": true,
+        "children": [
+          {
+            "key": "enru_00001",
+            "title": "Ira homework en",
+            "language_original": "en",
+            "language_translation": "ru",
+            "folder": true,
+            "expanded": true,
+            "dictations": [
+              "dicta_1750624983449",
+              "dicta_1751035945217"
+            ]
+          },
 ---
 
 ### 📘 `info.json`
@@ -161,7 +244,7 @@ static/
     "sentences": [
       {
         "key": "123457",
-        "title": "Lesson 1: First steps",
+        "text": "Lesson 1: First steps",
         "audio": "004.mp3"
       }
     ]
