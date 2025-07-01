@@ -46,6 +46,7 @@ def dictations_list():
             try:
                 with open(info_path, "r", encoding="utf-8") as f:
                     info = json.load(f)
+                    print(f"📘 {folder} — info:", info)
                     result.append({
                         "id": info.get("id"),
                         "title": info.get("title"),
@@ -55,6 +56,6 @@ def dictations_list():
                         "level": info.get("level")
                     })
             except Exception as e:
-                print(f"⚠️ Ошибка при чтении {info_path}: {e}")
+                    print(f"⚠️ Ошибка при чтении {info_path}: {e}")
 
-    return jsonify(result)      
+    return jsonify(result)  

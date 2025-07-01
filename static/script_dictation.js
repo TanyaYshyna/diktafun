@@ -1,24 +1,17 @@
 const inputField = document.getElementById('userInput');
 const correctAnswerDiv = document.getElementById('correctAnswer');
 const translationDiv = document.getElementById('translation');
+const audio = document.getElementById('audio');
+
 let original = sentenceData.text;
 let translation = sentenceData.translation;
 
-const audio = document.getElementById('audio');
-const sentenceData = {
-    dictation_id: "{{ dictation_id }}",
-    currentSentence: parseInt("{{ current_sentence }}"),
-    totalSentences: parseInt("{{ total_sentences }}"),
-    text: "{{ sentence_text | safe }}",
-    translation: "{{ translation | safe }}",
-    audio: "{{ url_for('static', filename=audio_path) }}"
-};
 
 // Функция перехода к следующему предложению
 function nextSentence() {
     const nextSentenceNum = sentenceData.currentSentence + 1;
     if (nextSentenceNum < sentenceData.totalSentences) {
-        window.location.href = `/dictation/${sentenceData.language}/${sentenceData.topic}/${nextSentenceNum}`;
+        window.location.href = `/dictation/${sentenceData.dictation_id}/${nextSentenceNum}`;
     }
 }
 
@@ -35,47 +28,34 @@ function clearText() {
 async function loadAudio() {
     const start = sentenceData.start;
     const end = sentenceData.end;
-    
+
     try {
-        // Вариант 1: Простое решение - загружаем весь файл, но устанавливаем начальное время
         audio.src = sentenceData.audio;
-        
-        // // Ждем, когда можно будет установить время начала
-        // audio.onloadedmetadata = function() {
-        //     audio.currentTime = start;
-            
-        //     // Останавливаем воспроизведение при достижении end времени
-        //     audio.ontimeupdate = function() {
-        //         if (audio.currentTime >= end) {
-        //             audio.pause();
-        //         }
-        //     };
-        // };
-        
+
         // Обработчик ошибок
-        audio.onerror = function() {
+        audio.onerror = function () {
             console.error('Ошибка загрузки аудио');
         };
-        
+
     } catch (error) {
         console.error('Ошибка:', error);
     }
 }
 
 // Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadAudio();
 });
 
 // Обработчики событий для inputField
-inputField.addEventListener('keydown', function(event) {
+inputField.addEventListener('keydown', function (event) {
     if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         checkText();
     }
 });
 
-inputField.addEventListener('input', function() {
+inputField.addEventListener('input', function () {
     const plainText = inputField.innerText;
     if (inputField.innerHTML !== plainText) {
         const cursorPos = saveCursorPosition(inputField);
@@ -308,7 +288,7 @@ function checkText() {
     }
 }
 
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
     // Проверяем Ctrl (для Windows/Linux) или Meta (для Mac)
     if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && document.activeElement !== inputField) {
         event.preventDefault();
@@ -319,13 +299,13 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-document.addEventListener('keyup', function(event) {
+document.addEventListener('keyup', function (event) {
     if (event.key === 'Control' || event.key === 'Meta') {
         document.body.classList.remove('playing-audio');
     }
 });
 
 // Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadAudio();
 });

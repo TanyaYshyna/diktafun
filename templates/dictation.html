@@ -49,32 +49,16 @@
 
     <!-- СКРИПТ В КОНЦЕ -->
     <script>
-        // Передаем данные из Flask в JS
         const sentenceData = {
-            language: "{{ language }}",
-            topic: "{{ topic }}",
+            dictation_id: "{{ dictation_id }}",
             currentSentence: parseInt("{{ current_sentence }}"),
             totalSentences: parseInt("{{ total_sentences }}"),
             text: "{{ sentence_text | safe }}",
             translation: "{{ translation | safe }}",
-            audio: "{{ url_for('static', filename=audio_path) }}",
-            start: parseFloat("{{ start_time | default(0) }}"),
-            end: parseFloat("{{ end_time | default(0) }}")
+            audio: "{{ url_for('static', filename=audio_path) }}"
         };
-
     </script>
     <script src="{{ url_for('static', filename='script_dictation.js') }}"></script>
-    <!-- <script>
-        const inputField = document.getElementById('userInput');
-
-        // Проверка при нажатии Enter
-        inputField.addEventListener('keydown', function (event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault(); // Не добавлять перевод строки
-                checkText(); // Вызов проверки
-            }
-        });
-    </script> -->
 
 </body>
 

@@ -96,20 +96,25 @@ function initFancyTree() {
             },
             activate: function (event, data) {
                 const node = data.node;
-                console.log("Активирована категория:", node.title);
-                // 🔍 фильтруем диктанты по parent_key
-                const selectedKey = node.key;
-                const filtered = allDictations.filter(d => d.parent_key === selectedKey);
+                console.log("🟢 Активирована категория:", node.title);
+
+                // ⚠ Получаем список ID диктантов из узла
+                const ids = node.data.dictations || [];
+
+                // 🔍 Находим диктанты с такими ID
+                const filtered = allDictations.filter(d => ids.includes(d.id));
+                console.log("🔑 Ищем ID:", ids);
+                console.log("📦 allDictations:", allDictations.map(d => d.id));
+                console.log("📥 Найдены диктанты:", filtered.map(d => d.id));
 
                 renderDictationList(filtered);
                 updateUIForSelectedNode(node);
 
-                // 🔍 Получаем путь к текущему узлу
+                // Показываем путь к узлу
                 let pathParts = [];
                 let current = node;
-
                 while (current) {
-                    if (current.title.toLowerCase() !== "root") {  // ⛔ Пропускаем "root"
+                    if (current.title.toLowerCase() !== "root") {
                         pathParts.unshift(current.title);
                     }
                     current = current.parent;
@@ -117,7 +122,6 @@ function initFancyTree() {
 
                 const path = pathParts.join(" / ");
                 document.getElementById("text_tree_branch").textContent = path;
-
             },
             renderNode: function (event, data) {
                 // Кастомизация отображения узлов
