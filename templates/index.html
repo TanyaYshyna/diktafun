@@ -57,21 +57,18 @@
 
     <div class="osn_panel">
         <h2>Список диктантов</h2>
-
         <div class="button-row">
-
             <div class="tooltip-wrapper">
                 <button id="btnAddNode"> + </button>
                 <div class="tooltip-text">Новый элемент</div>
             </div>
-
             <div class="tooltip-wrapper">
                 <button id="btnDeleteNode"> 🗑️ </button>
                 <div class="tooltip-text">Удалить элемент</div>
             </div>
-
-            <a href="{{ url_for('dictation_generator.dictation_generator') }}">
-                <button>+ Новый диктант</button>
+            <a
+                href="{{ url_for('dictation_generator.dictation_generator', language_original='en', language_translation='ru') }}">
+                <button id="newDictationBtn">+ Новый диктант</button>
             </a>
         </div>
 

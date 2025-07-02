@@ -5,30 +5,54 @@ const audioPlayers = {};
 const modal = document.getElementById('modal');
 const titleField = document.getElementById('modalTitle');
 
-let selectedCategory = null; // ← вот сюда!
-
-let currentDictation = {
-    id: '', // ID текущего диктанта
-    isNew: true, // Флаг - новый это диктант или существующий
-    title: '', // Название на основном языке
-    title_tr: '', // Название на языке перевода
-    languages: ["en", "ru"], // Поддерживаемые языки
-    category_path: [], // Категории диктанта
-    sentences: [] // Массив предложений
-};
+let selectedCategory = null;
 let currentPath = []; // Текущий путь (например, ["Книга 2", "Раздел 1"])
 let currentLevel = null; // Текущий уровень вложенности
 
 let data = [];
+let currentDictation = {
+    id: '', // ID текущего диктанта
+    isNew: true, // Флаг - новый это диктант или существующий
+    language_original: '',
+    language_translation: ''
+};
+
+
+// ============================================================
+// Инициализация нового диктанта
+function initNewDictation() {
+    const timestamp = Date.now();
+    const dictation_id = `dicta_${timestamp}`;
+    const langDiv = document.getElementById("langPair");
+    const language_original = langDiv.dataset.original;
+    const language_translation = langDiv.dataset.translation;
+
+    console.log("Язык оригинала:", language_original);
+    console.log("Язык перевода:", language_translation);
+
+    currentDictation.id = dictation_id;
+    currentDictation.language_original = language_original;
+    currentDictation.language_translation = language_translation;
+
+    // Очищаем поля формы
+    document.getElementById('title').value = '';
+    document.getElementById('title_translation').value = '';
+    document.getElementById('text').value = '';
+    document.querySelector('#sentences-table tbody').innerHTML = '';
+    document.getElementById('dictation-id').textContent = `Новый диктант` + dictation_id;
+    document.getElementById('modalTitle').textContent = 'Категория /  ___ получим категорию с главной страницы ___ '; // пока заглушка, сюда надо будет записывать путь где находится пользователь при открытии
+
+    //    document.getElementById('dictation-id').textContent = `Диктант ${currentDictation.id}`;
+}
 
 
 
 // Функция генерации аудио с обработкой ошибок
-async function handleAudioGeneration(index, text, language) {
+async function handleAudioGeneration(index, key, text, language) {
     try {
         console.log(`Начало генерации аудио для предложения ${index}, язык: ${language}`);
-        console.log(`==============================id диктанта: ${currentDictation.id}`);
-        console.log(`==============================id диктанта: ${text}`);
+        console.log(`============================== id диктанта: ${currentDictation.id}`);
+        console.log(`============================== text диктанта: ${text}`);
         // Отправляем запрос на сервер для генерации аудио
         const response = await fetch('/generate_audio', {
             method: 'POST',
@@ -36,7 +60,7 @@ async function handleAudioGeneration(index, text, language) {
             body: JSON.stringify({
                 dictation_id: currentDictation.id,
                 text: text,
-                sentence_id: index.toString().padStart(3, '0'), // Форматируем как "001"
+                sentence_id: key, // Форматируем как "001"
                 language: language
             })
         });
@@ -82,6 +106,7 @@ async function autoTranslate(text, sourceLanguage) {
     }
 }
 
+
 // Функция генерации аудио с повторными попытками
 async function handleAudioGenerationWithRetry(index, text, lang, retries = 2) {
     let lastError;
@@ -100,13 +125,14 @@ async function handleAudioGenerationWithRetry(index, text, lang, retries = 2) {
 
 // Функция создания строки таблицы для предложения
 async function createSentenceRow(index, sentence, translation) {
+    const key = index.toString().padStart(3, '0');
     const row = document.createElement('tr');
 
     // Ячейка с номером предложения
-    const numCell = document.createElement('td');
-    numCell.textContent = index + 1;
-    row.appendChild(numCell);
-
+    const KeyCell = document.createElement('td');
+    KeyCell.className = 'key';  // <-- Добавляем класс
+    KeyCell.textContent = key;
+    row.appendChild(KeyCell);
     // Ячейка с текстом (оригинал + перевод)
     const textCell = document.createElement('td');
     textCell.innerHTML = `
@@ -129,15 +155,14 @@ async function createSentenceRow(index, sentence, translation) {
     `;
     row.appendChild(audioCell);
 
-    const language = document.getElementById('language').value;
     const playBtn = audioCell.querySelector('.play-audio');
     const playBtnTr = audioCell.querySelector('.play-audio-tr');
 
     // Генерируем аудио для оригинала
-    const originalSuccess = await handleAudioGeneration(index, sentence, language);
+    const originalSuccess = await handleAudioGeneration(index, key, sentence, currentDictation.language_original);
     if (originalSuccess) {
         playBtn.disabled = false;
-        playBtn.querySelector('.status-text').textContent = language;
+        playBtn.querySelector('.status-text').textContent = currentDictation.language_original;
     } else {
         playBtn.disabled = true;
         playBtn.querySelector('.status-text').textContent = 'Ошибка';
@@ -145,109 +170,97 @@ async function createSentenceRow(index, sentence, translation) {
     }
 
     // Генерируем аудио для перевода
-    const translationSuccess = await handleAudioGeneration(index, translation, 'ru');
+    const translationSuccess = await handleAudioGeneration(index, key, translation, currentDictation.language_translation);
     if (translationSuccess) {
         playBtnTr.disabled = false;
-        playBtnTr.querySelector('.status-text').textContent = 'ru';
+        playBtnTr.querySelector('.status-text').textContent = currentDictation.language_translation;
     } else {
         playBtnTr.disabled = true;
         playBtnTr.querySelector('.status-text').textContent = 'Ошибка';
         playBtnTr.classList.add('error');
     }
 
+    // сюда надо дописать json
+
     return row;
 }
 
-// Функция сохранения диктанта
+// НАДО УДАЛИТЬ Функция сохранения диктанта
 async function saveDictation() {
-    const title = document.getElementById('title').value;
-    const title_translation = document.getElementById('title_translation').value;
-    const language = document.getElementById('language').value;
+    const dictationId = currentDictation.id;
+    const speaker = "avto"
+    const languageOriginal = document.getElementById('language').value;
+    const languageTranslation = "ru"; // пока жёстко, потом можно будет сделать выбор
 
-    // Формируем имена полей для JSON
-    const text_ = "text_" + language;
-    const audio_ = "audio_" + language;
-    const text_tr = "text_ru";
-    const audio_tr = "audio_ru";
-    const title_ = "title_" + language;
-    const title_tr = "title_ru";
+    const titleOriginal = document.getElementById('title').value;
+    const titleTranslation = document.getElementById('title_translation').value;
 
-    // Собираем предложения из таблицы
-    const sentences = [];
+    const level = "A1";  // можно добавить выбор, если понадобится
+
+    // Собираем предложения
+    const sentences_original = [];
+    const sentences_translation = [];
+
     document.querySelectorAll('#sentences-table tbody tr').forEach((row, index) => {
-        const original = row.querySelector('.original-text').textContent;
-        const translation = row.querySelector('.translation-text').textContent;
+        const originalText = row.querySelector('.original-text').textContent.trim();
+        const translationText = row.querySelector('.translation-text').textContent.trim();
         const num = (index + 1).toString().padStart(3, '0');
+        const audioFilename = `${num}.mp3`;  // ⬅️ имя аудиофайла создаётся один раз
 
-        const sentenceObj = {
-            id: num,
-            [text_]: original,
-            [audio_]: `${language}_${num}.mp3`,
-            [text_tr]: translation,
-            [audio_tr]: `ru_${num}.mp3`
-        };
+        sentences_original.push({
+            key: num,
+            text: originalText,
+            audio: audioFilename
+        });
 
-        sentences.push(sentenceObj);
+        sentences_translation.push({
+            key: num,
+            text: translationText,
+            audio: audioFilename
+        });
     });
-
-    // Формируем JSON структуру
-    const jsonData = {
-        id: currentDictation.id,
-        language: language,
-        meta: {
-            [title_]: title,
-            [title_tr]: title_translation,
-            languages: [language, "ru"],
-            level: "A1",
-            category_path: selectedCategory ? [selectedCategory.path] : []
-        },
-        sentences: sentences
+    const payload = {
+        id: dictationId,
+        language_original: languageOriginal,
+        title: titleOriginal,
+        level: level,
+        sentences: {
+            [languageOriginal]: {
+                language: languageOriginal,
+                speaker: speaker,
+                title: titleOriginal,
+                sentences: sentences_original
+            },
+            [languageTranslation]: {
+                language: languageTranslation,
+                speaker: speaker,
+                title: titleTranslation,
+                sentences: sentences_translation
+            }
+        }
     };
 
-    // Отправляем данные на сервер
     try {
-        const response = await fetch('/process', {
+        const response = await fetch('/save_dictation', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title_folder: currentDictation.id,
-                json_structure: jsonData
-            })
+            body: JSON.stringify(payload)
         });
 
         const result = await response.json();
-        if (result.success) {
-            alert('Диктант успешно сохранен!');
+        if (result.status === "ok") {
+            alert("✅ Диктант успешно сохранён в 3 файла");
         } else {
-            alert('Ошибка: ' + (result.message || 'Неизвестная ошибка сервера'));
+            alert("❌ Ошибка при сохранении: " + (result.error || "Неизвестно"));
         }
     } catch (error) {
-        alert('Ошибка при сохранении: ' + error.message);
+        console.error("Ошибка:", error);
+        alert("❌ Ошибка отправки: " + error.message);
     }
 }
 
 
 
-// ============================================================
-// Инициализация нового диктанта
-function initNewDictation() {
-    const timestamp = Date.now();
-    currentDictation.id = `dicta_${timestamp}`;
-    currentDictation.isNew = true;
-
-
-    // Очищаем поля формы
-    document.getElementById('title').value = '';
-    document.getElementById('title_translation').value = '';
-    document.getElementById('language').value = 'en';
-    document.getElementById('text').value = '';
-    document.querySelector('#sentences-table tbody').innerHTML = '';
-
-    document.getElementById('dictation-id').textContent = `Новый диктант`;
-    document.getElementById('modalTitle').textContent = 'Категория /  ___ получим категорию с главной страницы ___ '; // пока заглушка, сюда надо будет записывать путь где находится пользователь при открытии
-
-    //    document.getElementById('dictation-id').textContent = `Диктант ${currentDictation.id}`;
-}
 
 // Загрузка существующего диктанта
 async function loadExistingDictation(dictationId) {
@@ -280,6 +293,38 @@ async function loadExistingDictation(dictationId) {
 }
 
 // Настройка обработчиков событий
+// -------------------------------------------------------------
+// 🔧 Простая функция для сохранения JSON на сервер
+async function saveJSONToServer(filePath, data) {
+    const response = await fetch('/save_json', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ path: filePath, data: data })
+    });
+    const result = await response.json();
+    console.log("✅ Сохранено:", result);
+}
+
+async function saveJSON_sentences(dictationId, language, title, selector) {
+    const tbody = document.querySelector('#sentences-table tbody');
+    const sentences = Array.from(tbody.querySelectorAll('tr')).map((row, index) => {
+        return {
+            key: row.querySelector('.key').textContent,//001
+            text: row.querySelector(selector).textContent,
+            audio: `${row.querySelector('.key').textContent}.mp3`
+        };
+    });
+    const sentences_original = {
+        language: language,
+        speaker: "auto",
+        title: title,
+        sentences: sentences  // ← массив с объектами {key, text, audio}
+    };
+    await saveJSONToServer(`static/data/dictations/${dictationId}/${language}/sentences.json`, sentences_original);
+}
+
 function setupButtons() {
     // Обработчик кнопки "Разбить на предложения"
     document.getElementById('split-btn').addEventListener('click', async function () {
@@ -296,12 +341,33 @@ function setupButtons() {
         const tbody = document.querySelector('#sentences-table tbody');
         tbody.innerHTML = '';
 
+        // Используем языки из currentDictation
+        const language_original = currentDictation.language_original;
+        const language_translation = currentDictation.language_translation;
+        const dictationId = currentDictation.id;
+        const title_value = document.getElementById('title').value;
+        const title_translation_value = document.getElementById('title_translation').value;
+        // 📄 1. Создание info.json
+        const info = {
+            id: currentDictation.id,
+            language_original: language_original,
+            title: title_value,
+            level: "A1"
+        };
+        await saveJSONToServer(`static/data/dictations/${currentDictation.id}/info.json`, info);
+
         for (let i = 0; i < sentences.length; i++) {
-            const language = document.getElementById('language').value;
-            const translation = await autoTranslate(sentences[i], language);
+            const translation = await autoTranslate(sentences[i], language_original);
             const row = await createSentenceRow(i, sentences[i], translation);
             tbody.appendChild(row);
         }
+
+        // 📄 2. Создание sentences.json для оригинала
+        saveJSON_sentences(dictationId, language_original, title_value, '.original-text')
+
+        // 📄 3. Создание sentences.json для перевода
+        saveJSON_sentences(dictationId, language_translation, title_translation_value, '.translation-text')
+
     });
 
     // Обработчик кнопки "Сохранить"
@@ -315,8 +381,9 @@ function setupButtons() {
         if (!playBtn || playBtn.disabled) return;
 
         const index = playBtn.dataset.index;
-        const lang = playBtn.classList.contains('play-audio-tr') ? 'ru' :
-            document.getElementById('language').value;
+        const lang = playBtn.classList.contains('play-audio-tr') ? 
+            currentDictation.language_translation :
+            currentDictation.language_original;
         const audioKey = `${index}_${lang}`;
 
         if (audioPlayers[audioKey]) {

@@ -35,6 +35,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Создание нового документа
+document.getElementById('newDictationBtn').addEventListener('click', function () {
+    if (!selectedCategory || !selectedCategory.data.languages) {
+        alert("Сначала выберите категорию с языковой парой!");
+        return;
+    }
+    const langOrig = selectedCategory.data.languages.original;
+    const langTrans = selectedCategory.data.languages.translation;
+
+    window.location.href = `/dictation_generator/${langOrig}/${langTrans}`;
+});
+
 
 // ================ все диктанты в массив ========================
 let allDictations = [];

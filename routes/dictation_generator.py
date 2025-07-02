@@ -31,10 +31,16 @@ def generate_dictation_id():
 
 # ==============================================================
 # Форма загрузки деиктантов
-@generator_bp.route('/dictation_generator')
-def dictation_generator():
-    return render_template('dictation_generator.html')
-
+# @generator_bp.route('/dictation_generator')
+# def dictation_generator():
+#     return render_template('dictation_generator.html')
+@generator_bp.route('/dictation_generator/<language_original>/<language_translation>')
+def dictation_generator(language_original, language_translation):
+    return render_template(
+        'dictation_generator.html',
+        original_language=language_original,
+        translation_language=language_translation,
+    )
 
 
 @generator_bp.route('/download/<path:filename>')
@@ -121,45 +127,117 @@ def serve_temp_audio(lang, filename):
     return send_file(audio_path, mimetype='audio/mpeg')
 
 
-@generator_bp.route('/process', methods=['POST'])
-def process_dictation():
+# @generator_bp.route('/process', methods=['POST'])
+# def process_dictation():
+#     try:
+#         data = request.json
+#         title_folder = data.get('title_folder')
+#         json_structure = data.get('json_structure')
+
+#         if not title_folder or not json_structure:
+#             return jsonify({"success": False, "message": "Неверный формат данных"}), 400
+
+#         # Сохранение JSON в файл
+#         os.makedirs(f'static/data/dictations/{title_folder}', exist_ok=True)
+#         with open(f'static/data/dictations/{title_folder}/info.json', 'w', encoding='utf-8') as f:
+#             json.dump(json_structure, f, ensure_ascii=False, indent=4)
+
+#         return jsonify({"success": True})
+#     except Exception as e:
+#         return jsonify({"success": False, "message": str(e)}), 500
+
+@generator_bp.route('/save_json', methods=['POST'])
+def save_json():
+    import os
+    from flask import request, jsonify
+
+    data = request.get_json()
+    file_path = data.get('path')
+    content = data.get('data')
+
+    if not file_path or not content:
+        return jsonify({"success": False, "error": "Missing path or data"}), 400
+
+    # Убедись, что путь безопасный
+    if ".." in file_path or file_path.startswith("/"):
+        return jsonify({"success": False, "error": "Invalid path"}), 400
+
     try:
-        data = request.json
-        title_folder = data.get('title_folder')
-        json_structure = data.get('json_structure')
-
-        if not title_folder or not json_structure:
-            return jsonify({"success": False, "message": "Неверный формат данных"}), 400
-
-        # Сохранение JSON в файл
-        os.makedirs(f'static/data/dictations/{title_folder}', exist_ok=True)
-        with open(f'static/data/dictations/{title_folder}/info.json', 'w', encoding='utf-8') as f:
-            json.dump(json_structure, f, ensure_ascii=False, indent=4)
-
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            import json
+            json.dump(content, f, ensure_ascii=False, indent=2)
         return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "error": str(e)}), 500
     
 
-@generator_bp.route('/save_categories', methods=['POST'])
-def save_categories():
+@generator_bp.route('/save_dictation', methods=['POST'])
+def save_dictation():
+    data = request.get_json()
+    dictation_id = data.get('id')
+    if not dictation_id:
+        return jsonify({'error': 'Missing dictation ID'}), 400
+
+    base_path = os.path.join('static', 'data', 'dictations', dictation_id)
+    os.makedirs(base_path, exist_ok=True)
+
+    # 📁 Сохраняем info.json
+    info = {
+        "id": dictation_id,
+        "language_original": data.get("language_original"),
+        "title": data.get("title"),
+        "level": data.get("level")
+    }
+    info_path = os.path.join(base_path, 'info.json')
+    with open(info_path, 'w', encoding='utf-8') as f:
+        json.dump(info, f, ensure_ascii=False, indent=2)
+
+    # 📁 Сохраняем предложения в папки языков
+    translations = data.get('language_translation')
+    all_languages = [data.get("language_original"), data.get('language_translation')] 
+    # translations = data.get('language_translation', [])
+    # all_languages = [data.get("language_original")] + translations
+
+    for lang in all_languages:
+        lang_data = data.get('sentences', {}).get(lang)
+        if not lang_data:
+            continue  # Пропускаем, если для этого языка ничего нет
+
+        lang_dir = os.path.join(base_path, lang)
+        os.makedirs(lang_dir, exist_ok=True)
+
+        sentences_json = {
+            "language": lang,
+            "speaker": lang_data.get("speaker", "avto"),
+            "title": lang_data.get("title"),
+            "sentences": lang_data.get("sentences", [])
+        }
+
+        with open(os.path.join(lang_dir, "sentences.json"), 'w', encoding='utf-8') as f:
+            json.dump(sentences_json, f, ensure_ascii=False, indent=2)
+
+    return jsonify({'success': True})
+
+
+@generator_bp.route('/create_dictation_folders', methods=['POST'])
+def create_dictation_folders():
+    data = request.json
+    dictation_id = data.get('dictation_id')
+    languages = data.get('languages', [])
+    
+    if not dictation_id:
+        return jsonify({"success": False, "error": "Missing dictation ID"}), 400
+
+    base_path = os.path.join('static', 'data', 'dictations', dictation_id)
     try:
-        # Включаем логирование
-        logger.info("Начало сохранения категорий")
-
-        data = request.json
+        # Создаем основную папку
+        os.makedirs(base_path, exist_ok=True)
         
-        # Путь к файлу категорий
-        base_dir = current_app.root_path
-        categories_path = os.path.join(base_dir, 'static', 'data', 'categories.json')
-        
-        # Сохраняем данные в файл
-        with open(categories_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        
-        logger.info(f"Категории успешно сохранены в {categories_path}")
-        return jsonify({'success': True})
-    
+        # Создаем папки для каждого языка
+        for lang in languages:
+            os.makedirs(os.path.join(base_path, lang), exist_ok=True)
+            
+        return jsonify({"success": True})
     except Exception as e:
-        logger.error(f"Ошибка сохранения категорий: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({"success": False, "error": str(e)}), 500

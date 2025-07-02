@@ -1,3 +1,10 @@
 {
-    "livePreview.defaultPreviewPath": "/templates/dictation_generator.html"
+    "livePreview.defaultPreviewPath": "/templates/dictation_generator.html",
+    "python-envs.pythonProjects": [
+        {
+            "path": "static/data/dictations/dicta_1751482171145",
+            "envManager": "ms-python.python:venv",
+            "packageManager": "ms-python.python:pip"
+        }
+    ]
 }
