@@ -1,0 +1,82 @@
+{
+  "language": "en",
+  "speaker": "auto",
+  "title": "Word List 9_2",
+  "sentences": [
+    {
+      "key": "000",
+      "text": "fix",
+      "audio": "000.mp3"
+    },
+    {
+      "key": "001",
+      "text": "To fix something is to make it work.",
+      "audio": "001.mp3"
+    },
+    {
+      "key": "002",
+      "text": "My dad has many tools to help him fix broken things.",
+      "audio": "002.mp3"
+    },
+    {
+      "key": "003",
+      "text": "frank",
+      "audio": "003.mp3"
+    },
+    {
+      "key": "004",
+      "text": "If you are frank, you are being very honest.",
+      "audio": "004.mp3"
+    },
+    {
+      "key": "005",
+      "text": "The teacher had a frank discussion with her students.",
+      "audio": "005.mp3"
+    },
+    {
+      "key": "006",
+      "text": "identify",
+      "audio": "006.mp3"
+    },
+    {
+      "key": "007",
+      "text": "To identify something is to be able to name it.",
+      "audio": "007.mp3"
+    },
+    {
+      "key": "008",
+      "text": "I used the file to identify his name.",
+      "audio": "008.mp3"
+    },
+    {
+      "key": "009",
+      "text": "island",
+      "audio": "009.mp3"
+    },
+    {
+      "key": "010",
+      "text": "An island is land in the middle of water.",
+      "audio": "010.mp3"
+    },
+    {
+      "key": "011",
+      "text": "Japan is a group of islands.",
+      "audio": "011.mp3"
+    },
+    {
+      "key": "012",
+      "text": "ocean",
+      "audio": "012.mp3"
+    },
+    {
+      "key": "013",
+      "text": "The ocean is all of the salt water that surrounds land.",
+      "audio": "013.mp3"
+    },
+    {
+      "key": "014",
+      "text": "The ocean can make powerful waves.",
+      "audio": "014.mp3"
+    }
+  ]
+}

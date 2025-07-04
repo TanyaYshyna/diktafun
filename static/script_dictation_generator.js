@@ -87,7 +87,7 @@ async function handleAudioGeneration(index, key, text, language) {
 }
 
 // Функция автоматического перевода текста
-async function autoTranslate(text, sourceLanguage) {
+async function autoTranslate(text, sourceLanguage, target_language) {
     try {
         const response = await fetch('/translate', {
             method: 'POST',
@@ -95,7 +95,7 @@ async function autoTranslate(text, sourceLanguage) {
             body: JSON.stringify({
                 text: text,
                 source_language: sourceLanguage,
-                target_language: 'ru' // Всегда переводим на русский
+                target_language: target_language 
             })
         });
         const data = await response.json();
@@ -334,7 +334,8 @@ function setupButtons() {
             return;
         }
 
-        const sentences = text.split(/[.!?\n]+/)
+        //const sentences = text.split(/[.!?\n]+/)
+        const sentences = text.split('\n')
             .map(s => s.trim())
             .filter(s => s.length > 0);
 
@@ -357,7 +358,7 @@ function setupButtons() {
         await saveJSONToServer(`static/data/dictations/${currentDictation.id}/info.json`, info);
 
         for (let i = 0; i < sentences.length; i++) {
-            const translation = await autoTranslate(sentences[i], language_original);
+            const translation = await autoTranslate(sentences[i], language_original, language_translation);
             const row = await createSentenceRow(i, sentences[i], translation);
             tbody.appendChild(row);
         }
@@ -408,6 +409,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupButtons();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const titleInput = document.getElementById('title');
+    const titleTranslationInput = document.getElementById('title_translation');
+
+    if (titleInput && titleTranslationInput) {
+        titleInput.addEventListener('input', async () => {
+            const originalTitle = titleInput.value.trim();
+
+            // Проверка, что currentDictation и его языки определены
+            if (typeof currentDictation !== 'undefined' &&
+                currentDictation.language_original &&
+                currentDictation.language_translation) {
+
+                // 🔄 Псевдо-перевод: ты можешь подключить API здесь
+                const translatedTitle = await autoTranslate(
+                    originalTitle,
+                    currentDictation.language_original,
+                    currentDictation.language_translation
+                );
+                console.log("---------------------------:", translatedTitle);
+ 
+                titleTranslationInput.value = translatedTitle;
+            } else {
+                console.warn("currentDictation не определён или языки не заданы.");
+            }
+        });
+    }
+});
+
 
 
 // ================дерево========================

@@ -46,8 +46,10 @@ def show_dictation(dictation_id, num_sentence):
     with open(info_path, 'r', encoding='utf-8') as f:
         info = json.load(f)
 
+    title_orig = info['title']
     lang_orig = info['language_original']
-    lang_trans = info['language_translation'][0]
+    # lang_trans = info['language_translation'][0]
+    lang_trans = 'ru'
 
     # Пути к файлам предложений
     path_orig = os.path.join(base_path, lang_orig, 'sentences.json')
@@ -76,9 +78,11 @@ def show_dictation(dictation_id, num_sentence):
     return render_template(
         "dictation.html",
         dictation_id=dictation_id,
+        title_orig=title_orig,
         current_sentence=num_sentence,
         total_sentences=len(orig_sentences),
         sentence_text=sentence_orig['text'],
         translation=sentence_trans['text'],
-        audio_path = os.path.join('data', 'dictations', dictation_id, lang_orig, sentence_orig['audio'])
+        audio_path = os.path.join('data', 'dictations', dictation_id, lang_orig, sentence_orig['audio']),
+        audio_tr_path = os.path.join('data', 'dictations', dictation_id, lang_trans, sentence_orig['audio'])   
     )

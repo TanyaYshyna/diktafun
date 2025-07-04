@@ -2,6 +2,7 @@ const inputField = document.getElementById('userInput');
 const correctAnswerDiv = document.getElementById('correctAnswer');
 const translationDiv = document.getElementById('translation');
 const audio = document.getElementById('audio');
+const audio_tr = document.getElementById('audio_tr');
 
 let original = sentenceData.text;
 let translation = sentenceData.translation;
@@ -26,8 +27,6 @@ function clearText() {
 
 // Основная функция загрузки аудио
 async function loadAudio() {
-    const start = sentenceData.start;
-    const end = sentenceData.end;
 
     try {
         audio.src = sentenceData.audio;
@@ -35,6 +34,18 @@ async function loadAudio() {
         // Обработчик ошибок
         audio.onerror = function () {
             console.error('Ошибка загрузки аудио');
+        };
+
+    } catch (error) {
+        console.error('Ошибка:', error);
+    }
+
+    try {
+        audio_tr.src = sentenceData.audio_tr;
+
+        // Обработчик ошибок
+        audio_tr.onerror = function () {
+            console.error('Ошибка загрузки аудио перевода');
         };
 
     } catch (error) {
@@ -288,22 +299,37 @@ function checkText() {
     }
 }
 
-document.addEventListener('keydown', function (event) {
-    // Проверяем Ctrl (для Windows/Linux) или Meta (для Mac)
-    if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && document.activeElement !== inputField) {
-        event.preventDefault();
-        event.stopPropagation(); // Добавляем остановку распространения события
-        audio.currentTime = 0;
-        audio.play();
-        document.body.classList.add('playing-audio');
+// document.addEventListener('keydown', function (event) {
+//     // Проверяем Ctrl (для Windows/Linux) или Meta (для Mac)
+//     if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && document.activeElement !== inputField) {
+//         event.preventDefault();
+//         event.stopPropagation(); // Добавляем остановку распространения события
+//         audio.currentTime = 0;
+//         audio.play();
+//         document.body.classList.add('playing-audio');
+//     }
+// });
+document.addEventListener('keydown', function(event) {
+    if (event.ctrlKey && event.key === '1') {
+        const audio = document.getElementById('audio');
+        if (audio) {
+            audio.play();
+        }
+    } else if (event.ctrlKey && event.key === '2') {
+        const audio_tr = document.getElementById('audio_tr');
+        if (audio_tr) {
+            audio_tr.play();
+        }
     }
 });
-
-document.addEventListener('keyup', function (event) {
-    if (event.key === 'Control' || event.key === 'Meta') {
-        document.body.classList.remove('playing-audio');
-    }
-});
+// document.addEventListener('keyup', function (event) {
+//     if ((event.ctrlKey || event.metaKey) && event.key === '1') {
+//         document.body.classList.remove('playing-audio');
+//     }
+//     else if ((event.ctrlKey || event.metaKey) && event.key === '2') {
+//         document.body.classList.remove('playing-audio');
+//     }
+// });
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function () {

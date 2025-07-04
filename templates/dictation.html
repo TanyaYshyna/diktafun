@@ -19,16 +19,30 @@
         </div>
     </div>
     <div class="panel">
-        <h2>Диктант</h2>
+        <h2> Диктант: {{ title_orig }}</h2>
+        <h4 id="diktation_id"> {{ dictation_id }} </h4>
         <!-- Счетчик предложений -->
         <div class="sentence-counter">
             Предложение {{ current_sentence + 1 }}/{{ total_sentences }}
         </div>
 
-        <audio id="audio" controls>
-            <!-- Источник будет установлен через JS -->
-            Ваш браузер не поддерживает аудио!
-        </audio>
+        <style>
+            .audio-wrapper {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                /* Отступ между элементами */
+            }
+        </style>
+       <div style="display: flex; gap: 10px;">
+            <audio id="audio" controls>
+                <!-- Источник будет установлен через JS -->
+                Ваш браузер не поддерживает аудио!
+            </audio>
+            <audio id="audio_tr" controls>
+                <!-- Источник будет установлен через JS -->
+            </audio>
+        </div>
 
         <div id="userInput" contenteditable="true" class="text-input"></div>
 
@@ -55,7 +69,8 @@
             totalSentences: parseInt("{{ total_sentences }}"),
             text: "{{ sentence_text | safe }}",
             translation: "{{ translation | safe }}",
-            audio: "{{ url_for('static', filename=audio_path) }}"
+            audio: "{{ url_for('static', filename=audio_path) }}",
+            audio_tr: "{{ url_for('static', filename=audio_tr_path) }}"
         };
     </script>
     <script src="{{ url_for('static', filename='script_dictation.js') }}"></script>
