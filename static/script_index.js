@@ -108,18 +108,17 @@ function initFancyTree() {
             },
             activate: function (event, data) {
                 const node = data.node;
-                console.log("🟢 Активирована категория:", node.title);
 
                 // ⚠ Получаем список ID диктантов из узла
                 const ids = node.data.dictations || [];
+                const language_original = node.data.language_original || "en";
+                const language_translation = node.data.language_translation || "ru";
 
+ 
                 // 🔍 Находим диктанты с такими ID
                 const filtered = allDictations.filter(d => ids.includes(d.id));
-                console.log("🔑 Ищем ID:", ids);
-                console.log("📦 allDictations:", allDictations.map(d => d.id));
-                console.log("📥 Найдены диктанты:", filtered.map(d => d.id));
 
-                renderDictationList(filtered);
+                renderDictationList(filtered, language_original, language_translation);
                 updateUIForSelectedNode(node);
 
                 // Показываем путь к узлу
@@ -242,7 +241,7 @@ function getFlagImg(lang) {
 }
 
 
-function renderDictationList(dictations) {
+function renderDictationList(dictations, language_original, language_translation) {
     const container = document.getElementById("dictationList");
     container.innerHTML = "";
 
@@ -264,15 +263,13 @@ function renderDictationList(dictations) {
         console.groupEnd();
 
         // --- Язык (основной флаг) ---
-        const langIcon = getFlagImg(d.language);
+        const langIcon = getFlagImg(language_original);
 
         // --- Переводы (массив языков) ---
-        const translations = (d.languages || [])
-            .map(lang => getFlagImg(lang))
-            .join(' ');
+        const translations = getFlagImg(language_translation);
 
         // --- Ссылка на диктант ---
-        const link = `<a href="/dictation/${d.id}/0">Открыть</a>`;
+        const link = `<a href="/dictation/${d.id}/${language_original}/${language_translation}">Открыть</a>`;
 
         div.innerHTML = `
             <div><strong>${d.title}</strong></div>

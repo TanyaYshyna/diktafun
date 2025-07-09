@@ -1,4 +1,4 @@
-#!/Users/tanyayushyna/Documents/python_pr/dikta-app/venv/bin/python3.12
+#!/Users/tanyayushyna/Documents/python_pr/diktafun/venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import argparse
 import sys

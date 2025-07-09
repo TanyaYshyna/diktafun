@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/Users/tanyayushyna/Documents/python_pr/dikta-app/venv"
+set -gx VIRTUAL_ENV "/Users/tanyayushyna/Documents/python_pr/diktafun/venv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH

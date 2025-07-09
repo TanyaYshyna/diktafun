@@ -22,10 +22,9 @@
         <h2> Диктант: {{ title_orig }}</h2>
         <h4 id="diktation_id"> {{ dictation_id }} </h4>
         <!-- Счетчик предложений -->
-        <div class="sentence-counter">
-            Предложение {{ current_sentence + 1 }}/{{ total_sentences }}
+        <div class="sentence-counter" id="sentenceCounter">
+            <!-- будет подставлено из JS -->
         </div>
-
         <style>
             .audio-wrapper {
                 display: flex;
@@ -34,7 +33,7 @@
                 /* Отступ между элементами */
             }
         </style>
-       <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px;">
             <audio id="audio" controls>
                 <!-- Источник будет установлен через JS -->
                 Ваш браузер не поддерживает аудио!
@@ -61,17 +60,8 @@
 
     </div>
 
-    <!-- СКРИПТ В КОНЦЕ -->
-    <script>
-        const sentenceData = {
-            dictation_id: "{{ dictation_id }}",
-            currentSentence: parseInt("{{ current_sentence }}"),
-            totalSentences: parseInt("{{ total_sentences }}"),
-            text: "{{ sentence_text | safe }}",
-            translation: "{{ translation | safe }}",
-            audio: "{{ url_for('static', filename=audio_path) }}",
-            audio_tr: "{{ url_for('static', filename=audio_tr_path) }}"
-        };
+    <script id="sentences-data" type="application/json">
+        {{ sentences | tojson | safe }}
     </script>
     <script src="{{ url_for('static', filename='script_dictation.js') }}"></script>
 

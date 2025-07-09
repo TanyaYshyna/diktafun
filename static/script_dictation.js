@@ -3,15 +3,50 @@ const correctAnswerDiv = document.getElementById('correctAnswer');
 const translationDiv = document.getElementById('translation');
 const audio = document.getElementById('audio');
 const audio_tr = document.getElementById('audio_tr');
+const rawJson = document.getElementById("sentences-data").textContent;
+const sentences = JSON.parse(rawJson);
 
-let original = sentenceData.text;
-let translation = sentenceData.translation;
+// let original = sentenceData.text;
+// let translation = sentenceData.translation;
+// sentenceData.text	original = sentences[currentSentenceIndex].text
+// sentenceData.translation	translation = sentences[currentSentenceIndex].translation
+// sentenceData.audio	sentences[currentSentenceIndex].audio
+// sentenceData.audio_tr	sentences[currentSentenceIndex].audio_tr
+// sentenceData.totalSentences	sentences.length
+// sentenceData.currentSentence	currentSentenceIndex
+
+let allSentences = sentences; // ← из JSON
+let activeSentences = sentences.filter(s => !s.completed_correctly);
+let currentSentenceIndex = 0;
+//let currentIndex = 0;
+
+function startNewGame() {
+    activeSentences = allSentences.filter(s => !s.completed_correctly);
+    currentSentenceIndex = 0;
+}
+
+function showCurrentSentence() {
+    const sentence = sentences[currentSentenceIndex];
+
+    // Очистка пользовательского ввода
+    const userInput = document.getElementById("userInput");
+    userInput.innerHTML = "";
+    userInput.focus();
+
+    // Установка аудио
+    document.getElementById("audio").src = sentence.audio;
+    document.getElementById("audio_tr").src = sentence.audio_tr;
+
+    // Сброс подсказок
+    document.getElementById("correctAnswer").innerHTML = "";
+    document.getElementById("translation").style.display = "none";
+}
 
 
 // Функция перехода к следующему предложению
 function nextSentence() {
-    const nextSentenceNum = sentenceData.currentSentence + 1;
-    if (nextSentenceNum < sentenceData.totalSentences) {
+    const nextSentenceNum = currentSentenceIndex + 1;
+    if (nextSentenceNum < sentences.length) {
         window.location.href = `/dictation/${sentenceData.dictation_id}/${nextSentenceNum}`;
     }
 }
@@ -29,7 +64,7 @@ function clearText() {
 async function loadAudio() {
 
     try {
-        audio.src = sentenceData.audio;
+        audio.src = activeSentences[currentSentenceIndex].audio;
 
         // Обработчик ошибок
         audio.onerror = function () {
@@ -41,7 +76,7 @@ async function loadAudio() {
     }
 
     try {
-        audio_tr.src = sentenceData.audio_tr;
+        audio_tr.src = sentences[currentSentenceIndex].audio_tr;
 
         // Обработчик ошибок
         audio_tr.onerror = function () {
@@ -86,6 +121,7 @@ function simplifyText(text) {
 }
 
 function check(original, userInput) {
+    // const original = activeSentences[currentSentenceIndex].text;
     const simplOriginal = simplifyText(original);
     const simplUser = simplifyText(userInput);
 
@@ -283,6 +319,7 @@ function restoreCursorPosition(containerEl, offset) {
 }
 
 function checkText() {
+    const original = activeSentences[currentSentenceIndex].text;
     const userInput = inputField.innerText;
     const result = check(original, userInput);
 
@@ -292,24 +329,14 @@ function checkText() {
     const allCorrect = result.every(word => word.type === "correct");
     if (allCorrect) {
         translationDiv.style.display = "block";
-        translationDiv.textContent = translation;
+        translationDiv.textContent = sentences[currentSentenceIndex].translation;
     } else {
         translationDiv.style.display = "none";
         translationDiv.textContent = "";
     }
 }
 
-// document.addEventListener('keydown', function (event) {
-//     // Проверяем Ctrl (для Windows/Linux) или Meta (для Mac)
-//     if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && document.activeElement !== inputField) {
-//         event.preventDefault();
-//         event.stopPropagation(); // Добавляем остановку распространения события
-//         audio.currentTime = 0;
-//         audio.play();
-//         document.body.classList.add('playing-audio');
-//     }
-// });
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
     if (event.ctrlKey && event.key === '1') {
         const audio = document.getElementById('audio');
         if (audio) {
@@ -322,16 +349,12 @@ document.addEventListener('keydown', function(event) {
         }
     }
 });
-// document.addEventListener('keyup', function (event) {
-//     if ((event.ctrlKey || event.metaKey) && event.key === '1') {
-//         document.body.classList.remove('playing-audio');
-//     }
-//     else if ((event.ctrlKey || event.metaKey) && event.key === '2') {
-//         document.body.classList.remove('playing-audio');
-//     }
-// });
+
+document.getElementById("sentenceCounter").textContent =
+    `Предложение ${currentSentenceIndex + 1} / ${sentences.length}`;
 
 // Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function () {
-    loadAudio();
+document.addEventListener("DOMContentLoaded", function () {
+    showCurrentSentence();
+    startNewGame();
 });
