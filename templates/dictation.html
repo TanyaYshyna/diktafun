@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Dikte</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/style_dictation.css">
 </head>
 
 <body>
@@ -18,6 +19,16 @@
             <span>Пользователь</span>
         </div>
     </div>
+
+
+    <div id="startModal" class="modal">
+        <div class="modal-content">
+            <h2>Готовы начать диктант?</h2>
+            <button id="confirmStartBtn" tabindex="0" aria-disabled="true">Начать диктант</button>
+        </div>
+    </div>
+
+
     <div class="panel">
         <h2> Диктант: {{ title_orig }}</h2>
         <h4 id="diktation_id"> {{ dictation_id }} </h4>
@@ -43,21 +54,52 @@
             </audio>
         </div>
 
+        <!-- тут пользователь набирает тектст -->
         <div id="userInput" contenteditable="true" class="text-input"></div>
+        <div class="result-panel">
+            <div class="text-column">
+                <!-- Поле с правильной подсказкой -->
+                <div id="correctAnswer" class="text-output">I had a lot of fun.</div>
+                <!-- Перевод — показывать только при 100% правильности -->
+                <div id="translation">Мне было очень весело.</div>
+            </div>
 
-        <button id="checkBtn" onclick="checkText()">Проверить</button>
-
-        <div class="button-group">
-            <button id="checkRepit" onclick="clearText()">Повторить</button>
-            <button id="checkNext" onclick="nextSentence()">Следующий</button>
+            <button id="checkBtn" onclick="checkText()">
+                <img src="{{ url_for('static', filename='icons/test0.svg') }}" alt="Проверить" class="icon">
+            </button>
         </div>
 
-        <!-- Поле с правильной подсказкой -->
-        <div id="correctAnswer" class="text-output"></div>
 
-        <!-- Перевод — показывать только при 100% правильности -->
-        <div id="translation" style="margin-top:10px; display:none;"></div>
+        <!-- тут пользователь записывает ацдио -->
+        <div class="audio-user-panel">
+            <div class="audio-user-column">
+                <div style="display: flex; gap: 10px;">
+                    <audio id="audio_user" controls>
+                        <!-- Источник будет установлен через JS -->
+                        Ваш браузер не поддерживает аудио!
+                    </audio>
+                    <!-- Поле с устным ответом пользователя (распознанным)-->
+                    <div id="userAudioAnswer" class="text-user-audio"></div>
+                </div>
+            </div>
 
+            <button id="microphoneBtn" onclick="recordAudio()">
+                <img src="{{ url_for('static', filename='icons/microphone.svg') }}" alt="∞" class="icon">
+            </button>
+        </div>
+
+
+        <div class="button-group">
+            <button id="checkPrevios" onclick="previousSentence()">
+                <img src="{{ url_for('static', filename='icons/previos.svg') }}" alt="Предыдущий" class="icon">
+            </button>
+            <button id="checkRepit" onclick="clearText()">
+                <img src="{{ url_for('static', filename='icons/repeat.svg') }}" alt="Повторить" class="icon">
+            </button>
+            <button id="checkNext" onclick="nextSentence()">
+                <img src="{{ url_for('static', filename='icons/next.svg') }}" alt="Следующий" class="icon">
+            </button>
+        </div>
     </div>
 
     <script id="sentences-data" type="application/json">

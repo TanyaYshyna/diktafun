@@ -1,49 +1,67 @@
 /* variables.css */
 :root {
   --primary-color: #3498db;
-  --secondary-color: #2ecc71;
+  --secondary-color: #3498dbd8;
   --background-color: #f3f9fc;
   --text-color: #333333;
 }
+
+
 
 
 .container {
     max-width: 800px;
     margin: 0 auto;
 }
+
+
 .form-group {
     margin-bottom: 15px;
 }
+
+
 textarea {
     width: 100%;
     padding: 10px;
 }
+
+
 table {
     width: 100%;
     border-collapse: collapse;
     margin: 20px 0;
 }
+
+
 th, td {
     border: 1px solid #ddd;
     padding: 8px;
     text-align: left;
 }
+
+
 button {
     padding: 10px 15px;
-    background: #4CAF50;
+    background: #3498dbd8;
     color: white;
     border: none;
     cursor: pointer;
 }
+
+
 
 button.error {
     opacity: 0.7;
     border-color: #ff4444;
 }
 
+
+
 button.error .status-text {
     color: #ff4444;
 }
+
+
 
 button:disabled:not(.error) .status-text {
     color: #666;
@@ -52,7 +70,9 @@ button:disabled:not(.error) .status-text {
 
 
 
-/* Фон всей страницы */
+
+
+/* Р¤РѕРЅ РІСЃРµР№ СЃС‚СЂР°РЅРёС†С‹ */
 body {
   background: var(--background-color) ;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -61,7 +81,9 @@ body {
   padding: 20px;
 }
 
-/* Панель */
+
+
+/* РџР°РЅРµР»СЊ */
 .panel {
   max-width: 700px;
   margin: 40px auto;
@@ -72,18 +94,22 @@ body {
   font-family: sans-serif;
 }
 
-/* Заголовок */
+
+
+/* Р—Р°РіРѕР»РѕРІРѕРє */
 h2 {
   text-align: center;
-  color: #4a6075; /* сине-серый оттенок */
+  color: #4a6075; /* СЃРёРЅРµ-СЃРµСЂС‹Р№ РѕС‚С‚РµРЅРѕРє */
   font-size: 24px;
   margin-bottom: 20px;
 }
 
-/* Кнопки */
+
+
+/* РљРЅРѕРїРєРё */
 button {
-  background-color: #f9ebaf; /* солнечно-жёлтый */
-  color: #1e4870; /* сине-серый — как у заголовка */
+  background-color: #f9ebaf; /* СЃРѕР»РЅРµС‡РЅРѕ-Р¶С‘Р»С‚С‹Р№ */
+  color: #1e4870; /* СЃРёРЅРµ-СЃРµСЂС‹Р№ вЂ” РєР°Рє Сѓ Р·Р°РіРѕР»РѕРІРєР° */
   border: none;
   padding: 10px 20px;
   font-size: 16px;
@@ -93,27 +119,33 @@ button {
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+
+
 button:hover {
-  background-color: #f9e26d; /* немного темнее при наведении */
+  background-color: #f9e26d; /* РЅРµРјРЅРѕРіРѕ С‚РµРјРЅРµРµ РїСЂРё РЅР°РІРµРґРµРЅРёРё */
   box-shadow: 0 4px 10px #1e4870;
 }
 
-/* Текстовое поле */
+
+
+/* РўРµРєСЃС‚РѕРІРѕРµ РїРѕР»Рµ */
 textarea {
-  border: 1px solid #b0c4d8; /* светло-серо-синий */
+  border: 1px solid #b0c4d8; /* СЃРІРµС‚Р»Рѕ-СЃРµСЂРѕ-СЃРёРЅРёР№ */
   border-radius: 10px;
   padding: 12px;
   font-size: 16px;
   width: 100%;
   resize: vertical;
-  box-shadow: 0 2px 6px rgba(150, 170, 190, 0.2); /* мягкая растушевка */
+  box-shadow: 0 2px 6px rgba(150, 170, 190, 0.2); /* РјСЏРіРєР°СЏ СЂР°СЃС‚СѓС€РµРІРєР° */
   background-color: #ffffff;
   color: #333;
   outline: none;
   transition: box-shadow 0.3s ease;
 }
 
-/* Выпадающий список */
+
+
+/* Р’С‹РїР°РґР°СЋС‰РёР№ СЃРїРёСЃРѕРє */
 select {
   padding: 5px 10px;
   font-size: 16px;
@@ -122,22 +154,30 @@ select {
   margin-left: 10px;
 }
 
-/* Сообщения об ошибках и успехе */
+
+
+/* РЎРѕРѕР±С‰РµРЅРёСЏ РѕР± РѕС€РёР±РєР°С… Рё СѓСЃРїРµС…Рµ */
 .correct {
   color: green;
   font-weight: bold;
 }
+
+
 
 .wrong {
   color: red;
   font-weight: bold;
 }
 
+
+
 audio {
-  accent-color: #4a6075; /* тот же сине-серый цвет */
+  accent-color: #4a6075; /* С‚РѕС‚ Р¶Рµ СЃРёРЅРµ-СЃРµСЂС‹Р№ С†РІРµС‚ */
   width: 100%;
   margin-bottom: 15px;
 }
+
+
 
 .text-input {
   width: 100%;
@@ -153,63 +193,12 @@ audio {
   white-space: pre-wrap;
 }
 
-.button-group {
-    text-align: right;
-    margin-top: 10px;
-}
-
-.button-group button {
-    margin-left: 5px;
-}
-
-.highlight-error {
-  border-bottom: 4px solid #ffd54f;
-  font-weight: bold;
-  padding: 0 2px;
-}
-#highlightedInput {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-
-.word-correct {
-  color: black;
-}
-
-.word-missing {
-  color: green;
-  text-decoration: underline;
-}
-
-.word-error {
-   border-bottom: 3px solid #ffd54f;
-   font-weight: bold;
-}
-
-.letter-error {
-    border-bottom: 2px solid red;
-    font-weight: bold;
-}
-
-.correct-line-word {
-  color: green;
-}
-
-.correct-line-letter {
-  text-decoration: underline green;
-}
-
-.user-panel {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
 .language-selector {
     position: relative;
     display: inline-block;
 }
+
+
 
 .language-selector button {
     background: none;
@@ -220,6 +209,8 @@ audio {
     gap: 5px;
     padding: 5px;
 }
+
+
 
 .language-dropdown {
     display: none;
@@ -232,6 +223,8 @@ audio {
     z-index: 1;
 }
 
+
+
 .language-dropdown a {
     display: flex;
     align-items: center;
@@ -241,15 +234,21 @@ audio {
     color: #333;
 }
 
+
+
 /* .language-dropdown a:hover {
     background: #f5f5f5;
-} */
+}
+
+ */
 
 .language-selector:hover .language-dropdown {
     display: block;
 }
 
-/* Дополнения для topbar */
+
+
+/* Р”РѕРїРѕР»РЅРµРЅРёСЏ РґР»СЏ topbar */
 .topbar {
     background-color: #2c3e50;
     color: white;
@@ -259,10 +258,14 @@ audio {
     align-items: center;
 }
 
+
+
 .logo-section {
     display: flex;
     align-items: center;
 }
+
+
 
 .language-btn {
     background: none !important;
@@ -272,16 +275,22 @@ audio {
     box-shadow: none !important;
 }
 
+
+
 .username {
     margin-left: 15px;
 }
 
-/* Для мобильных устройств */
+
+
+/* Р”Р»СЏ РјРѕР±РёР»СЊРЅС‹С… СѓСЃС‚СЂРѕР№СЃС‚РІ */
 @media (max-width: 600px) {
     .user-panel {
         flex-direction: column;
         align-items: flex-end;
     }
+
+
     .username {
         margin-left: 0;
         margin-top: 5px;
@@ -289,76 +298,42 @@ audio {
 }
 
 
-
-/* Стили для таблицы */
-#sentences-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 20px 0;
-}
-
-#sentences-table th, #sentences-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    vertical-align: middle;
-}
-
-.sentence-input, .translation-input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-/* Стили для кнопок */
-.generate-audio, .play-audio, .delete-sentence {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px;
-    margin: 0 2px;
-}
-
 .hidden {
     display: none;
 }
+
+
 
 button img {
     vertical-align: middle;
 }
 
-/* Стили для таблицы */
-/* Стили таблицы */
-#sentences-table {
-    width: 100%;
-    border-collapse: collapse;
-}
 
-#sentences-table th, #sentences-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    vertical-align: top;
-}
 
-/* Текстовые блоки */
+/* РўРµРєСЃС‚РѕРІС‹Рµ Р±Р»РѕРєРё */
 .original-text {
     font-weight: bold;
     margin-bottom: 5px;
 }
+
+
 
 .translation-text {
     color: #555;
     font-style: italic;
 }
 
-/* Кнопки аудио */
+
+
+/* РљРЅРѕРїРєРё Р°СѓРґРёРѕ */
 .generate-audio, .play-audio {
     background: none;
     border: none;
     cursor: pointer;
     margin: 0 3px;
 }
+
+
 
 
 
@@ -372,28 +347,15 @@ body {
     user-select: none;
 }
 
-body.playing-audio::after {
-    content: "Аудио воспроизводится...";
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(0,0,0,0.7);
-    color: white;
-    padding: 10px 15px;
-    border-radius: 5px;
-    font-size: 14px;
-    z-index: 1000;
-}
 
-.dictation-tree {
-    margin-left: 20px;
-}
 
 .h1-group {
     margin-top: 30px;
     border-bottom: 2px solid #ddd;
     padding-bottom: 5px;
 }
+
+
 
 .h2-group {
     margin-top: 20px;
@@ -402,12 +364,7 @@ body.playing-audio::after {
     padding-left: 10px;
 }
 
-.dictation-card {
-    margin: 10px 0 10px 40px;
-    padding: 15px;
-    background: #f9f9f9;
-    border-radius: 5px;
-}
+
 
 
 .tree-selector {
@@ -415,6 +372,8 @@ body.playing-audio::after {
     margin: 20px;
     font-family: Arial, sans-serif;
 }
+
+
 
 .path-display {
     padding: 10px;
@@ -424,11 +383,15 @@ body.playing-audio::after {
     font-weight: bold;
 }
 
+
+
 .selector-container {
     display: flex;
     gap: 10px;
     margin-bottom: 10px;
 }
+
+
 
 select, input, button {
     padding: 8px;
@@ -436,20 +399,28 @@ select, input, button {
     border-radius: 4px;
 }
 
+
+
 button {
-    background: #4CAF50;
+    background: #4da1d9;
     color: white;
     cursor: pointer;
     border: none;
 }
 
+
+
 button:hover {
-    background: #45a049;
+    background: #45aef3;
 }
+
+
 
 .hidden {
     display: none;
 }
+
+
 
 #new-folder-ui {
     margin-top: 10px;
@@ -457,12 +428,16 @@ button:hover {
     gap: 10px;
 }
 
-/*  --------------- всплывающие подсказки --------------- */
+
+
+/*  --------------- РІСЃРїР»С‹РІР°СЋС‰РёРµ РїРѕРґСЃРєР°Р·РєРё --------------- */
 .tooltip-wrapper {
   position: relative;
   display: inline-block;
   margin: 10px;
 }
+
+
 
 .tooltip-text {
   visibility: hidden;
@@ -480,6 +455,8 @@ button:hover {
   opacity: 0;
   transition: opacity 0.2s;
 }
+
+
 
 .tooltip-wrapper:hover .tooltip-text {
   visibility: visible;

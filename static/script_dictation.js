@@ -1,24 +1,81 @@
 const inputField = document.getElementById('userInput');
+const checkNextDiv = document.getElementById('checkNext');
+const checkPreviosDiv = document.getElementById('checkPrevios');
 const correctAnswerDiv = document.getElementById('correctAnswer');
 const translationDiv = document.getElementById('translation');
 const audio = document.getElementById('audio');
 const audio_tr = document.getElementById('audio_tr');
 const rawJson = document.getElementById("sentences-data").textContent;
 const sentences = JSON.parse(rawJson);
-
-// let original = sentenceData.text;
-// let translation = sentenceData.translation;
-// sentenceData.text	original = sentences[currentSentenceIndex].text
-// sentenceData.translation	translation = sentences[currentSentenceIndex].translation
-// sentenceData.audio	sentences[currentSentenceIndex].audio
-// sentenceData.audio_tr	sentences[currentSentenceIndex].audio_tr
-// sentenceData.totalSentences	sentences.length
-// sentenceData.currentSentence	currentSentenceIndex
+const playSequence = "oto";  // Для старта предложения (o=оригинал, t=перевод)
+const successSequence = "ot"; // Для правильного ответа (можно изменить на "o" или "to")
 
 let allSentences = sentences; // ← из JSON
 let activeSentences = sentences.filter(s => !s.completed_correctly);
 let currentSentenceIndex = 0;
-//let currentIndex = 0;
+// Добавляем глобальные переменные
+let first_pass_new_sentences = true;
+let currentCircle = 1;
+
+// Глобальные переменные модального окна начала диктанта
+let isAudioLoaded = false;
+const startModal = document.getElementById('startModal');
+const confirmStartBtn = document.getElementById('confirmStartBtn');
+
+// Инициализация диктанта
+function initializeDictation() {
+    // Показываем модальное окно сразу
+    startModal.style.display = 'flex';
+    confirmStartBtn.setAttribute('aria-disabled', 'false');
+    confirmStartBtn.focus();
+
+    // Загружаем первое предложение в фоне
+    const firstSentence = activeSentences[0];
+    audio.src = firstSentence.audio;
+    audio_tr.src = firstSentence.audio_tr;
+
+    // Проверяем готовность аудио
+    const checkReady = setInterval(() => {
+        if (audio.readyState > 3 && audio_tr.readyState > 3) {
+            clearInterval(checkReady);
+            isAudioLoaded = true;
+            confirmStartBtn.disabled = false;
+        }
+    }, 100);
+}
+
+// Обработчик кнопки старта
+confirmStartBtn.addEventListener('click', () => {
+    if (!isAudioLoaded) return;
+
+    // Закрываем модальное окно
+    startModal.style.display = 'none';
+
+    // Воспроизводим последовательность OTO как и требовалось
+    playMultipleAudios(playSequence); // "oto"
+
+    // Активируем интерфейс
+    inputField.focus();
+});
+
+// обработка клавиши Enter в модальном окне:
+confirmStartBtn.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && isAudioLoaded) {
+        startModal.style.display = 'none';
+        playMultipleAudios(playSequence);
+        inputField.focus();
+    }
+});
+
+
+// Инициализация предложений
+function initializeSentences() {
+    allSentences.forEach(s => {
+        s.completed_correctly = false; // Изначально все false
+    });
+    activeSentences = [...allSentences];
+}
+
 
 function startNewGame() {
     activeSentences = allSentences.filter(s => !s.completed_correctly);
@@ -26,38 +83,114 @@ function startNewGame() {
 }
 
 function showCurrentSentence() {
-    const sentence = sentences[currentSentenceIndex];
-
-    // Очистка пользовательского ввода
-    const userInput = document.getElementById("userInput");
-    userInput.innerHTML = "";
-    userInput.focus();
+    console.log('showCurrentSentence()');
+    const sentence = activeSentences[currentSentenceIndex];
 
     // Установка аудио
-    document.getElementById("audio").src = sentence.audio;
-    document.getElementById("audio_tr").src = sentence.audio_tr;
+    audio.src = sentence.audio;
+    audio_tr.src = sentence.audio_tr;
 
-    // Сброс подсказок
-    document.getElementById("correctAnswer").innerHTML = "";
+    // Установка подсказок
+    document.getElementById("correctAnswer").innerHTML = sentence.text;
+    document.getElementById("correctAnswer").style.display = "none";
+    document.getElementById("translation").innerHTML = sentence.translation;
     document.getElementById("translation").style.display = "none";
+
+
+    // Очистка пользовательского ввода
+    inputField.innerHTML = "";
+    inputField.focus();
+
+
+    // Ждем загрузки аудио перед воспроизведением
+    let audioLoaded = 0;
+    const totalAudio = 2; // Оригинал и перевод
+
+
+    function checkAndPlay() {
+        audioLoaded++;
+        if (audioLoaded === totalAudio) {
+            // Даем небольшую задержку для стабильности
+            setTimeout(() => playMultipleAudios(playSequence), 300);
+        }
+    }
+
+    audio.oncanplaythrough = checkAndPlay;
+    audio_tr.oncanplaythrough = checkAndPlay;
+
+    // На случай, если аудио уже загружено
+    if (audio.readyState > 3) checkAndPlay();
+    if (audio_tr.readyState > 3) checkAndPlay();
+
+
 }
 
 
 // Функция перехода к следующему предложению
 function nextSentence() {
-    const nextSentenceNum = currentSentenceIndex + 1;
-    if (nextSentenceNum < sentences.length) {
-        window.location.href = `/dictation/${sentenceData.dictation_id}/${nextSentenceNum}`;
+    first_pass_new_sentences = true; // Готовимся к проверке нового предложения
+
+    currentSentenceIndex++;
+    // Круг завершен
+    if (currentSentenceIndex >= activeSentences.length) {
+        currentCircle++;
+        currentSentenceIndex = 0;
+
+        // Оставляем только предложения с ошибками
+        activeSentences = activeSentences.filter(s => s.completed_correctly === false);
+
+        if (activeSentences.length === 0) {
+            alert(`Диктант завершен! Все предложения пройдены за ${currentCircle - 1} кругов`);
+            return;
+        }
     }
+
+    showCurrentSentence();
+    updateCounter();
 }
+
+// Функция перехода к следующему предложению
+function previousSentence() {
+    first_pass_new_sentences = true; // Готовимся к проверке нового предложения
+
+    currentSentenceIndex--;
+    // Круг завершен
+    if (currentSentenceIndex < 0) {
+        currentCircle--;
+        currentSentenceIndex = 0;
+
+        // Оставляем только предложения с ошибками
+        activeSentences = activeSentences.filter(s => s.completed_correctly === false);
+
+        if (activeSentences.length === 0) {
+            alert(`Диктант завершен! Все предложения пройдены за ${currentCircle - 1} кругов`);
+            return;
+        }
+    }
+
+    showCurrentSentence();
+    updateCounter();
+}
+
+// Обновленный счетчик
+function updateCounter() {
+    document.getElementById("sentenceCounter").textContent =
+        `Круг ${currentCircle} | Предложение ${currentSentenceIndex + 1}/${activeSentences.length}`;
+}
+
 
 // Функция очистки текста
 function clearText() {
     inputField.innerHTML = '';
-    correctAnswerDiv.innerHTML = '';
-    translationDiv.style.display = 'none';
-    audio.currentTime = 0;
-    audio.play();
+    // correctAnswerDiv.innerHTML = '';
+    // translationDiv.style.display = 'none';
+    // audio.currentTime = 0;
+    // audio.play();
+}
+
+// Функция записи аудио
+function recordAudio() {
+
 }
 
 // Основная функция загрузки аудио
@@ -88,9 +221,20 @@ async function loadAudio() {
     }
 }
 
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function () {
-    loadAudio();
+
+
+// Инициализация при загрузке
+document.addEventListener("DOMContentLoaded", function () {
+    initializeSentences();
+    updateCounter();
+    // startNewGame();
+    // showCurrentSentence();
+
+    initializeDictation();
+
+    // // Блокируем кнопки до старта
+    // document.getElementById('nextButton').disabled = true;
+    // document.getElementById('checkButton').disabled = true;
 });
 
 // Обработчики событий для inputField
@@ -120,53 +264,6 @@ function simplifyText(text) {
         .split(" ");
 }
 
-function check(original, userInput) {
-    // const original = activeSentences[currentSentenceIndex].text;
-    const simplOriginal = simplifyText(original);
-    const simplUser = simplifyText(userInput);
-
-    const originalWords = original.trim().split(/\s+/);
-    const userWords = userInput.trim().split(/\s+/);
-
-    const userVerified = [];
-    let i = 0, j = 0;
-    let foundError = false;
-
-    while (i < simplOriginal.length || j < simplUser.length) {
-        const wordOrig = simplOriginal[i];
-        const wordUser = simplUser[j];
-        const fullWordOrig = originalWords[i] || "";
-        const fullWordUser = userWords[j] || "";
-
-        if (foundError) {
-            if (j < userWords.length) {
-                userVerified.push({ type: "raw_user", text: userWords[j] });
-                j++;
-            } else {
-                break;
-            }
-        } else if (wordOrig === wordUser) {
-            userVerified.push({ type: "correct", text: fullWordOrig });
-            i++; j++;
-        } else if (simplOriginal[i + 1] === wordUser) {
-            userVerified.push({ type: "missing", text: fullWordOrig });
-            i++;
-        } else {
-            const errorIndex = findFirstErrorIndex(wordOrig, wordUser);
-            userVerified.push({
-                type: "error",
-                userText: fullWordUser,
-                correctText: fullWordOrig,
-                errorIndex: errorIndex
-            });
-            i++; j++;
-            foundError = true;
-        }
-    }
-
-    return userVerified;
-}
-
 function findFirstErrorIndex(word1, word2) {
     const len = Math.min(word1.length, word2.length);
     for (let k = 0; k < len; k++) {
@@ -175,9 +272,7 @@ function findFirstErrorIndex(word1, word2) {
     return len;
 }
 
-function renderResult(userVerified) {
-    const correctDiv = document.getElementById("correctAnswer");
-    correctDiv.innerHTML = "";
+function renderResult(original, userVerified) {
 
     const correctLine = [];
     let foundError = false;
@@ -214,9 +309,11 @@ function renderResult(userVerified) {
             correctLine.push(`<span>${word}</span> `);
         });
     }
+    else {
+        checkNextDiv.focus();
+    }
 
-    correctDiv.innerHTML = correctLine.join("");
-    correctDiv.style.marginTop = "10px";
+    correctAnswerDiv.innerHTML = correctLine.join("");
 }
 
 function renderToEditable(userVerified) {
@@ -318,21 +415,107 @@ function restoreCursorPosition(containerEl, offset) {
     walk(containerEl);
 }
 
+function playMultipleAudios(sequence) {
+    const steps = sequence.split(''); // Разбиваем строку на массив (например, "oto" → ["o", "t", "o"])
+    let index = 0;
+
+    function playNext() {
+        if (index >= steps.length) return;
+
+        const currentAudio = steps[index] === 'o' ? audio : audio_tr; // Выбираем аудио
+        if (!currentAudio) {
+            console.warn('Аудио не найдено для шага:', steps[index]);
+            index++;
+            return playNext();
+        }
+
+        currentAudio.currentTime = 0; // Перематываем
+        currentAudio.play()
+            .then(() => {
+                currentAudio.onended = () => {
+                    index++;
+                    playNext(); // Рекурсивно запускаем следующий шаг
+                };
+            })
+            .catch(error => {
+                console.error('Ошибка воспроизведения:', error);
+                index++;
+                playNext(); // Продолжаем, даже если ошибка
+            });
+    }
+
+    playNext(); // Запускаем процесс
+}
+
+function check(original, userInput) {
+    const simplOriginal = simplifyText(original);
+    const simplUser = simplifyText(userInput);
+
+    const originalWords = original.trim().split(/\s+/);
+    const userWords = userInput.trim().split(/\s+/);
+
+    const userVerified = [];
+    let i = 0, j = 0;
+    let foundError = false;
+
+    while (i < simplOriginal.length || j < simplUser.length) {
+        const wordOrig = simplOriginal[i];
+        const wordUser = simplUser[j];
+        const fullWordOrig = originalWords[i] || "";
+        const fullWordUser = userWords[j] || "";
+
+        if (foundError) {
+            if (j < userWords.length) {
+                userVerified.push({ type: "raw_user", text: userWords[j] });
+                j++;
+            } else {
+                break;
+            }
+        } else if (wordOrig === wordUser) {
+            userVerified.push({ type: "correct", text: fullWordOrig });
+            i++; j++;
+        } else if (simplOriginal[i + 1] === wordUser) {
+            userVerified.push({ type: "missing", text: fullWordOrig });
+            i++;
+        } else {
+            const errorIndex = findFirstErrorIndex(wordOrig, wordUser);
+            userVerified.push({
+                type: "error",
+                userText: fullWordUser,
+                correctText: fullWordOrig,
+                errorIndex: errorIndex
+            });
+            i++; j++;
+            foundError = true;
+        }
+    }
+
+    return userVerified;
+}
+
 function checkText() {
     const original = activeSentences[currentSentenceIndex].text;
     const userInput = inputField.innerText;
     const result = check(original, userInput);
+    const currentSentence = activeSentences[currentSentenceIndex];
 
     renderToEditable(result);
-    renderResult(result);
+    renderResult(original, result);
 
     const allCorrect = result.every(word => word.type === "correct");
+
+    // Логика обновления флага
+    if (first_pass_new_sentences) {
+        first_pass_new_sentences = false; // Сбрасываем после первой проверки
+        currentSentence.completed_correctly = allCorrect;
+    }
+
+    correctAnswerDiv.style.display = "block";
     if (allCorrect) {
         translationDiv.style.display = "block";
-        translationDiv.textContent = sentences[currentSentenceIndex].translation;
+        setTimeout(() => playMultipleAudios(successSequence), 500); // "ot" с задержкой
     } else {
         translationDiv.style.display = "none";
-        translationDiv.textContent = "";
     }
 }
 
@@ -353,8 +536,7 @@ document.addEventListener('keydown', function (event) {
 document.getElementById("sentenceCounter").textContent =
     `Предложение ${currentSentenceIndex + 1} / ${sentences.length}`;
 
-// Инициализация при загрузке страницы
-document.addEventListener("DOMContentLoaded", function () {
-    showCurrentSentence();
-    startNewGame();
+document.getElementById("userInput").addEventListener("input", function () {
+    document.getElementById("correctAnswer").style.display = "none";
+    document.getElementById("translation").style.display = "none";
 });
