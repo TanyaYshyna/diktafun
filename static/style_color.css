@@ -1,7 +1,11 @@
 /* variables.css */
 :root {
-  --primary-color: #3498db;
-  --secondary-color: #2997e0;
-  --background-color: #f3f9fc;
-  --text-color: #333333;
+  --primary-color: #3498db;       /* Голубой: задания выполнены с первого раза */
+  --secondary-color: #2997e0;     /* Чуть темнее голубой: можно использовать для hover или альтернатив */
+  --background-color: #f3f9fc;    /* Светлый фон всей страницы и кнопок */
+  --text-color: #333333;          /* Стандартный тёмный текст */
+  --error-color: red;             /* Красная рамка для текущего задания */
+  --success-color: green;         /* Зелёный: задания с ошибками */
+  --neutral-border-color: #ccc;   /* Серый: рамка для обычных невыполненных заданий */
+  --gap-text-color: #999999;      /* Цвет троеточий “…” */
 }

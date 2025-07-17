@@ -11,7 +11,6 @@ const playSequence = "oto";  // Для старта предложения (o=о
 const successSequence = "ot"; // Для правильного ответа (можно изменить на "o" или "to")
 
 let allSentences = sentences; // ← из JSON
-let activeSentences = sentences.filter(s => !s.completed_correctly);
 let currentSentenceIndex = 0;
 // Добавляем глобальные переменные
 let first_pass_new_sentences = true;
@@ -22,6 +21,462 @@ let isAudioLoaded = false;
 const startModal = document.getElementById('startModal');
 const confirmStartBtn = document.getElementById('confirmStartBtn');
 
+// ===== Элементы DOM =====
+const openUserAudioModalBtn = document.getElementById('openUserAudioModalBtn');
+const userAudioModal = document.getElementById('userAudioModal');
+const closeUserAudioBtn = document.querySelector('.close-user-audio');
+const userCancelBtn = document.getElementById('userCancelButton');
+const userConfirmBtn = document.getElementById('userConfirmButton');
+const userRecordBtn = document.getElementById('userRecordButton');
+const userAudioStatusText = document.getElementById('userAudioStatusText');
+const userAudioTranscript = document.getElementById('userAudioTranscript');
+const userAudioVisualizer = document.getElementById('userAudioVisualizer');
+
+// ===== Переменные для аудио =====
+// ===== Элементы DOM =====
+const recordButton = document.getElementById('recordButton');
+const recordButtonText = document.getElementById('recordButtonText');
+const audioVisualizer = document.getElementById('audioVisualizer');
+const userAudioElement = document.getElementById('audio_user');
+const userAudioAnswer = document.getElementById('userAudioAnswer');
+
+let mediaRecorder, audioChunks = [];
+let languageCodes = {};
+let recognition = null;
+let textAttemptCount = 0;
+
+async function loadLanguageCodes() {
+    const response = await fetch(LANGUAGE_CODES_URL);
+    languageCodes = await response.json();
+    initSpeechRecognition();
+}
+
+// ===== Табло функций ========
+//    console.log("👀 renderSentenceCounter вызвана");
+function initTabloSentenceCounter(maxVisible = 9) {
+    const container = document.getElementById("sentenceCounter");
+    container.innerHTML = "";
+    const total = allSentences.length;
+
+    const boxWrapper = document.createElement("div");
+    boxWrapper.classList.add("sentence-box-wrapper");
+
+    window.sentenceButtons = [];
+
+    if (total <= maxVisible) {
+        newTabloBtn(1, 0, "sentence-box box-current", boxWrapper);
+        for (let i = 1; i < total; i++) {
+            newTabloBtn(i + 1, i, "sentence-box box-default", boxWrapper);
+        }
+    } else {
+        newTabloBtn(1, 0, "sentence-box box-current", boxWrapper);
+        for (let i = 1; i < maxVisible - 2; i++) {
+            newTabloBtn(i + 1, i, "sentence-box box-default", boxWrapper);
+        }
+        newTabloBtn("...", maxVisible - 2, "box-gap", boxWrapper);
+        newTabloBtn(total, maxVisible - 1, "sentence-box box-default", boxWrapper);
+    }
+
+    container.appendChild(boxWrapper);
+}
+
+function newTabloBtn(lable, index, className, boxWrapper) {
+    const btn = document.createElement("button");
+    //btn.classList.add("sentence-box");
+    btn.dataset.position = index;
+    btn.textContent = lable;
+    btn.className = className;
+    btn.onclick = () => {
+        console.log("👀 clicked", btn.textContent);
+        const num = parseInt(btn.textContent);
+        if (!isNaN(num)) {
+            currentSentenceIndex = num - 1;
+            showCurrentSentence(currentSentenceIndex);
+        }
+    };
+    boxWrapper.appendChild(btn);
+    window.sentenceButtons.push(btn);
+}
+
+function applyStatusClass(btn, sentence, isCurrent = false) {
+    if (isCurrent) {
+        btn.classList.add("box-current", "box-default");
+    } else if (sentence.text_check === 0) {
+        btn.classList.add("box-done");
+    } else if (sentence.text_check > 0) {
+        btn.classList.add("box-partial");
+    } else {
+        btn.classList.add("box-default");
+    }
+}
+
+function updateTabloSentenceCounter(currentIndex, maxVisible = 9) {
+    const total = allSentences.length;
+    const buttons = window.sentenceButtons;
+    if (!buttons || buttons.length === 0) return;
+
+    const currentLabel = currentIndex + 1;
+    const visibleLabels = buttons.map(btn => btn.textContent);
+
+    // [1] Если текущая кнопка уже на экране — просто обновляем стили
+    if (visibleLabels.includes(String(currentLabel))) {
+        buttons.forEach(btn => {
+            const num = parseInt(btn.textContent);
+            if (isNaN(num)) return;
+
+            const index = num - 1;
+            btn.className = "sentence-box";
+
+            if (index === currentIndex) {
+                btn.classList.add("box-current", "box-default");
+            } else {
+                const sentence = allSentences[index];
+                applyStatusClass(btn, sentence, false);
+            }
+        });
+    } else {
+        // [2] Если нужной кнопки нет — перестраиваем видимые кнопки
+        let visibleIndices = [];
+
+        if (currentIndex < maxVisible - 2) {
+            visibleIndices.push(0);
+            for (let i = 1; i < maxVisible - 2; i++) visibleIndices.push(i);
+            visibleIndices.push("...");
+            visibleIndices.push(total - 1);
+        } else if (currentIndex > total - (maxVisible - 2)) {
+            visibleIndices.push(0);
+            visibleIndices.push("...");
+            for (let i = total - maxVisible + 2; i < total; i++) visibleIndices.push(i);
+        } else {
+            visibleIndices.push(0);
+            visibleIndices.push("...");
+            for (let i = currentIndex; i < currentIndex + (maxVisible - 4); i++) {
+                visibleIndices.push(i);
+            }
+            visibleIndices.push("...");
+            visibleIndices.push(total - 1);
+        }
+
+        buttons.forEach((btn, i) => {
+            const value = visibleIndices[i];
+            btn.className = "sentence-box";
+            if (value === "...") {
+                btn.textContent = "...";
+                btn.classList.add("box-gap");
+                btn.disabled = true;
+                btn.removeAttribute("data-position");
+            } else {
+                const sentence = allSentences[value];
+                btn.textContent = value + 1;
+                btn.dataset.position = value;
+                btn.disabled = false;
+
+                if (value === currentIndex) {
+                    btn.classList.add("box-current", "box-default");
+                } else {
+                    applyStatusClass(btn, sentence, false);
+                }
+            }
+        });
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function checkIfAllCompleted() {
+    const hasUnfinished = allSentences.some(s => s.text_check === -1);
+    if (!hasUnfinished) {
+        document.getElementById("finishModal").style.display = "flex";
+    }
+}
+
+// ===== Аудио-функционал =====
+// Сначала объявляем stopRecording
+function stopRecording() {
+    if (mediaRecorder?.state === 'recording') {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        if (recognition) {
+            try {
+                recognition.abort();
+            } catch (e) {
+                console.error('Ошибка остановки распознавания:', e);
+            }
+        }
+    }
+
+    recordButton.classList.remove('recording');
+    recordButtonText.textContent = 'Записать аудио';
+    stopVisualization();
+}
+
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false
+            }
+        });
+
+        // Определяем лучший формат для текущего браузера
+        const options = {
+            mimeType: getSupportedMimeType()
+        };
+        console.log("Используемый формат:", options.mimeType);
+
+        mediaRecorder = new MediaRecorder(stream, options);
+        setupVisualizer(stream);
+
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = saveRecording;
+
+        audioChunks = [];
+        mediaRecorder.start(100); // Захватываем данные каждые 100мс
+
+        // Инициализируем распознавание речи заново при каждом старте записи
+        if (recognition) {
+            try {
+                recognition.stop(); // Останавливаем предыдущий экземпляр
+            } catch (e) {
+                console.log('Не удалось остановить предыдущее распознавание:', e);
+            }
+            initSpeechRecognition(); // Переинициализируем
+        }
+
+        userAudioAnswer.innerHTML = 'Говорите...';
+        if (recognition) {
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error('Ошибка запуска распознавания:', e);
+                // Если ошибка, инициализируем заново и пробуем снова
+                initSpeechRecognition();
+                recognition.start();
+            }
+        }
+
+        recordButton.classList.add('recording');
+        recordButtonText.textContent = 'Остановить';
+    } catch (error) {
+        console.error('Ошибка записи:', error);
+        userAudioAnswer.innerHTML = `Ошибка: ${error.message}`;
+    }
+}
+
+async function toggleRecording() {
+    if (mediaRecorder?.state === 'recording') {
+        stopRecording();
+    } else {
+        startRecording();
+    }
+}
+
+function getSupportedMimeType() {
+    const types = [
+        'audio/mp4; codecs="mp4a.40.2"', // AAC (лучший для Safari)
+        'audio/webm; codecs=opus',        // Opus (для Chrome/Firefox)
+        'audio/webm'                      // Fallback
+    ];
+
+    return types.find(type => MediaRecorder.isTypeSupported(type)) || '';
+}
+
+function saveRecording() {
+    if (!audioChunks.length) {
+        console.warn("Нет аудиоданных для сохранения");
+        return;
+    }
+
+    const blobType = mediaRecorder.mimeType.includes('mp4')
+        ? 'audio/mp4'
+        : 'audio/webm';
+
+    const audioBlob = new Blob(audioChunks, { type: blobType });
+    const audioUrl = URL.createObjectURL(audioBlob);
+
+    // Устанавливаем правильный type для элемента <audio>
+    userAudioElement.src = audioUrl;
+    userAudioElement.type = blobType;
+
+    console.log(`Аудио сохранено (${blobType}):`, audioUrl);
+}
+
+function initSpeechRecognition() {
+    if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+        console.error('Браузер не поддерживает SpeechRecognition');
+        return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = languageCodes[LANGUAGE_ORIGINAL] || 'en-US';
+    recognition.interimResults = true;
+    recognition.continuous = true; // Добавляем непрерывное распознавание
+
+    recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript;
+            } else {
+                interimTranscript += transcript;
+            }
+        }
+        recognition.finalTranscript = finalTranscript;
+
+        // Показываем промежуточный и финальный текст
+        userAudioAnswer.innerHTML = `<span class="final">${finalTranscript}</span><span class="interim">${interimTranscript}</span>`;
+    };
+
+    recognition.onerror = (event) => {
+        console.error('Ошибка распознавания:', event.error);
+        // Не показываем ошибку "aborted" пользователю
+        if (event.error !== 'aborted') {
+            userAudioAnswer.textContent = `Ошибка: ${event.error}`;
+        }
+
+        // Если ошибка не "aborted", можно попробовать перезапустить
+        if (event.error !== 'aborted' && mediaRecorder?.state === 'recording') {
+            setTimeout(() => {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.error('Не удалось перезапустить распознавание:', e);
+                }
+            }, 500);
+        }
+    };
+
+    recognition.onend = () => {
+        // Проверяем, что запись все еще активна
+        if (mediaRecorder?.state !== 'recording') {
+            return;
+        }
+
+        const original = allSentences[currentSentenceIndex].text.toLowerCase().trim();
+        const spoken = recognition.finalTranscript.toLowerCase().trim();
+
+        if (simplifyText(original) === simplifyText(spoken)) {
+            updateCheckResult(allSentences[currentSentenceIndex].key, "audio_check", 0);
+            disableRecordButton(false);
+
+            const nextBtn = document.getElementById('checkNext');
+            if (nextBtn) nextBtn.focus();
+        } else {
+            console.log("Голос не совпал с текстом.");
+            // Пробуем продолжить распознавание, если запись еще идет
+            if (mediaRecorder?.state === 'recording') {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.error('Не удалось продолжить распознавание:', e);
+                }
+            }
+        }
+    };
+}
+
+function disableRecordButton(active) {
+    const recordBtn = document.getElementById('recordBtn');
+
+    if (recordBtn) {
+        if (active) {
+            recordBtn.disabled = false;
+            recordBtn.innerHTML = '<img src="/static/icons/record0.svg" alt="Запись">';
+        } else {
+            recordBtn.disabled = true;
+            recordBtn.innerHTML = '<img src="/static/icons/test1.svg" alt="Галочка">';
+        }
+    }
+}
+
+function saveRecording() {
+    try {
+        if (!audioChunks.length) {
+            console.warn('Нет данных для сохранения');
+            return;
+        }
+
+        const blobType = mediaRecorder.mimeType.includes('mp4')
+            ? 'audio/mp4'
+            : 'audio/webm';
+
+        const audioBlob = new Blob(audioChunks, { type: blobType });
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        userAudioElement.src = audioUrl;
+        userAudioElement.type = blobType; // Явно указываем тип
+
+        console.log('Аудио сохранено:', {
+            format: blobType,
+            size: (audioBlob.size / 1024).toFixed(2) + ' KB'
+            // duration: mediaRecorder.duration.toFixed(2) + ' сек'
+        });
+
+    } catch (error) {
+        console.error('Ошибка сохранения записи:', error);
+        userAudioAnswer.textContent = 'Ошибка сохранения аудио';
+    }
+}
+
+// Инициализация кнопки
+recordButton.addEventListener('click', toggleRecording);
+
+function setupVisualizer(stream) {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyser);
+    analyser.fftSize = 256;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    const canvas = audioVisualizer;
+    const canvasCtx = canvas.getContext('2d');
+
+    function draw() {
+        requestAnimationFrame(draw);
+        analyser.getByteFrequencyData(dataArray);
+
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+        const barWidth = (canvas.width / bufferLength) * 2.5;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const barHeight = dataArray[i] / 2;
+            canvasCtx.fillStyle = `rgb(100, 150, 255)`;
+            canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+            x += barWidth + 1;
+        }
+    }
+
+    draw();
+}
+
+function stopVisualization() {
+    const canvas = audioVisualizer;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+
+// ===== Аудио-функционал КОНЕЦ =====
+
+
 // Инициализация диктанта
 function initializeDictation() {
     // Показываем модальное окно сразу
@@ -29,8 +484,9 @@ function initializeDictation() {
     confirmStartBtn.setAttribute('aria-disabled', 'false');
     confirmStartBtn.focus();
 
+    initTabloSentenceCounter();
     // Загружаем первое предложение в фоне
-    const firstSentence = activeSentences[0];
+    const firstSentence = allSentences[0];
     audio.src = firstSentence.audio;
     audio_tr.src = firstSentence.audio_tr;
 
@@ -67,24 +523,40 @@ confirmStartBtn.addEventListener('keydown', (event) => {
     }
 });
 
-
 // Инициализация предложений
 function initializeSentences() {
-    allSentences.forEach(s => {
-        s.completed_correctly = false; // Изначально все false
+    allSentences.forEach(sentence => {
+        sentence.text_check = -1;
+        sentence.audio_check = -1;
     });
-    activeSentences = [...allSentences];
 }
 
+function updateCheckResult(key, type, value) {
+    const sentence = allSentences.find(s => s.key === key);
+    if (sentence) {
+        sentence[type] = value;
+    }
+}
 
 function startNewGame() {
-    activeSentences = allSentences.filter(s => !s.completed_correctly);
+    console.log("👀 startNewGame()");
     currentSentenceIndex = 0;
+    // renderSentenceCounter(currentSentenceIndex, allSentences);
+
 }
 
-function showCurrentSentence() {
-    console.log('showCurrentSentence()');
-    const sentence = activeSentences[currentSentenceIndex];
+function showCurrentSentence(showIndex) {
+    currentSentenceIndex = showIndex;
+    updateTabloSentenceCounter(showIndex);
+    //renderSentenceCounter(currentSentenceIndex, allSentences);
+    const sentence = allSentences[currentSentenceIndex];
+
+    // Сбрасываем состояние аудио-ответа
+    userAudioAnswer.innerHTML = '';
+
+    // возвращаем доступность кнопки проверки и поля ввода текста
+    disableCheckButton(true);
+    disableRecordButton(true);
 
     // Установка аудио
     audio.src = sentence.audio;
@@ -100,6 +572,7 @@ function showCurrentSentence() {
     // Очистка пользовательского ввода
     inputField.innerHTML = "";
     inputField.focus();
+    textAttemptCount = 0;
 
 
     // Ждем загрузки аудио перед воспроизведением
@@ -128,54 +601,45 @@ function showCurrentSentence() {
 
 // Функция перехода к следующему предложению
 function nextSentence() {
-    first_pass_new_sentences = true; // Готовимся к проверке нового предложения
+    const total = allSentences.length;
+    let nextIndex = currentSentenceIndex + 1;
 
-    currentSentenceIndex++;
-    // Круг завершен
-    if (currentSentenceIndex >= activeSentences.length) {
-        currentCircle++;
-        currentSentenceIndex = 0;
-
-        // Оставляем только предложения с ошибками
-        activeSentences = activeSentences.filter(s => s.completed_correctly === false);
-
-        if (activeSentences.length === 0) {
-            alert(`Диктант завершен! Все предложения пройдены за ${currentCircle - 1} кругов`);
+    while (nextIndex < total) {
+        const sentence = allSentences[nextIndex];
+        if (sentence.text_check === -1) {
+            showCurrentSentence(nextIndex); // ← или твоя функция загрузки предложения
             return;
         }
+        nextIndex++;
     }
 
-    showCurrentSentence();
-    updateCounter();
+    checkIfAllCompleted();
+    // Если не нашли — либо в конце, либо все выполнены
+    console.log("✅ Все предложения завершены или больше нет непройденных.");
 }
 
 // Функция перехода к следующему предложению
 function previousSentence() {
-    first_pass_new_sentences = true; // Готовимся к проверке нового предложения
+    let prevIndex = currentSentenceIndex - 1;
 
-    currentSentenceIndex--;
-    // Круг завершен
-    if (currentSentenceIndex < 0) {
-        currentCircle--;
-        currentSentenceIndex = 0;
-
-        // Оставляем только предложения с ошибками
-        activeSentences = activeSentences.filter(s => s.completed_correctly === false);
-
-        if (activeSentences.length === 0) {
-            alert(`Диктант завершен! Все предложения пройдены за ${currentCircle - 1} кругов`);
+    while (prevIndex >= 0) {
+        const sentence = allSentences[prevIndex];
+        if (sentence.text_check === -1) {
+            showCurrentSentence(prevIndex); // ← или твоя функция загрузки предложения
             return;
         }
+        prevIndex--;
     }
 
-    showCurrentSentence();
-    updateCounter();
+    checkIfAllCompleted();
+
+    console.log("🚫 Ранее непройденных предложений не найдено.");
 }
 
 // Обновленный счетчик
 function updateCounter() {
-    document.getElementById("sentenceCounter").textContent =
-        `Круг ${currentCircle} | Предложение ${currentSentenceIndex + 1}/${activeSentences.length}`;
+    console.log("👀 updateCounter()" + allSentences.length);
+    //renderSentenceCounter(currentSentenceIndex, allSentences)
 }
 
 
@@ -197,7 +661,7 @@ function recordAudio() {
 async function loadAudio() {
 
     try {
-        audio.src = activeSentences[currentSentenceIndex].audio;
+        audio.src = allSentences[currentSentenceIndex].audio;
 
         // Обработчик ошибок
         audio.onerror = function () {
@@ -227,14 +691,26 @@ async function loadAudio() {
 document.addEventListener("DOMContentLoaded", function () {
     initializeSentences();
     updateCounter();
-    // startNewGame();
-    // showCurrentSentence();
-
     initializeDictation();
+    loadLanguageCodes();
 
-    // // Блокируем кнопки до старта
-    // document.getElementById('nextButton').disabled = true;
-    // document.getElementById('checkButton').disabled = true;
+    // Проверка поддерживаемых аудиоформатов
+    console.group("Поддержка аудиоформатов:");
+    const formatsToCheck = [
+        'audio/mp4; codecs="mp4a.40.2"', // AAC
+        'audio/webm; codecs=opus',       // Opus
+        'audio/webm',                    // Fallback WebM
+        'audio/wav'                      // WAV (для тестирования)
+    ];
+
+    formatsToCheck.forEach(format => {
+        console.log(`${format}:`, MediaRecorder.isTypeSupported(format));
+    });
+    console.groupEnd();
+
+    // Дополнительная информация о браузере
+    console.log("Браузер:", navigator.userAgent);
+    console.log("Языковые коды загружены:", languageCodes);
 });
 
 // Обработчики событий для inputField
@@ -258,7 +734,10 @@ inputField.addEventListener('input', function () {
 function simplifyText(text) {
     return text
         .toLowerCase()
-        .replace(/[.,!?;:"'«»()]/g, "")
+        // Удаляем ВСЕ апострофы, кавычки и другие похожие символы
+        .replace(/[\u0027\u2018\u2019\u0060\u00B4'‘’`´]/g, "")
+        // Удаляем остальные ненужные символы
+        .replace(/[.,!?;:"«»()]/g, "")
         .replace(/\s+/g, " ")
         .trim()
         .split(" ");
@@ -310,7 +789,8 @@ function renderResult(original, userVerified) {
         });
     }
     else {
-        checkNextDiv.focus();
+        // checkNextDiv.focus();
+        recordButton.focus();
     }
 
     correctAnswerDiv.innerHTML = correctLine.join("");
@@ -447,7 +927,24 @@ function playMultipleAudios(sequence) {
     playNext(); // Запускаем процесс
 }
 
-function check(original, userInput) {
+function disableCheckButton(active) {
+    const checkBtn = document.getElementById('checkBtn');
+    const userInput = document.getElementById('userInput');
+
+    if (checkBtn) {
+        if (active) {
+            checkBtn.disabled = false;
+            checkBtn.innerHTML = '<img src="/static/icons/test0.svg" alt="Проверить">';
+            if (userInput) userInput.contentEditable = "true";
+        } else {
+            checkBtn.disabled = true;
+            checkBtn.innerHTML = '<img src="/static/icons/test1.svg" alt="Галочка">';
+            if (userInput) userInput.contentEditable = "false";
+        }
+    }
+}
+
+function check(original, userInput, currentKey) {
     const simplOriginal = simplifyText(original);
     const simplUser = simplifyText(userInput);
 
@@ -490,25 +987,46 @@ function check(original, userInput) {
         }
     }
 
+    // === [ВСТАВЬ ЭТО ПЕРЕД ЗАВЕРШЕНИЕМ ФУНКЦИИ check()] ===
+    if (!foundError) {
+        // Всё правильно — с первой попытки?
+        if (textAttemptCount === 0) {
+            updateCheckResult(currentKey, "text_check", 0);
+        } else {
+            updateCheckResult(currentKey, "text_check", textAttemptCount);
+        }
+
+        allSentences[currentSentenceIndex].text_check = textAttemptCount === 0 ? 0 : textAttemptCount;
+        // updateCurrentButtonStatus(currentSentenceIndex, allSentences[currentSentenceIndex]);
+        updateTabloSentenceCounter(currentSentenceIndex)
+        disableCheckButton(false);         // отключить кнопку
+        // перевести фокус
+        recordButton.focus();
+    } else {
+        // Ошибка — увеличиваем счётчик попыток
+        textAttemptCount++;
+    }
+
     return userVerified;
 }
 
 function checkText() {
-    const original = activeSentences[currentSentenceIndex].text;
+    const original = allSentences[currentSentenceIndex].text;
     const userInput = inputField.innerText;
-    const result = check(original, userInput);
-    const currentSentence = activeSentences[currentSentenceIndex];
+    const currentKey = allSentences[currentSentenceIndex].key;
+    const result = check(original, userInput, currentKey);
+    const currentSentence = allSentences[currentSentenceIndex];
 
     renderToEditable(result);
     renderResult(original, result);
 
     const allCorrect = result.every(word => word.type === "correct");
 
-    // Логика обновления флага
-    if (first_pass_new_sentences) {
-        first_pass_new_sentences = false; // Сбрасываем после первой проверки
-        currentSentence.completed_correctly = allCorrect;
-    }
+    // // Логика обновления флага
+    // if (first_pass_new_sentences) {
+    //     first_pass_new_sentences = false; // Сбрасываем после первой проверки
+    //     currentSentence.completed_correctly = allCorrect;
+    // }
 
     correctAnswerDiv.style.display = "block";
     if (allCorrect) {
@@ -540,3 +1058,54 @@ document.getElementById("userInput").addEventListener("input", function () {
     document.getElementById("correctAnswer").style.display = "none";
     document.getElementById("translation").style.display = "none";
 });
+
+// Добавьте этот код в ваш script_dictation.js, например, в конец файла
+
+
+function clickBtnRestartAll() {
+    // Сброс всех предложений
+    allSentences.forEach(sentence => {
+        sentence.text_check = -1;
+        sentence.audio_check = -1;
+    });
+
+    // Начинаем с первого предложения 
+    currentSentenceIndex = 0;
+    showCurrentSentence(currentSentenceIndex);
+
+    // Скрываем модальное окно
+    document.getElementById("finishModal").style.display = "none";
+}
+
+// Обработчик для кнопки "Повторить ошибки"
+function clickBtnRestartErrors() {
+    // Фильтруем предложения с ошибками (text_check > 0)
+    const errorSentences = allSentences.filter(sentence => sentence.text_check > 0);
+
+    if (errorSentences.length > 0) {
+        // Обновляем список предложений для работы только с ошибками
+        allSentences.forEach(sentence => {
+            if (sentence.text_check > 0) {
+                sentence.text_check = -1;
+                sentence.audio_check = -1;
+            }
+        });
+        currentSentenceIndex = 0;
+        for (let i = 0; i < allSentences.length; i++) {
+            if (allSentences[i].text_check = -1) {
+                currentSentenceIndex = i;
+                break;
+            };
+            showCurrentSentence(currentSentenceIndex);
+        }
+    } else {
+        alert("У вас нет предложений с ошибками!");
+    }
+
+    // Скрываем модальное окно
+    document.getElementById("finishModal").style.display = "none";
+}
+
+function clickBackToList() {
+    window.location.href = "/"; // Замените на ваш URL
+}

@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Dikte</title>
+    <link rel="stylesheet" href="/static/style_color.css">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/style_dictation.css">
 </head>
@@ -30,20 +31,57 @@
 
 
     <div class="panel">
-        <h2> Диктант: {{ title_orig }}</h2>
-        <h4 id="diktation_id"> {{ dictation_id }} </h4>
         <!-- Счетчик предложений -->
-        <div class="sentence-counter" id="sentenceCounter">
-            <!-- будет подставлено из JS -->
+        <div class="panel-tablo">
+            <!-- Добавляем flex-контейнер -->
+            <style>
+                .panel-tablo {
+                    display: flex;
+                    justify-content: space-between;
+                    /* Распределяет пространство между элементами */
+                    align-items: flex-start;
+                    /* Выравнивает по верхнему краю */
+                    width: 100%;
+                }
+
+                /* Оставляем кнопки в столбик */
+                .panel-tablo-1 {
+                    display: flex;
+                    flex-direction: column;
+                    /* Элементы вертикально */
+                    gap: 10px;
+                    /* Отступ между кнопками */
+                }
+
+                /* Можно добавить, если нужно выравнивание текста справа */
+                #diktation_id {
+                    margin-left: auto;
+                    padding-top: 5px;
+                    /* Чтобы текст был на одном уровне с первой кнопкой */
+                }
+            </style>
+            <div class="panel-tablo-1">
+                <div class="sentence-counter" id="sentenceCounter">
+                    <!-- будет подставлено из JS -->
+                </div>
+                <div class="button-group">
+                    <button id="checkPrevios" onclick="previousSentence()">
+                        <img src="{{ url_for('static', filename='icons/previos.svg') }}" alt="Предыдущий" class="icon">
+                    </button>
+                    <button id="checkRepit" onclick="clearText()">
+                        <img src="{{ url_for('static', filename='icons/repeat.svg') }}" alt="Повторить" class="icon">
+                    </button>
+                    <button id="checkNext" onclick="nextSentence()">
+                        <img src="{{ url_for('static', filename='icons/next.svg') }}" alt="Следующий" class="icon">
+                    </button>
+                </div>
+            </div>
+
+            <h4 id="diktation_id">{{ dictation_id }}</h4>
         </div>
-        <style>
-            .audio-wrapper {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                /* Отступ между элементами */
-            }
-        </style>
+        <h2> Диктант: {{ title_orig }}</h2>
+
+
         <div style="display: flex; gap: 10px;">
             <audio id="audio" controls>
                 <!-- Источник будет установлен через JS -->
@@ -59,9 +97,9 @@
         <div class="result-panel">
             <div class="text-column">
                 <!-- Поле с правильной подсказкой -->
-                <div id="correctAnswer" class="text-output">I had a lot of fun.</div>
+                <div id="correctAnswer" class="text-output">...</div>
                 <!-- Перевод — показывать только при 100% правильности -->
-                <div id="translation">Мне было очень весело.</div>
+                <div id="translation">...</div>
             </div>
 
             <button id="checkBtn" onclick="checkText()">
@@ -69,41 +107,40 @@
             </button>
         </div>
 
-
         <!-- тут пользователь записывает ацдио -->
         <div class="audio-user-panel">
-            <div class="audio-user-column">
-                <div style="display: flex; gap: 10px;">
-                    <audio id="audio_user" controls>
-                        <!-- Источник будет установлен через JS -->
-                        Ваш браузер не поддерживает аудио!
-                    </audio>
-                    <!-- Поле с устным ответом пользователя (распознанным)-->
-                    <div id="userAudioAnswer" class="text-user-audio"></div>
-                </div>
+            <div class="audio-user-content">
+                <canvas id="audioVisualizer" class="audio-visualizer" width="300" height="80"></canvas>
+                <div id="userAudioAnswer" class="text-user-audio"></div>
+                <audio id="audio_user" controls playsinline>
+                    Ваш браузер не поддерживает аудио!
+                </audio>
             </div>
-
-            <button id="microphoneBtn" onclick="recordAudio()">
-                <img src="{{ url_for('static', filename='icons/microphone.svg') }}" alt="∞" class="icon">
+            <button id="recordButton" class="record-btn">
+                <img src="{{ url_for('static', filename='icons/microphone.svg') }}" alt="Запись">
+                <span id="recordButtonText">Записать аудио</span>
             </button>
         </div>
 
-
-        <div class="button-group">
-            <button id="checkPrevios" onclick="previousSentence()">
-                <img src="{{ url_for('static', filename='icons/previos.svg') }}" alt="Предыдущий" class="icon">
-            </button>
-            <button id="checkRepit" onclick="clearText()">
-                <img src="{{ url_for('static', filename='icons/repeat.svg') }}" alt="Повторить" class="icon">
-            </button>
-            <button id="checkNext" onclick="nextSentence()">
-                <img src="{{ url_for('static', filename='icons/next.svg') }}" alt="Следующий" class="icon">
-            </button>
+    </div>
+    <div id="finishModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Вы завершили диктант</h2>
+            <p>Что вы хотите сделать дальше?</p>
+            <div class="modal-buttons">
+                <button id="btnRestartAll">Пройти всё заново</button>
+                <button id="btnRestartErrors">Повторить ошибки</button>
+                <button id="btnBackToList">Вернуться к списку</button>
+            </div>
         </div>
     </div>
 
     <script id="sentences-data" type="application/json">
         {{ sentences | tojson | safe }}
+    </script>
+    <script>
+        const LANGUAGE_ORIGINAL = "{{ language_original }}";
+        const LANGUAGE_CODES_URL = "{{ url_for('static', filename='data/language-codes.json') }}";
     </script>
     <script src="{{ url_for('static', filename='script_dictation.js') }}"></script>
 
