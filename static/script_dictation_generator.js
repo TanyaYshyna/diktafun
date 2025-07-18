@@ -50,9 +50,9 @@ function initNewDictation() {
 // Функция генерации аудио с обработкой ошибок
 async function handleAudioGeneration(index, key, text, language) {
     try {
-        console.log(`Начало генерации аудио для предложения ${index}, язык: ${language}`);
-        console.log(`============================== id диктанта: ${currentDictation.id}`);
-        console.log(`============================== text диктанта: ${text}`);
+        // console.log(`Начало генерации аудио для предложения ${index}, язык: ${language}`);
+        // console.log(`============================== id диктанта: ${currentDictation.id}`);
+        // console.log(`============================== text диктанта: ${text}`);
         // Отправляем запрос на сервер для генерации аудио
         const response = await fetch('/generate_audio', {
             method: 'POST',
@@ -95,7 +95,7 @@ async function autoTranslate(text, sourceLanguage, target_language) {
             body: JSON.stringify({
                 text: text,
                 source_language: sourceLanguage,
-                target_language: target_language 
+                target_language: target_language
             })
         });
         const data = await response.json();
@@ -124,142 +124,206 @@ async function handleAudioGenerationWithRetry(index, text, lang, retries = 2) {
 }
 
 // Функция создания строки таблицы для предложения
-async function createSentenceRow(index, sentence, translation) {
+async function createSentenceRow(tbody, index, sentence, translation) {
     const key = index.toString().padStart(3, '0');
-    const row = document.createElement('tr');
+
+    const row1 = document.createElement('tr');
+    row1.dataset.key = key;
 
     // Ячейка с номером предложения
-    const KeyCell = document.createElement('td');
-    KeyCell.className = 'key';  // <-- Добавляем класс
-    KeyCell.textContent = key;
-    row.appendChild(KeyCell);
+    const keyCell = document.createElement('td'); // ✅ правильно
+    keyCell.rowSpan = 2;
+    keyCell.innerHTML = `
+        <div id="key">${index + 1}</div>
+     `;
+    row1.appendChild(keyCell);
+
+    // оригинал -  верхняя часть
     // Ячейка с текстом (оригинал + перевод)
     const textCell = document.createElement('td');
+    // <div class="original-text" contenteditable="true">${sentence}</div>
     textCell.innerHTML = `
-        <div class="original-text">${sentence}</div>
-        <div class="translation-text">${translation}</div>
+        <div class="text-original" data-index="${index}" contenteditable="true">${sentence}</div>
     `;
-    row.appendChild(textCell);
+    row1.appendChild(textCell);
+
+
+    // Ячейка с кнопками генерации аудио
+    const audioGenerationOriginal = document.createElement('td');
+    audioGenerationOriginal.innerHTML = `
+        <button class="generate-audio" data-index="${index}" data-lang="original" title="сгенерировать новое аудио">
+            <img src="/static/icons/record.svg" width="20">
+            <span class="status-text">${currentDictation.language_original}</span>
+        </button>
+    `;
+    row1.appendChild(audioGenerationOriginal);
 
     // Ячейка с кнопками проигрывания аудио
-    const audioCell = document.createElement('td');
-    audioCell.innerHTML = `
-        <button class="play-audio" data-index="${index}" data-lang="original" title="Прослушать" disabled>
+    const audioCellOriginal = document.createElement('td');
+    audioCellOriginal.innerHTML = `
+        <button class="play-audio" data-index="${index}" data-lang="original" title="Прослушать оригинал">
             <img src="/static/icons/play.svg" width="20">
-            <span class="status-text">Генерация...</span>
-        </button>
-        <button class="play-audio-tr" data-index="${index}" data-lang="translation" title="Прослушать перевод" disabled>
-            <img src="/static/icons/play.svg" width="20">
-            <span class="status-text">Генерация...</span>
+            <span class="status-text">${currentDictation.language_original}</span>
         </button>
     `;
-    row.appendChild(audioCell);
+    row1.appendChild(audioCellOriginal);
 
-    const playBtn = audioCell.querySelector('.play-audio');
-    const playBtnTr = audioCell.querySelector('.play-audio-tr');
-
+    const playBtnOriginal = audioCellOriginal.querySelector('.play-audio');
     // Генерируем аудио для оригинала
     const originalSuccess = await handleAudioGeneration(index, key, sentence, currentDictation.language_original);
     if (originalSuccess) {
-        playBtn.disabled = false;
-        playBtn.querySelector('.status-text').textContent = currentDictation.language_original;
+        playBtnOriginal.disabled = false;
+        playBtnOriginal.querySelector('.status-text').textContent = currentDictation.language_original;
     } else {
-        playBtn.disabled = true;
-        playBtn.querySelector('.status-text').textContent = 'Ошибка';
-        playBtn.classList.add('error');
+        playBtnOriginal.disabled = true;
+        playBtnOriginal.querySelector('.status-text').textContent = 'Ошибка';
+        playBtnOriginal.classList.add('error');
     }
+    // назначаем слушатель изменения прямо сейчас
+    // Для оригинального текста
+    textCell.addEventListener('input', () => {
+        const row = textCell.closest('tr');
+        const genBtn = row.querySelector('.generate-audio[data-lang="original"]');
+        const playBtn = row.querySelector('.play-audio');
 
+        if (genBtn) {
+            genBtn.classList.add('changed');
+            genBtn.disabled = false;
+        }
+        if (playBtn) {
+            playBtn.classList.add('changed');
+            playBtn.disabled = true;
+        }
+    });
+    // Назначаем обработчик для кнопки генерации оригинала
+    const genOriginalBtn = audioGenerationOriginal.querySelector('.generate-audio');
+    genOriginalBtn.addEventListener('click', async () => {
+        console.log(`++++++++++++++++++Генерация аудио оригинала для строки ${index}`);
+
+        const text = row1.querySelector('.text-original').textContent.trim();
+        if (!text) return;
+
+        const genBtn = row1.querySelector('.generate-audio[data-lang="original"]');
+        const playBtn = row1.querySelector('.play-audio');
+        try {
+            const success = await handleAudioGeneration(
+                index,
+                key,
+                text,
+                currentDictation.language_original
+            );
+            if (success) {
+                if (genBtn) {
+                    genBtn.classList.remove("changed");
+                    genBtn.disabled = true; // Делаем её нетактивной
+                }
+                if (playBtn) {
+                    playBtn.classList.remove("changed");
+                    playBtn.disabled = false; // Делаем её активной
+                }
+            }
+        } finally {
+            genOriginalBtn.disabled = false;
+        }
+    });
+    tbody.appendChild(row1);
+
+    // Вторая строка без первой ячейки ========================================================
+    const row2 = document.createElement("tr");
+    row2.dataset.key = key;
+
+    // Ячейка с текстом (перевод)
+    const textCellTranslation = document.createElement('td');
+    // <div class="translation-text" contenteditable="true">${translation}</div>
+    textCellTranslation.innerHTML = `
+        <div class="text-translation" data-index="${index}" contenteditable="true">${translation}</div>
+     `;
+    row2.appendChild(textCellTranslation);
+
+    // Ячейка с кнопками генерации аудио
+    const audioGenerationTranslation = document.createElement('td');
+    audioGenerationTranslation.innerHTML = `
+        <button class="generate-audio" data-index="${index}" data-lang="translation" title="сгенерировать новое аудио">
+            <img src="/static/icons/record.svg" width="20">
+            <span class="status-text">${currentDictation.language_translation}</span>
+        </button>
+    `;
+    row2.appendChild(audioGenerationTranslation);
+
+    // Ячейка с кнопками проигрывания аудио
+    const audioCellTranslation = document.createElement('td');
+    audioCellTranslation.innerHTML = `
+        <button class="play-audio-tr" data-index="${index}" data-lang="translation" title="Прослушать перевод">
+            <img src="/static/icons/play.svg" width="20">
+            <span class="status-text">${currentDictation.language_translation}</span>
+        </button>
+    `;
+
+    row2.appendChild(audioCellTranslation);
+
+    const playBtnTranslation = audioCellTranslation.querySelector('.play-audio-tr');
     // Генерируем аудио для перевода
     const translationSuccess = await handleAudioGeneration(index, key, translation, currentDictation.language_translation);
     if (translationSuccess) {
-        playBtnTr.disabled = false;
-        playBtnTr.querySelector('.status-text').textContent = currentDictation.language_translation;
+        playBtnTranslation.disabled = false;
+        playBtnTranslation.querySelector('.status-text').textContent = currentDictation.language_translation;
     } else {
-        playBtnTr.disabled = true;
-        playBtnTr.querySelector('.status-text').textContent = 'Ошибка';
-        playBtnTr.classList.add('error');
+        playBtnTranslation.disabled = true;
+        playBtnTranslation.querySelector('.status-text').textContent = 'Ошибка';
+        playBtnTranslation.classList.add('error');
     }
 
-    // сюда надо дописать json
+    // назначаем слушатель изменения прямо сейчас
+    // Для перевода
+    textCellTranslation.addEventListener('input', () => {
+        const row = textCellTranslation.closest('tr');
+        const genBtn = row.querySelector('.generate-audio[data-lang="translation"]');
+        const playBtn = row.querySelector('.play-audio-tr');
 
-    return row;
-}
-
-// НАДО УДАЛИТЬ Функция сохранения диктанта
-async function saveDictation() {
-    const dictationId = currentDictation.id;
-    const speaker = "avto"
-    const languageOriginal = document.getElementById('language').value;
-    const languageTranslation = "ru"; // пока жёстко, потом можно будет сделать выбор
-
-    const titleOriginal = document.getElementById('title').value;
-    const titleTranslation = document.getElementById('title_translation').value;
-
-    const level = "A1";  // можно добавить выбор, если понадобится
-
-    // Собираем предложения
-    const sentences_original = [];
-    const sentences_translation = [];
-
-    document.querySelectorAll('#sentences-table tbody tr').forEach((row, index) => {
-        const originalText = row.querySelector('.original-text').textContent.trim();
-        const translationText = row.querySelector('.translation-text').textContent.trim();
-        const num = (index + 1).toString().padStart(3, '0');
-        const audioFilename = `${num}.mp3`;  // ⬅️ имя аудиофайла создаётся один раз
-
-        sentences_original.push({
-            key: num,
-            text: originalText,
-            audio: audioFilename
-        });
-
-        sentences_translation.push({
-            key: num,
-            text: translationText,
-            audio: audioFilename
-        });
+        if (genBtn) {
+            genBtn.classList.add('changed');
+            genBtn.disabled = false;
+        }
+        if (playBtn) {
+            playBtn.classList.add('changed');
+            playBtn.disabled = true;
+        }
     });
-    const payload = {
-        id: dictationId,
-        language_original: languageOriginal,
-        title: titleOriginal,
-        level: level,
-        sentences: {
-            [languageOriginal]: {
-                language: languageOriginal,
-                speaker: speaker,
-                title: titleOriginal,
-                sentences: sentences_original
-            },
-            [languageTranslation]: {
-                language: languageTranslation,
-                speaker: speaker,
-                title: titleTranslation,
-                sentences: sentences_translation
+    // Назначаем обработчик для кнопки генерации перевода
+    const genTranslationBtn = audioGenerationTranslation.querySelector('.generate-audio');
+    genTranslationBtn.addEventListener('click', async () => {
+        console.log(`Генерация аудио перевода для строки ${index}`);
+
+        const text = row2.querySelector('.text-translation').textContent.trim();
+        if (!text) return;
+
+        const genBtn = row2.querySelector('.generate-audio[data-lang="translation"]');
+        const playBtn = row2.querySelector('.play-audio-tr');
+        try {
+            const success = await handleAudioGeneration(
+                index,
+                key,
+                text,
+                currentDictation.language_translation
+            );
+            if (success) {
+                if (genBtn) {
+                    genBtn.classList.remove("changed");
+                    genBtn.disabled = true; // Делаем её нетактивной
+                }
+                if (playBtn) {
+                    playBtn.classList.remove("changed");
+                    playBtn.disabled = false; // Делаем её активной
+                }
             }
+        } finally {
+            genTranslationBtn.disabled = false;
         }
-    };
+    });
+    tbody.appendChild(row2);
 
-    try {
-        const response = await fetch('/save_dictation', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-        if (result.status === "ok") {
-            alert("✅ Диктант успешно сохранён в 3 файла");
-        } else {
-            alert("❌ Ошибка при сохранении: " + (result.error || "Неизвестно"));
-        }
-    } catch (error) {
-        console.error("Ошибка:", error);
-        alert("❌ Ошибка отправки: " + error.message);
-    }
+    return row1;
 }
-
-
 
 
 // Загрузка существующего диктанта
@@ -283,8 +347,8 @@ async function loadExistingDictation(dictationId) {
             const original = sentence[`text_${currentDictation.language}`];
             const translation = sentence.text_ru;
 
-            const row = await createSentenceRow(i, original, translation);
-            tbody.appendChild(row);
+            const row = await createSentenceRow(tbody, i, original, translation);
+
         }
     } catch (error) {
         console.error('Ошибка загрузки диктанта:', error);
@@ -309,11 +373,15 @@ async function saveJSONToServer(filePath, data) {
 
 async function saveJSON_sentences(dictationId, language, title, selector) {
     const tbody = document.querySelector('#sentences-table tbody');
-    const sentences = Array.from(tbody.querySelectorAll('tr')).map((row, index) => {
+    const sentences = Array.from(tbody.querySelectorAll('tr')).map((_, index) => {
+        const origEl = document.querySelector(`.text-original[data-index="${index}"]`);
+        const transEl = document.querySelector(`.text-translation[data-index="${index}"]`);
+        const keyEl = document.querySelector(`[data-key][data-index="${index}"]`);
+
         return {
-            key: row.querySelector('.key').textContent,//001
-            text: row.querySelector(selector).textContent,
-            audio: `${row.querySelector('.key').textContent}.mp3`
+            key: keyEl ? keyEl.dataset.key : '',
+            text_original: origEl ? origEl.textContent.trim() : '',
+            text_translation: transEl ? transEl.textContent.trim() : ''
         };
     });
     const sentences_original = {
@@ -334,13 +402,18 @@ function setupButtons() {
             return;
         }
 
+
+        // Скрываем поле ввода, лейбл и кнопку (всю обёртку formGroupRaw)
+       // Скрываем панель ввода
+        const formGroupRaw = document.getElementById('formGroupRaw');
+        if (formGroupRaw) {
+            formGroupRaw.classList.add('hidden-block');
+        }
+
         //const sentences = text.split(/[.!?\n]+/)
         const sentences = text.split('\n')
             .map(s => s.trim())
             .filter(s => s.length > 0);
-
-        const tbody = document.querySelector('#sentences-table tbody');
-        tbody.innerHTML = '';
 
         // Используем языки из currentDictation
         const language_original = currentDictation.language_original;
@@ -357,32 +430,47 @@ function setupButtons() {
         };
         await saveJSONToServer(`static/data/dictations/${currentDictation.id}/info.json`, info);
 
+        const tbody = document.querySelector('#sentences-table tbody');
+        tbody.innerHTML = '';
         for (let i = 0; i < sentences.length; i++) {
-            const translation = await autoTranslate(sentences[i], language_original, language_translation);
-            const row = await createSentenceRow(i, sentences[i], translation);
-            tbody.appendChild(row);
+            i_next = i + 1;
+            let translation = "";
+            if (i_next < sentences.length) {
+                if (sentences[i + 1].startsWith('/*')) {
+                    // есть перевод, берем его и переводить не надо
+                    console.log("---------------------------:", sentences[i_next]);
+                    console.log("---------------------------:", sentences[i_next].substring(2));
+                    console.log("---------------------------:", sentences[i_next].substring(2).trim());
+                    translation = sentences[i_next].substring(2).trim(); // удалить /*;
+                    await createSentenceRow(tbody, i, sentences[i], translation);
+                    i++;
+                }
+                else {
+                    translation = await autoTranslate(sentences[i], language_original, language_translation);
+                    await createSentenceRow(tbody, i, sentences[i], translation);
+                }
+            }
+
         }
 
         // 📄 2. Создание sentences.json для оригинала
-        saveJSON_sentences(dictationId, language_original, title_value, '.original-text')
+        saveJSON_sentences(dictationId, language_original, title_value, '.text-original')
 
         // 📄 3. Создание sentences.json для перевода
-        saveJSON_sentences(dictationId, language_translation, title_translation_value, '.translation-text')
+        saveJSON_sentences(dictationId, language_translation, title_translation_value, '.text-translation')
 
     });
 
     // Обработчик кнопки "Сохранить"
-    document.getElementById('save-btn').addEventListener('click', saveDictation);
+    // document.getElementById('save-btn').addEventListener('click', saveDictation);
 
     // Обработчик кликов по кнопкам воспроизведения аудио
     document.addEventListener('click', function (e) {
-        //loadTreeData(); // Инициализация дерева при загрузке
-
         const playBtn = e.target.closest('.play-audio, .play-audio-tr');
         if (!playBtn || playBtn.disabled) return;
 
         const index = playBtn.dataset.index;
-        const lang = playBtn.classList.contains('play-audio-tr') ? 
+        const lang = playBtn.classList.contains('play-audio-tr') ?
             currentDictation.language_translation :
             currentDictation.language_original;
         const audioKey = `${index}_${lang}`;
@@ -392,7 +480,12 @@ function setupButtons() {
             audioPlayers[audioKey].play();
         }
     });
+
+    // enableRecordButtonsOnTextChange();
+    // setupRecordAudioButtons();
+
 }
+
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
@@ -430,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentDictation.language_translation
                 );
                 console.log("---------------------------:", translatedTitle);
- 
+
                 titleTranslationInput.value = translatedTitle;
             } else {
                 console.warn("currentDictation не определён или языки не заданы.");
@@ -642,3 +735,4 @@ async function saveTreeData() {
         $('#btnSelectCategory').prop('disabled', false).text('✅ Выбрать');
     }
 }
+

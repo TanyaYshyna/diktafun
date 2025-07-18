@@ -56,3 +56,174 @@
     background-color: #f9f9f9;
     display: inline-block;
 }
+
+/* для заоловков ========================================================== */
+.form-group-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.form-group-line label {
+    display: inline-block;
+    min-width: 15px;
+    margin: 0;
+    font-weight: bold;
+}
+
+.form-group-line input[type="text"] {
+    display: inline-block;
+    border-radius: 10px;
+    width: 100%;
+}
+
+/* для поля ввода  =========================================================*/
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    margin-bottom: 6px;
+    font-weight: bold;
+    font-size: 15px;
+    color: #333;
+}
+
+.form-group textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    resize: vertical;
+    font-family: inherit;
+    background: white;
+}
+
+/* для поля ввод и кнопки создания таблицы =========================================================*/
+.form-raw {
+    display: block;
+}
+
+.form-raw.hidden-block {
+    display: none;
+}
+
+/* для таблицы =========================================================*/
+#sentences-table {
+    font-size: 16px; /* Размер шрифта в таблице */
+}
+
+#sentences-table td {
+    padding: 12px 8px; /* Увеличиваем отступы */
+    vertical-align: top; /* Выравнивание по верху */
+}
+
+/* #sentences-table .text-original,
+#sentences-table .text-translation {
+    min-height: 24px; /* Минимальная высота ячейки */
+    /* padding: 8px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    background: white;
+} */ 
+/* Стили для редактируемых текстовых полей */
+#sentences-table .text-original,
+#sentences-table .text-translation {
+    display: block; /* Занимает всю ширину */
+    width: 100%;
+    min-width: 100%; /* На всякий случай */
+    box-sizing: border-box; /* Чтобы padding не влиял на ширину */
+    margin: 0;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-size: 16px;
+    outline: none;
+}
+/* Специфичные стили для оригинального текста */
+#sentences-table .text-original {
+    font-weight: bold;
+}
+/* Специфичные стили для перевода */
+#sentences-table .text-translation {
+    color: #555;
+    font-style: italic;
+}
+
+/* Отключаем наследование стилей при вставке */
+.text-original[contenteditable="true"],
+.text-translation[contenteditable="true"] {
+    -webkit-user-modify: read-write-plaintext-only;
+}
+
+
+/* для кнопок таблицы =========================================================*/
+/* Новые стили для управления видимостью */
+.generate-audio {
+    display: none; /* По умолчанию скрыты */
+}
+
+.play-audio, .play-audio-tr {
+    display: inline-block; /* По умолчанию видны */
+}
+
+/* Для кнопок генерации при изменённом тексте */
+.generate-audio.changed {
+    display: inline-block;
+    opacity: 1;
+}
+
+/* Для кнопок воспроизведения при изменённом тексте */
+.play-audio.changed, .play-audio-tr.changed {
+    display: none;
+}
+
+/* Общие стили для кнопок */
+.generate-audio, .play-audio, .play-audio-tr {
+    background: none;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+
+.generate-audio:disabled, 
+.play-audio:disabled, 
+.play-audio-tr:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* из старого файла */
+/* Убрать .hidden - будем использовать .changed */
+.original-text {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 16px; /* Увеличиваем шрифт */
+}
+
+.translation-text {
+    color: #555;
+    font-style: italic;
+    font-size: 16px; /* Увеличиваем шрифт */
+}
+
+/* Добавить для предотвращения наследования форматирования */
+.text-original, .text-translation {
+    font-size: 16px !important;
+    font-family: inherit !important;
+    font-weight: normal !important;
+    line-height: 1.5 !important;
+    white-space: pre-wrap; /* Сохраняет переносы строк, но сбрасывает другое форматирование */
+    all: initial; /* Сбрасывает все наследуемые стили */
+    * {
+        all: revert; /* Для вложенных элементов */
+    }
+}

@@ -63,9 +63,9 @@ button.error .status-text {
 
 
 
-button:disabled:not(.error) .status-text {
+/* button:disabled:not(.error) .status-text {
     color: #666;
-}
+} */
 
 
 
@@ -298,42 +298,9 @@ audio {
 }
 
 
-.hidden {
-    display: none;
-}
-
-
-
 button img {
     vertical-align: middle;
 }
-
-
-
-/* РўРµРєСЃС‚РѕРІС‹Рµ Р±Р»РѕРєРё */
-.original-text {
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-
-
-.translation-text {
-    color: #555;
-    font-style: italic;
-}
-
-
-
-/* РљРЅРѕРїРєРё Р°СѓРґРёРѕ */
-.generate-audio, .play-audio {
-    background: none;
-    border: none;
-    cursor: pointer;
-    margin: 0 3px;
-}
-
-
 
 
 
@@ -416,9 +383,9 @@ button:hover {
 
 
 
-.hidden {
+/* .hidden {
     display: none;
-}
+} */
 
 
 

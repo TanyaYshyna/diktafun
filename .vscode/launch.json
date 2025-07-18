@@ -4,7 +4,6 @@
     // Для получения дополнительной информации посетите: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    
         {
             "name": "Отладчик Python: Flask",
             "type": "debugpy",
@@ -21,6 +20,14 @@
             ],
             "jinja": true,
             "autoStartBrowser": false
+        // },
+        // {
+        //     "name": "Отладка в Chrome (JS)",
+        //     "type": "chrome",
+        //     "request": "launch",
+        //     "url": "http://127.0.0.1:5000/dictation_generator/en/ru",
+        //     "webRoot": "${workspaceFolder}/static",
+        //     "userDataDir": false
         }
     ]
 }

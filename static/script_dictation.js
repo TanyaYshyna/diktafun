@@ -1106,6 +1106,6 @@ function clickBtnRestartErrors() {
     document.getElementById("finishModal").style.display = "none";
 }
 
-function clickBackToList() {
+function clickBtnBackToList() {
     window.location.href = "/"; // Замените на ваш URL
 }
