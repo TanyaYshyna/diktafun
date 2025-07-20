@@ -1,0 +1,57 @@
+{
+  "language": "en",
+  "speaker": "auto",
+  "title": "Group 1: The robot",
+  "sentences": [
+    {
+      "key": "000",
+      "text": "The robot is fast!",
+      "audio": "000.mp3"
+    },
+    {
+      "key": "001",
+      "text": "I love my robot friend.",
+      "audio": "001.mp3"
+    },
+    {
+      "key": "002",
+      "text": "He has a little house.",
+      "audio": "002.mp3"
+    },
+    {
+      "key": "003",
+      "text": "She says, \"Oh, no!\"",
+      "audio": "003.mp3"
+    },
+    {
+      "key": "004",
+      "text": "We go to school today.",
+      "audio": "004.mp3"
+    },
+    {
+      "key": "005",
+      "text": "You should ask your parents.",
+      "audio": "005.mp3"
+    },
+    {
+      "key": "006",
+      "text": "They put money into the bath.",
+      "audio": "006.mp3"
+    },
+    {
+      "key": "007",
+      "text": "Mr. Robot can’t climb the path.",
+      "audio": "007.mp3"
+    },
+    {
+      "key": "008",
+      "text": "Her eye is pretty like a plant.",
+      "audio": "008.mp3"
+    },
+    {
+      "key": "009",
+      "text": "My father works after Christmas.",
+      "audio": "009.mp3"
+    }
+  ]
+}

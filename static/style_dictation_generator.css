@@ -227,3 +227,14 @@
         all: revert; /* Для вложенных элементов */
     }
 }
+
+/* audio-dependent-column-display
+audio-dependent-column-do-not-display */
+/* В вашем CSS файле */
+.audio-dependent-column-display {
+  display: none;
+}
+
+.audio-dependent-column-notdisplay {
+  display: none !important;
+}

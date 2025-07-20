@@ -1,0 +1,57 @@
+{
+  "language": "en",
+  "speaker": "auto",
+  "title": "Group 3: Prove",
+  "sentences": [
+    {
+      "key": "000",
+      "text": "Prove you can do it!",
+      "audio": "000.mp3"
+    },
+    {
+      "key": "001",
+      "text": "Let’s improve our work!",
+      "audio": "001.mp3"
+    },
+    {
+      "key": "002",
+      "text": "Whole cake? Yes, please!",
+      "audio": "002.mp3"
+    },
+    {
+      "key": "003",
+      "text": "These toys are different.",
+      "audio": "003.mp3"
+    },
+    {
+      "key": "004",
+      "text": "Everybody should drink water.",
+      "audio": "004.mp3"
+    },
+    {
+      "key": "005",
+      "text": "Half of the grass is green.",
+      "audio": "005.mp3"
+    },
+    {
+      "key": "006",
+      "text": "Don’t pass the busy street!",
+      "audio": "006.mp3"
+    },
+    {
+      "key": "007",
+      "text": "Two eyes see better.",
+      "audio": "007.mp3"
+    },
+    {
+      "key": "008",
+      "text": "Many people thought so.",
+      "audio": "008.mp3"
+    },
+    {
+      "key": "009",
+      "text": "Because it’s Christmas!",
+      "audio": "009.mp3"
+    }
+  ]
+}
