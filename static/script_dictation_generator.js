@@ -59,19 +59,30 @@ function initWaveSurfer(audioUrl) {
 }
 
 function toggleAudioDependentElements(hasAudio) {
-    // Колонки таблицы, которые нужно скрыть/показать
-    const columnsToToggle = document.querySelectorAll('.audio-dependent-column');
-    // Другие элементы, зависящие от аудио
-    const elementsToToggle = document.querySelectorAll('.audio-dependent-element');
-
-    columnsToToggle.forEach(col => {
-        col.classList.toggle('hidden-column', !hasAudio);
-    });
-
-    elementsToToggle.forEach(el => {
-        el.classList.toggle('hidden-element', !hasAudio);
-    });
+    if (hasAudio) {
+        document.querySelectorAll('.audio-dependent-column-display').forEach(el => {
+            el.style.display = 'table-cell'; // для <td>
+        });
+    }
+    else {
+        document.querySelectorAll('.audio-dependent-column-display').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
 }
+    // // Колонки таблицы, которые нужно скрыть/показать
+    // const columnsToToggle = document.querySelectorAll('.audio-dependent-column');
+    // // Другие элементы, зависящие от аудио
+    // const elementsToToggle = document.querySelectorAll('.audio-dependent-element');
+
+    // columnsToToggle.forEach(col => {
+    //     col.classList.toggle('hidden-column', !hasAudio);
+    // });
+
+    // elementsToToggle.forEach(el => {
+    //     el.classList.toggle('hidden-element', !hasAudio);
+    // });
+
 
 
 document.getElementById("audioFile").addEventListener("change", function (event) {
@@ -291,7 +302,7 @@ async function createSentenceRow(tbody, key, index, sentence, translation) {
             genOriginalBtn.disabled = false;
         }
     });
-     
+
     const startInput = `<input type="number" class="start-time audio-dependent-column-display" data-index="${key}" step="0.01" size="6">`;
     const endInput = `<input type="number" class="end-time audio-dependent-column-display" data-index="${key}" step="0.01" size="6">`;
     const sourceRadios = `
