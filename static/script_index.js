@@ -270,12 +270,16 @@ function renderDictationList(dictations, language_original, language_translation
 
         // --- Ссылка на диктант ---
         const link = `<a href="/dictation/${d.id}/${language_original}/${language_translation}">Открыть</a>`;
+        const link_red = `<a href="/dictation_generator/${d.id}/${language_original}/${language_translation}">Открыть для редактирования</a>`;
 
         div.innerHTML = `
-            <div><strong>${d.title}</strong></div>
-            <div>Язык: ${langIcon} ⇒ ${translations}</div>
-            <div>Уровень: ${d.level || '—'}</div>
-            <div>${link}</div>
+            <div class="diktation_panel">
+                <div><strong>${d.title}</strong></div>
+                <div>Язык: ${langIcon} ⇒ ${translations}</div>
+                <div>Уровень: ${d.level || '—'}</div>
+                <div>${link}</div>
+                <div>${link_red}</div>
+            </div>
         `;
 
         container.appendChild(div);

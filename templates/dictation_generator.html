@@ -14,7 +14,9 @@
     <script src="https://cdn.jsdelivr.net/npm/jquery.fancytree@2.38.2/dist/jquery.fancytree-all-deps.min.js"></script>
 
     <!-- WaveSurfer -->
-    <script src="https://unpkg.com/wavesurfer.js"></script>
+    <link rel="icon" href="data:,"> <!-- Пустая иконка -->
+    <script src="https://unpkg.com/wavesurfer.js@6.6.2/dist/wavesurfer.min.js"></script>
+    <script src="https://unpkg.com/wavesurfer.js@6.6.2/dist/plugin/wavesurfer.regions.min.js"></script>
 </head>
 
 <body>
@@ -84,27 +86,49 @@
 
         <div class="form-group-line">
             <label>Загрузить аудио:</label>
-            <!-- <div class="tooltip-wrapper">
-                <label>. . .</label>
-                <div class="tooltip-text">Загрузить аудио</div> 
-              </div> -->
-            <input type="file" id="audioFile" accept="audio/*">
+            <!-- <input type="file" id="audioFile" accept="audio/*"> -->
+            <!-- Спрятанное настоящее поле выбора -->
+            <input type="file" id="audioFile" accept="audio/*" style="display: none;">
+
+            <!-- Красивая ложная кнопка -->
+            <button id="fakeAudioFileBtn">...</button>
+
+            <!-- Показываем статус -->
+            <div id="audioFileStatus" class="small-info">Файл не выбран</div>
         </div>
 
-        <div class="audio-dependent-column-display ">
-            <div id="waveform" style="height: 100px; margin-bottom: 10px;"></div>
-            <div id="currentPhraseInfo">
-                <div id="currentText"></div>
-                <div id="currentTimes">
-                    Start: <span id="startTime">–</span> —
-                    End: <span id="endTime">–</span>
+        <div class="audio-controls-container">
+            <label>(1) Текущее предложение</label>
+
+            <div id="waveWrapper">
+                <div id="waveform"></div>
+            </div>
+
+            <div class="controls-row">
+                <button id="playPauseBtn" onclick="funClick()">▶️</button>
+                <div class="time-fields">
+                    <!-- Start: <span id="startTime">–</span> — End: <span id="endTime">–</span> -->
+                    <label for="startTime">Start:</label>
+                    <input type="number" id="startTime" step="0.01" min="0" size="6">
+
+                    <label for="endTime">End:</label>
+                    <input type="number" id="endTime" step="0.01" min="0" size="6">
                 </div>
             </div>
         </div>
 
         <div id="formGroupRaw" class="form-group form-raw">
+            <button id="recognize_words_btn">Рспознать слва из аудио</button>
             <div class="form-group">
-                <label>Текст по фразам (фраза - отдельная строка, перевод начинается с /*):</label>
+                <label>Время-слово:</label>
+                <textarea id="text_time_word" rows="5"></textarea>
+            </div>
+        </div>
+
+
+        <div id="formGroupRaw" class="form-group form-raw">
+            <div class="form-group">
+                <label>Текст по фразам (/* превод):</label>
                 <textarea id="text" rows="10"></textarea>
             </div>
             <button id="split-btn">Разбить на фразы и озвучить</button>
@@ -119,6 +143,7 @@
                     <th>Аудио</th>
                     <th class="audio-dependent-column-display ">Start</th>
                     <th class="audio-dependent-column-display ">End</th>
+                    <th class="audio-dependent-column-display ">Status</th>
                     <th class="audio-dependent-column-display ">Источник</th>
                 </tr>
             </thead>
@@ -129,6 +154,25 @@
 
     </div>
 
+
+    <!-- <script type="application/json">
+        window.dictationId = "{{ dictation_id }}";
+        window.editMode = {{ edit_mode | tojson }};
+    </script> -->
+    <script id="init-data" type="application/json">
+    {{ {
+        "dictation_id": dictation_id,
+        "editMode": edit_mode,
+        "original_language": original_language,
+        "translation_language": translation_language,
+       "original_data": original_data,
+        "translation_data": translation_data,
+        "audio_file": audio_file,
+        "title": title,
+        "level": level,
+        "audio_words": audio_words
+     } | tojson }}
+    </script>
     <script src="{{ url_for('static', filename='script_dictation_generator.js') }}"></script>
 </body>
 

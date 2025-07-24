@@ -5,13 +5,16 @@ import re
 import shutil
 import pathlib
 
-from flask import Blueprint, jsonify, logging, render_template, request, send_file, url_for
+from flask import Blueprint, Flask,jsonify, logging, render_template, request, send_file, url_for
 from googletrans import Translator
 from gtts import gTTS
 from flask import current_app
 import shortuuid
 import datetime
 import logging
+import requests
+import time
+
 
 # Настройка логгера
 logging.basicConfig(
@@ -30,23 +33,80 @@ def generate_dictation_id():
     return f"DICT_{date_part}_{unique_part}"
 
 # ==============================================================
-# Форма загрузки деиктантов
+# Форма загрузки диктантов
 # @generator_bp.route('/dictation_generator')
 # def dictation_generator():
 #     return render_template('dictation_generator.html')
+
+
+@generator_bp.route('/dictation_generator/<dictation_id>/<language_original>/<language_translation>')
+def edit_dictation(dictation_id, language_original, language_translation):
+    base_path = os.path.join('static', 'data', 'dictations', dictation_id)
+
+    # Загружаем info.json
+    info_path = os.path.join(base_path, 'info.json')
+    info = {}
+    if os.path.exists(info_path):
+        with open(info_path, 'r', encoding='utf-8') as f:
+            info = json.load(f)
+
+    # Загружаем оригинальные предложения
+    path_sentences_orig = os.path.join(base_path, language_original, 'sentences.json')
+    if os.path.exists(path_sentences_orig):
+        with open(path_sentences_orig, 'r', encoding='utf-8') as f:
+            original_data = json.load(f)
+    else:
+        original_data = {"title": "", "sentences": []}
+
+    # Загружаем переведённые предложения
+    path_sentences_tr = os.path.join(base_path, language_translation, 'sentences.json')
+    if os.path.exists(path_sentences_tr):
+        with open(path_sentences_tr, 'r', encoding='utf-8') as f:
+            translation_data = json.load(f)
+    else:
+        translation_data = {"title": "", "sentences": []}
+
+    # Загружаем распознанные слова из audio_words.json
+    audio_words_path = os.path.join(base_path, 'audio_words.json')
+    audio_words = []
+    if os.path.exists(audio_words_path):
+        with open(audio_words_path, 'r', encoding='utf-8') as f:
+            audio_words = json.load(f)
+
+    # Путь к аудиофайлу, если есть
+    audio_file = None
+    audio_path = os.path.join(base_path, 'audio.mp3')
+    if os.path.exists(audio_path):
+        audio_file = url_for('static', filename=f'data/dictations/{dictation_id}/audio.mp3')
+
+    return render_template(
+        'dictation_generator.html',
+        dictation_id=dictation_id,
+        original_language=language_original,
+        translation_language=language_translation,
+        title=info.get("title", ""),
+        level=info.get("level", "A1"),
+        original_data=original_data,
+        translation_data=translation_data,
+        audio_file=audio_file,
+        audio_words=audio_words,
+        edit_mode=True  # редактирования режим
+    )
+
+
 @generator_bp.route('/dictation_generator/<language_original>/<language_translation>')
 def dictation_generator(language_original, language_translation):
     return render_template(
         'dictation_generator.html',
         original_language=language_original,
         translation_language=language_translation,
+        edit_mode=False  # не режим редактирования
     )
 
 
 @generator_bp.route('/download/<path:filename>')
 def download(filename):
     return send_file(filename, as_attachment=True)
-
 
 
 @generator_bp.route('/generate_audio', methods=['POST'])
@@ -105,6 +165,30 @@ def generate_audio():
             "success": False,
             "error": f"Внутренняя ошибка сервера: {e}"
         }), 500
+
+@generator_bp.route('/upload_audio', methods=['POST'])
+def save_uploaded_audio():
+    audio = request.files.get('file')
+    dictation_id = request.form.get('dictation_id')
+
+    if not audio or not dictation_id:
+        return jsonify({'error': 'Missing audio file or dictation ID'}), 400
+
+    # Путь до папки диктанта
+    save_path = os.path.join("static", "data", "dictations", dictation_id)
+    os.makedirs(save_path, exist_ok=True)
+
+    # Сохраняем файл как audio.mp3
+    audio_path = os.path.join(save_path, "audio.mp3")
+    audio.save(audio_path)
+
+    # путь для браузера
+    audio_url = f"/static/data/dictations/{dictation_id}/audio.mp3" 
+
+    # return jsonify({'message': 'Аудио успешно сохранено'})
+    return jsonify({"message": "Файл загружен", "audio_url": audio_url})
+
+
 # ==============================================================
 # транслятор
 translator = Translator()
@@ -113,7 +197,7 @@ translator = Translator()
 def translate_text():
     data = request.json
     text = data['text']
-    src_lang = data.get('source_language', 'auto')  # По умолчанию автоопределение
+    src_lang = data.get('source_language', 'en')  # По умолчанию автоопределение
     try:
         translation = translator.translate(text, src=src_lang, dest='ru').text
         return jsonify({"translation": translation})
@@ -126,25 +210,6 @@ def serve_temp_audio(lang, filename):
     audio_path = os.path.join('static','data', 'temp', 'audio', lang, filename)
     return send_file(audio_path, mimetype='audio/mpeg')
 
-
-# @generator_bp.route('/process', methods=['POST'])
-# def process_dictation():
-#     try:
-#         data = request.json
-#         title_folder = data.get('title_folder')
-#         json_structure = data.get('json_structure')
-
-#         if not title_folder or not json_structure:
-#             return jsonify({"success": False, "message": "Неверный формат данных"}), 400
-
-#         # Сохранение JSON в файл
-#         os.makedirs(f'static/data/dictations/{title_folder}', exist_ok=True)
-#         with open(f'static/data/dictations/{title_folder}/info.json', 'w', encoding='utf-8') as f:
-#             json.dump(json_structure, f, ensure_ascii=False, indent=4)
-
-#         return jsonify({"success": True})
-#     except Exception as e:
-#         return jsonify({"success": False, "message": str(e)}), 500
 
 @generator_bp.route('/save_json', methods=['POST'])
 def save_json():
@@ -219,7 +284,6 @@ def save_dictation():
 
     return jsonify({'success': True})
 
-
 @generator_bp.route('/create_dictation_folders', methods=['POST'])
 def create_dictation_folders():
     data = request.json
@@ -241,3 +305,156 @@ def create_dictation_folders():
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+    
+# ===========================================================================
+# распознать текст
+from dotenv import load_dotenv
+
+load_dotenv()
+ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
+
+upload_url = "https://api.assemblyai.com/v2/upload"
+transcript_url = "https://api.assemblyai.com/v2/transcript"
+
+HEADERS = {
+    "authorization": ASSEMBLYAI_API_KEY,
+    "content-type": "application/json"
+}
+ 
+ 
+def wait_for_result(transcript_id):
+    polling_url = f"{transcript_url}/{transcript_id}"
+    while True:
+        response = requests.get(polling_url, headers=HEADERS)
+        data = response.json()
+        if data['status'] == 'completed':
+            return data
+        elif data['status'] == 'error':
+            raise Exception(f"Ошибка AssemblyAI: {data['error']}")
+        import time
+        time.sleep(1)
+
+
+# 🔹 Загружаем файл на AssemblyAI
+def upload_to_assemblyai(file_path):
+    headers = {'authorization': ASSEMBLYAI_API_KEY}
+    with open(file_path, 'rb') as f:
+        response = requests.post(
+            'https://api.assemblyai.com/v2/upload',
+            headers=headers,
+            files={'file': f}
+        )
+    
+    response.raise_for_status()
+    return response.json()['upload_url']
+
+# 🔹 Запускаем транскрипцию
+def request_transcription(audio_url):
+    import requests
+    import logging
+    import json
+
+    endpoint = "https://api.assemblyai.com/v2/transcript"
+    headers = {
+        "authorization": ASSEMBLYAI_API_KEY,
+        "content-type": "application/json"
+    }
+
+    config = {
+        "audio_url": audio_url
+        }
+    logger.info(f"Отправляем самый простой запрос: {config}")
+    # config = {
+    #     "audio_url": audio_url,
+    #     "config": {
+    #         "language_code": "en",
+    #         "features": {
+    #             "enable_word_timestamps": True,
+    #             "punctuate": True
+    #         }
+    #     }
+    # }
+
+    # logger.info(f"Отправляем в AssemblyAI: {json.dumps(config, indent=2)}")
+
+    try:
+        response = requests.post(endpoint, headers=headers, json=config)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"Ошибка при запросе: {e}")
+        logger.error(f"Ответ от AssemblyAI: {e.response.text}")
+        raise
+
+    return response.json()["id"]
+
+
+# 🔹 Ожидаем готовности
+def wait_for_completion(transcript_id):
+    polling_endpoint = f'https://api.assemblyai.com/v2/transcript/{transcript_id}'
+    headers = {'authorization': ASSEMBLYAI_API_KEY}
+
+    while True:
+        response = requests.get(polling_endpoint, headers=headers)
+        data = response.json()
+
+        if data['status'] == 'completed':
+            return data
+        elif data['status'] == 'error':
+            raise Exception(f"Ошибка распознавания: {data['error']}")
+        time.sleep(1)
+
+@generator_bp.route('/recognize_words', methods=['POST'])
+def recognize_words():
+    logger.info("Начало обработки /recognize_words")
+    try:
+        data = request.get_json()
+        logger.info(f"Получены данные: {data}")
+        
+        dictation_id = data.get('dictation_id')
+        if not dictation_id:
+            logger.error("Отсутствует dictation_id")
+            return jsonify({'error': 'Нет dictation_id'}), 400
+
+        dictation_path = os.path.join("static", "data", "dictations", dictation_id)
+        audio_path = os.path.join(dictation_path, "audio.mp3")
+        logger.info(f"Ищем аудио по пути: {audio_path}")
+
+        if not os.path.exists(audio_path):
+            logger.error(f"Аудиофайл не найден: {audio_path}")
+            return jsonify({'error': 'Аудиофайл не найден'}), 404
+        
+        logger.info(f"Размер файла: {os.path.getsize(audio_path)} байт")
+
+        try:
+            logger.info("Начинаем загрузку на AssemblyAI")
+            audio_url = upload_to_assemblyai(audio_path)
+            logger.info(f"Файл загружен, URL: {audio_url}")
+            
+            transcript_id = request_transcription(audio_url)
+            logger.info(f"Запущена транскрипция, ID: {transcript_id}")
+            
+            result = wait_for_completion(transcript_id)
+            logger.info("Транскрипция завершена")
+
+            words = []
+            for w in result.get('words', []):
+                words.append({
+                    'word': w['text'],
+                    'start': w['start'] / 1000,
+                    'end': w['end'] / 1000
+                })
+
+            words_path = os.path.join(dictation_path, "audio_words.json")
+            with open(words_path, "w", encoding="utf-8") as f:
+                json.dump(words, f, ensure_ascii=False, indent=2)
+            logger.info(f"Слова сохранены в {words_path}")
+
+            return jsonify(words)
+
+        except Exception as e:
+            logger.error(f"Ошибка при обработке аудио: {str(e)}", exc_info=True)
+            return jsonify({'error': str(e)}), 500
+
+    except Exception as e:
+        logger.error(f"Неожиданная ошибка: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500

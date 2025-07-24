@@ -1,0 +1,27 @@
+{
+  "language": "en",
+  "speaker": "auto",
+  "title": "Sick",
+  "sentences": [
+    {
+      "key": "000",
+      "text": "\"I cannot go to school today,\"",
+      "audio": "000.mp3"
+    },
+    {
+      "key": "001",
+      "text": "Said little Peggy Ann McKay.",
+      "audio": "001.mp3"
+    },
+    {
+      "key": "002",
+      "text": "\"I have the measles and the mumps,",
+      "audio": "002.mp3"
+    },
+    {
+      "key": "003",
+      "text": "A gash, a rash and purple bumps.",
+      "audio": "003.mp3"
+    }
+  ]
+}
