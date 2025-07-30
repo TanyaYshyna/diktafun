@@ -98,11 +98,17 @@ def edit_dictation(dictation_id, language_original, language_translation):
 def dictation_generator(language_original, language_translation):
     return render_template(
         'dictation_generator.html',
+        dictation_id='',
         original_language=language_original,
         translation_language=language_translation,
-        edit_mode=False  # не режим редактирования
+        title='',
+        level="A1",
+        original_data=[],
+        translation_data=[],
+        audio_file='',
+        audio_words=[],
+        edit_mode=False  # новый документ
     )
-
 
 @generator_bp.route('/download/<path:filename>')
 def download(filename):
@@ -159,6 +165,52 @@ def generate_audio():
                 "error": f"Ошибка генерации аудио: {e}"
             }), 500
 
+    except Exception as e:
+        logging.error(f"Неожиданная ошибка в generate_audio: {e}")
+        return jsonify({
+            "success": False,
+            "error": f"Внутренняя ошибка сервера: {e}"
+        }), 500
+
+@generator_bp.route('/generate_path_audio', methods=['POST'])
+def generate_path_audio():
+    data = request.json
+    logging.info("Начало generate_path_audio")
+
+    try:
+        dictation_id = data.get('dictation_id')
+        if not dictation_id:
+            return jsonify({"success": False, "error": "Отсутствует ID диктанта"}), 400
+
+        lang = data.get('language_original')
+        lang_tr = data.get('language_translation')
+
+        # Создаем базовую директорию для хранения аудио
+        base_dir = current_app.config.get('AUDIO_BASE_DIR', 'static/data/dictations')
+        audio_dir_original = os.path.join(base_dir, dictation_id, lang)
+        audio_dir_translation = os.path.join(base_dir, dictation_id, lang_tr)
+        
+        # Проверяем и создаем директории
+        try:
+            os.makedirs(audio_dir_original, exist_ok=True)
+            logging.info(f"Директория для аудио создана: {audio_dir_original}")
+        except OSError as e:
+            logging.error(f"Ошибка создания директории: {e}")
+            return jsonify({"success": False, "error": f"Ошибка создания директории: {e}"}), 500
+        
+        try:
+            os.makedirs(audio_dir_translation, exist_ok=True)
+            logging.info(f"Директория для аудио создана: {audio_dir_translation}")
+        except OSError as e:
+            logging.error(f"Ошибка создания директории: {e}")
+            return jsonify({"success": False, "error": f"Ошибка создания директории: {e}"}), 500
+
+        return jsonify({
+            "success": True,
+            "audio_dir_original": audio_dir_original,
+            "audio_dir_translation": audio_dir_translation
+        })
+ 
     except Exception as e:
         logging.error(f"Неожиданная ошибка в generate_audio: {e}")
         return jsonify({
@@ -283,6 +335,7 @@ def save_dictation():
             json.dump(sentences_json, f, ensure_ascii=False, indent=2)
 
     return jsonify({'success': True})
+
 
 @generator_bp.route('/create_dictation_folders', methods=['POST'])
 def create_dictation_folders():

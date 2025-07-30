@@ -27,6 +27,19 @@
               "expanded": true,
               "folder": true,
               "key": "enru_00000",
+              "title": "Ira NEW WORDS",
+              "data": {
+                "language_original": "en",
+                "language_translation": "ru",
+                "dictations": [
+                  "dicta_1753521543110"
+                ]
+              }
+            },
+            {
+              "expanded": true,
+              "folder": true,
+              "key": "enru_00000",
               "title": "Сhildren's poems",
               "data": {
                 "language_original": "en",

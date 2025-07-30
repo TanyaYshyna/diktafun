@@ -97,41 +97,59 @@
             <div id="audioFileStatus" class="small-info">Файл не выбран</div>
         </div>
 
-        <div class="audio-controls-container">
-            <label>(1) Текущее предложение</label>
-
-            <div id="waveWrapper">
-                <div id="waveform"></div>
+        <div class="toggle-panel">
+            <div class="toggle-header" onclick="togglePanel(this)">
+                <span class="arrow">▶</span>
+                <span class="title">Аудио</span>
             </div>
+            <div class="toggle-content">
+                <label>(1) Текущее предложение</label>
 
-            <div class="controls-row">
-                <button id="playPauseBtn" onclick="funClick()">▶️</button>
-                <div class="time-fields">
-                    <!-- Start: <span id="startTime">–</span> — End: <span id="endTime">–</span> -->
-                    <label for="startTime">Start:</label>
-                    <input type="number" id="startTime" step="0.01" min="0" size="6">
+                <div id="waveWrapper">
+                    <div id="waveform"></div>
+                </div>
 
-                    <label for="endTime">End:</label>
-                    <input type="number" id="endTime" step="0.01" min="0" size="6">
+                <div class="controls-row">
+                    <button id="playPauseBtn" onclick="funClick()">▶️</button>
+                    <div class="time-fields">
+                        <!-- Start: <span id="startTime">–</span> — End: <span id="endTime">–</span> -->
+                        <label for="startTime">Start:</label>
+                        <input type="number" id="startTime" step="0.01" min="0" size="6">
+
+                        <label for="endTime">End:</label>
+                        <input type="number" id="endTime" step="0.01" min="0" size="6">
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="formGroupRaw" class="form-group form-raw">
-            <button id="recognize_words_btn">Рспознать слва из аудио</button>
-            <div class="form-group">
-                <label>Время-слово:</label>
-                <textarea id="text_time_word" rows="5"></textarea>
+        <div class="toggle-panel inner-toggle">
+            <div class="toggle-header" onclick="togglePanel(this)">
+                <span class="arrow">▶</span>
+                <span class="title">Распознавание из аудио</span>
+            </div>
+            <div id="formGroupRaw" class="form-group form-raw toggle-content inner-toggle">
+                <button id="recognize_words_btn">Рспознать слва из аудио</button>
+                <div class="form-group">
+                    <label>Время-слово:</label>
+                    <textarea id="text_time_word" rows="5"></textarea>
+                </div>
             </div>
         </div>
 
 
-        <div id="formGroupRaw" class="form-group form-raw">
-            <div class="form-group">
-                <label>Текст по фразам (/* превод):</label>
-                <textarea id="text" rows="10"></textarea>
+        <div class="toggle-panel">
+            <div class="toggle-header" onclick="togglePanel(this)">
+                <span class="arrow">▶</span>
+                <span class="title">Текст по фразам</span>
             </div>
-            <button id="split-btn">Разбить на фразы и озвучить</button>
+            <div id="formGroupRaw" class="form-group form-raw toggle-content">
+                <div class="form-group">
+                    <label>Текст по фразам (/* превод):</label>
+                    <textarea id="text" rows="10"></textarea>
+                </div>
+                <button id="split-btn">Разбить на фразы и озвучить</button>
+            </div>
         </div>
 
         <table id="sentences-table">

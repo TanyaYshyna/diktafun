@@ -348,9 +348,48 @@ wavesurfer-region {
     padding: 6px 10px;
     border-radius: 5px;
     border: 1px solid #aaa;
-    background-color: #f8f8f8;
     cursor: pointer;
 }
 #fakeAudioFileBtn:hover {
     background-color: #e8e8e8;
 }
+
+
+/* --------------------прячущиеся панели  НАЧАЛО ----------------------------------- */
+.toggle-panel {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    background: #f9f9f9;
+    overflow: hidden;
+}
+
+.toggle-header {
+    cursor: pointer;
+    padding: 8px 12px;
+    font-weight: bold;
+    background: #e0e0e0;
+    display: flex;
+    align-items: center;
+    user-select: none;
+}
+
+.toggle-header .arrow {
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 0.2s ease;
+}
+
+.toggle-panel.open .toggle-header .arrow {
+    transform: rotate(90deg);
+}
+
+.toggle-content {
+    display: none;
+    padding: 10px 15px;
+}
+
+.toggle-panel.open .toggle-content {
+    display: block;
+}
+/* --------------------прячущиеся панели  КОНЕЦ ----------------------------------- */

@@ -12,6 +12,19 @@ const successSequence = "ot"; // Для правильного ответа (м�
 
 let allSentences = sentences; // ← из JSON
 let currentSentenceIndex = 0;
+
+let currentDictation = {
+    id: '', // ID поточного диктанту
+    language_original: '',
+    language_translation: '',
+    dictationStartTime: null, // початок виконання диктанту
+    dictationTimerInterval: null, // час виконання диктанту в мілісекундах
+    circle_number: 0,
+    phrases_total: 0, // кількість фраз на поточному крузі
+    phrases_perfect: 0, // скільки на поточному крузі зроблено з першої спроби
+    phrases_corrected: 0 // скільки фраз зроблено з декількох спроб
+};
+
 // Добавляем глобальные переменные
 let first_pass_new_sentences = true;
 let currentCircle = 1;
@@ -45,6 +58,66 @@ let languageCodes = {};
 let recognition = null;
 let textAttemptCount = 0;
 
+// ===== 
+// let phrases_total = 0; // кількість фраз на поточному крузі
+// let phrases_perfect = 0; // скільки на поточному крузі зроблено з першої спроби
+// let phrases_corrected = 0; // скільки фраз зроблено з декількох спроб
+
+
+// --------------- timer ---------------------------------
+let timerInterval = null;
+
+function startTimer() {
+    currentDictation.dictationStartTime = Date.now();
+    timerInterval = setInterval(() => {
+        currentDictation.dictationTimerInterval = Date.now() - currentDictation.dictationStartTime;
+        updateDictationTimerDisplay(currentDictation.dictationTimerInterval);
+    }, 1000);
+}
+
+function updateDictationTimerDisplay(elapsed) {
+    const hours = Math.floor(elapsed / 1440000);
+    const minutes = Math.floor(elapsed / 60000);
+    const seconds = Math.floor((elapsed % 60000) / 1000);
+
+    const timerElement = document.getElementById("timer");
+    if (timerElement) {
+        timerElement.textContent =
+            `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+}
+
+function timeDisplay(time) {
+    const hours = Math.floor(elapsed / 1440000);
+    const minutes = Math.floor(elapsed / 60000);
+    const seconds = Math.floor((elapsed % 60000) / 1000);
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+}
+
+// оновити значення на табло піл годинником
+function updateRoundStats(perfect = '', corrected = '', total = '') {
+
+    if (perfect !== '') {
+        // речення нписали з першого разу без помилок
+        document.getElementById("count_perfect").textContent = perfect;
+    }
+    if (corrected !== '') {
+        // були помилки в написі (скільки не важливо)
+        document.getElementById("count_corrected").textContent = corrected;
+    }
+    if (total !== '') {
+        // загальна кількість речень які треба пройти на цьому колі
+        document.getElementById("count_total").textContent = total;
+    }
+
+
+}
+
+// -------------------------------------------------------
 async function loadLanguageCodes() {
     const response = await fetch(LANGUAGE_CODES_URL);
     languageCodes = await response.json();
@@ -183,21 +256,22 @@ function updateTabloSentenceCounter(currentIndex, maxVisible = 9) {
 
 
 
-
-
-
-
-
-
-
-
-
+// ===== пройшли коло =========
 function checkIfAllCompleted() {
     const hasUnfinished = allSentences.some(s => s.text_check === -1);
     if (!hasUnfinished) {
+
+        // document.getElementById("finish_modal_time").textContent = timeDisplay(currentDictation.timerInterval);
+        document.getElementById("finish_modal_circle_number").textContent = timeDisplay(currentDictation.dictationTimerInterval);
+        document.getElementById("finish_modal_count_perfect").textContent = currentDictation.phrases_perfect;
+        document.getElementById("finish_modal_count_corrected").textContent = currentDictation.phrases_corrected;
+        document.getElementById("finish_modal_count_total").textContent = currentDictation.phrases_total;
+
         document.getElementById("finishModal").style.display = "flex";
     }
 }
+
+
 
 // ===== Аудио-функционал =====
 // Сначала объявляем stopRecording
@@ -218,6 +292,7 @@ function stopRecording() {
     recordButtonText.textContent = 'Записать аудио';
     stopVisualization();
 }
+
 
 async function startRecording() {
     try {
@@ -274,6 +349,7 @@ async function startRecording() {
     }
 }
 
+
 async function toggleRecording() {
     if (mediaRecorder?.state === 'recording') {
         stopRecording();
@@ -281,6 +357,7 @@ async function toggleRecording() {
         startRecording();
     }
 }
+
 
 function getSupportedMimeType() {
     const types = [
@@ -291,6 +368,7 @@ function getSupportedMimeType() {
 
     return types.find(type => MediaRecorder.isTypeSupported(type)) || '';
 }
+
 
 function saveRecording() {
     if (!audioChunks.length) {
@@ -311,6 +389,7 @@ function saveRecording() {
 
     console.log(`Аудио сохранено (${blobType}):`, audioUrl);
 }
+
 
 function initSpeechRecognition() {
     if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
@@ -390,6 +469,7 @@ function initSpeechRecognition() {
     };
 }
 
+
 function disableRecordButton(active) {
     const recordBtn = document.getElementById('recordBtn');
 
@@ -403,6 +483,7 @@ function disableRecordButton(active) {
         }
     }
 }
+
 
 function saveRecording() {
     try {
@@ -435,6 +516,7 @@ function saveRecording() {
 
 // Инициализация кнопки
 recordButton.addEventListener('click', toggleRecording);
+
 
 function setupVisualizer(stream) {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -472,8 +554,6 @@ function stopVisualization() {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
-
-
 // ===== Аудио-функционал КОНЕЦ =====
 
 
@@ -500,12 +580,29 @@ function initializeDictation() {
     }, 100);
 }
 
-// Обработчик кнопки старта
+// Обработчик кнопки старта новой игры
 confirmStartBtn.addEventListener('click', () => {
     if (!isAudioLoaded) return;
 
-    // Закрываем модальное окно
+    console.log("👀 startNewGame()");
+
+    // запускаємо годинник
+    startTimer();
+
+    // Зачиняємо модальне вікно
     startModal.style.display = 'none';
+
+
+    // перше коло
+    currentDictation.circle_number = 1;
+
+    currentDictation.phrases_total = allSentences.length;
+    currentDictation.phrases_perfect = 0;
+    currentDictation.phrases_corrected = 0;
+    updateRoundStats(
+        currentDictation.phrases_perfect,
+        currentDictation.phrases_corrected,
+        currentDictation.phrases_total);
 
     // Воспроизводим последовательность OTO как и требовалось
     playMultipleAudios(playSequence); // "oto"
@@ -514,21 +611,13 @@ confirmStartBtn.addEventListener('click', () => {
     inputField.focus();
 });
 
-// обработка клавиши Enter в модальном окне:
-confirmStartBtn.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && isAudioLoaded) {
-        startModal.style.display = 'none';
-        playMultipleAudios(playSequence);
-        inputField.focus();
-    }
-});
-
 // Инициализация предложений
 function initializeSentences() {
     allSentences.forEach(sentence => {
         sentence.text_check = -1;
         sentence.audio_check = -1;
     });
+
 }
 
 function updateCheckResult(key, type, value) {
@@ -538,17 +627,10 @@ function updateCheckResult(key, type, value) {
     }
 }
 
-function startNewGame() {
-    console.log("👀 startNewGame()");
-    currentSentenceIndex = 0;
-    // renderSentenceCounter(currentSentenceIndex, allSentences);
-
-}
 
 function showCurrentSentence(showIndex) {
     currentSentenceIndex = showIndex;
     updateTabloSentenceCounter(showIndex);
-    //renderSentenceCounter(currentSentenceIndex, allSentences);
     const sentence = allSentences[currentSentenceIndex];
 
     // Сбрасываем состояние аудио-ответа
@@ -599,7 +681,7 @@ function showCurrentSentence(showIndex) {
 }
 
 
-// Функция перехода к следующему предложению
+// Функция переходу до наступного речення
 function nextSentence() {
     const total = allSentences.length;
     let nextIndex = currentSentenceIndex + 1;
@@ -618,7 +700,7 @@ function nextSentence() {
     console.log("✅ Все предложения завершены или больше нет непройденных.");
 }
 
-// Функция перехода к следующему предложению
+// Функция переходу до поперднього речення
 function previousSentence() {
     let prevIndex = currentSentenceIndex - 1;
 
@@ -635,13 +717,6 @@ function previousSentence() {
 
     console.log("🚫 Ранее непройденных предложений не найдено.");
 }
-
-// Обновленный счетчик
-function updateCounter() {
-    console.log("👀 updateCounter()" + allSentences.length);
-    //renderSentenceCounter(currentSentenceIndex, allSentences)
-}
-
 
 // Функция очистки текста
 function clearText() {
@@ -687,10 +762,9 @@ async function loadAudio() {
 
 
 
-// Инициализация при загрузке
+// Инициализация при загрузке -------------------------------------------------------
 document.addEventListener("DOMContentLoaded", function () {
     initializeSentences();
-    updateCounter();
     initializeDictation();
     loadLanguageCodes();
 
@@ -713,14 +787,6 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Языковые коды загружены:", languageCodes);
 });
 
-// Обработчики событий для inputField
-inputField.addEventListener('keydown', function (event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        checkText();
-    }
-});
-
 inputField.addEventListener('input', function () {
     const plainText = inputField.innerText;
     if (inputField.innerHTML !== plainText) {
@@ -730,7 +796,7 @@ inputField.addEventListener('input', function () {
     }
 });
 
-// Функции для работы с текстом
+// -----------Функции для работы с текстом -----------------------------------------
 function simplifyText(text) {
     return text
         .toLowerCase()
@@ -987,18 +1053,24 @@ function check(original, userInput, currentKey) {
         }
     }
 
-    // === [ВСТАВЬ ЭТО ПЕРЕД ЗАВЕРШЕНИЕМ ФУНКЦИИ check()] ===
+    // === ==
     if (!foundError) {
-        // Всё правильно — с первой попытки?
+
         if (textAttemptCount === 0) {
+            // все виконано ідеально з першої спроби
             updateCheckResult(currentKey, "text_check", 0);
+            currentDictation.phrases_perfect++; // додамо кількість ідеальних
+            updateRoundStats(currentDictation.phrases_perfect);
         } else {
+            // все виконано але за декілька спроб
             updateCheckResult(currentKey, "text_check", textAttemptCount);
+            currentDictation.phrases_corrected++; // додамо кількість над якими ще можна попрацювати
+            updateRoundStats('', currentDictation.phrases_corrected);
         }
 
         allSentences[currentSentenceIndex].text_check = textAttemptCount === 0 ? 0 : textAttemptCount;
         // updateCurrentButtonStatus(currentSentenceIndex, allSentences[currentSentenceIndex]);
-        updateTabloSentenceCounter(currentSentenceIndex)
+        updateTabloSentenceCounter(currentSentenceIndex);
         disableCheckButton(false);         // отключить кнопку
         // перевести фокус
         recordButton.focus();
@@ -1037,67 +1109,108 @@ function checkText() {
     }
 }
 
-document.addEventListener('keydown', function (event) {
-    if (event.ctrlKey && event.key === '1') {
-        const audio = document.getElementById('audio');
-        if (audio) {
-            audio.play();
-        }
-    } else if (event.ctrlKey && event.key === '2') {
-        const audio_tr = document.getElementById('audio_tr');
-        if (audio_tr) {
-            audio_tr.play();
-        }
-    }
+// Обработчики событий для inputField
+inputField.addEventListener('keydown', function (event) {
+        // console.log("👀 ----------------keydown-----------------" + event.key);
+     if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        checkText();
+        return;
+    } 
 });
 
-document.getElementById("sentenceCounter").textContent =
-    `Предложение ${currentSentenceIndex + 1} / ${sentences.length}`;
+// Горячие клавиши — глобально
+document.addEventListener('keydown', function (event) {    
+    if (event.ctrlKey) {
+    // Проверяем, что Ctrl нажат
+        switch (event.key) {
+            case '1':
+                // Проигрываем оригинал
+                const audio = document.getElementById('audio');
+                if (audio) audio.play();
+                break;
+
+            case '2':
+                // Проигрываем перевод
+                const audio_tr = document.getElementById('audio_tr');
+                if (audio_tr) audio_tr.play();
+                break;
+
+            case '4':
+                // Следующее предложение
+                // event.preventDefault();
+                nextSentence();
+                break;
+
+            case '3':
+                // Предыдущее предложение
+                // event.preventDefault();
+                previousSentence();
+                break;
+        }
+    }
+
+
+});
+
+
+// document.getElementById("sentenceCounter").textContent =
+//     `Предложение ${currentSentenceIndex + 1} / ${sentences.length}`;
 
 document.getElementById("userInput").addEventListener("input", function () {
     document.getElementById("correctAnswer").style.display = "none";
     document.getElementById("translation").style.display = "none";
 });
 
-// Добавьте этот код в ваш script_dictation.js, например, в конец файла
-
-
+// Кнопки модального вікна вкінці диктанту -----------------------------------
+// (1) Граймо далі з початку 
 function clickBtnRestartAll() {
-    // Сброс всех предложений
+    // Відмічаємо всі речення як невідпрацьовані
     allSentences.forEach(sentence => {
         sentence.text_check = -1;
         sentence.audio_check = -1;
     });
 
-    // Начинаем с первого предложения 
+    // перше коло
+    currentDictation.circle_number = 1;
+
+    // Стартуємо з першого речення 
     currentSentenceIndex = 0;
     showCurrentSentence(currentSentenceIndex);
 
-    // Скрываем модальное окно
+    // Модельне вікно треба сховати
     document.getElementById("finishModal").style.display = "none";
 }
 
-// Обработчик для кнопки "Повторить ошибки"
+// (2) Обработчик для кнопки "Повторить ошибки"
 function clickBtnRestartErrors() {
     // Фильтруем предложения с ошибками (text_check > 0)
     const errorSentences = allSentences.filter(sentence => sentence.text_check > 0);
 
     if (errorSentences.length > 0) {
         // Обновляем список предложений для работы только с ошибками
+        let total = 0;
         allSentences.forEach(sentence => {
             if (sentence.text_check > 0) {
                 sentence.text_check = -1;
                 sentence.audio_check = -1;
+                total++;
             }
         });
+        currentDictation.circle_number++;
+        currentDictation.phrases_total = total;
+        currentDictation.phrases_perfect = 0;
+        currentDictation.phrases_corrected = 0;
+        updateRoundStats(currentDictation.phrases_perfect);
         currentSentenceIndex = 0;
         for (let i = 0; i < allSentences.length; i++) {
             if (allSentences[i].text_check = -1) {
                 currentSentenceIndex = i;
+                console.log('currentSentenceIndex === ' + currentSentenceIndex);
                 break;
             };
-            showCurrentSentence(currentSentenceIndex);
         }
+        showCurrentSentence(currentSentenceIndex);
     } else {
         alert("У вас нет предложений с ошибками!");
     }
@@ -1106,6 +1219,7 @@ function clickBtnRestartErrors() {
     document.getElementById("finishModal").style.display = "none";
 }
 
+// (3) Повернення на головну сторінку
 function clickBtnBackToList() {
-    window.location.href = "/"; // Замените на ваш URL
+    window.location.href = "/"; // на головну сторінку
 }
