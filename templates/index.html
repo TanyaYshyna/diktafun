@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Главная — Диктанты</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style_color.css">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/style_index.css">
 
@@ -18,44 +20,16 @@
 
 <body>
     <div class="topbar">
-        <div class="logo-section">
-            <h1>DikteApp</h1>
+        <div class="topbar">
+            <img src="/static/icons/logo.svg" class="logo">
         </div>
-        <div class="user-panel">
-            <!-- Выбор языка -->
-            <div class="language-selector">
-                <button id="language-toggle" class="language-btn">
-                    <img src="{{ url_for('static', filename='flags/ru.svg') }}" alt="Русский" width="20">
-                    <span>RU</span>
-                </button>
-                <div class="language-dropdown">
-                    <a href="#" data-lang="ru">
-                        <img src="{{ url_for('static', filename='flags/ru.svg') }}" alt="Русский" width="20">
-                        Русский
-                    </a>
-                    <a href="#" data-lang="uk">
-                        <img src="{{ url_for('static', filename='flags/ua.svg') }}" alt="Українська" width="20">
-                        Українська
-                    </a>
-                    <a href="#" data-lang="tr">
-                        <img src="{{ url_for('static', filename='flags/tr.svg') }}" alt="Türkçe" width="20">
-                        Türkçe
-                    </a>
-                    <a href="#" data-lang="ar">
-                        <img src="{{ url_for('static', filename='flags/sa.svg') }}" alt="العربية" width="20">
-                        العربية
-                    </a>
-                </div>
-            </div>
-            <!-- Пользователь -->
-            <span class="username">Пользователь</span>
-            <!-- <a href="{{ url_for('register') }}">Авторизоваться</a> -->
-            <a href="{{ url_for('register') }}">Регистрация</a>
-            <!-- <a href="{{ url_for('profile') }}">Пользователь</a> -->
+        <div class="user-section">
+            <button class="username">Пользователь</button>
+            <button class="streak">🔥 4 дня подряд</button>
         </div>
     </div>
 
-    <div class="osn_panel">
+    <div class="panel">
         <h2>Список диктантов</h2>
         <div class="button-row">
             <div class="tooltip-wrapper">

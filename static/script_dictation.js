@@ -28,6 +28,7 @@ let currentDictation = {
 // Добавляем глобальные переменные
 let first_pass_new_sentences = true;
 let currentCircle = 1;
+let counterTabloIndex = 0;
 
 // Глобальные переменные модального окна начала диктанта
 let isAudioLoaded = false;
@@ -66,6 +67,7 @@ let textAttemptCount = 0;
 
 // --------------- timer ---------------------------------
 let timerInterval = null;
+const timerElement = document.getElementById("timer");
 
 function startTimer() {
     currentDictation.dictationStartTime = Date.now();
@@ -76,15 +78,30 @@ function startTimer() {
 }
 
 function updateDictationTimerDisplay(elapsed) {
-    const hours = Math.floor(elapsed / 1440000);
-    const minutes = Math.floor(elapsed / 60000);
-    const seconds = Math.floor((elapsed % 60000) / 1000);
-
-    const timerElement = document.getElementById("timer");
-    if (timerElement) {
-        timerElement.textContent =
-            `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    let s = elapsed / 1000;
+    let d = Math.floor(s / 86400);
+    s = s - d * 86400;
+    let h = Math.floor(s / 3600);
+    s = s - h * 3600;
+    let m = Math.floor(s / 60);
+    s = Math.floor(s % 60);
+    //s = s - m * 60;
+    let time_text = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    if (d > 0) {
+        time_text = `${d}:` + time_text;
     }
+    if (timerElement) {
+        timerElement.textContent = time_text;
+    }
+    // const hours = Math.floor(elapsed / 1440000);
+    // const minutes = Math.floor(elapsed / 60000);
+    // const seconds = Math.floor((elapsed % 60000) / 1000);
+
+    // const timerElement = document.getElementById("timer");
+    // if (timerElement) {
+    //     timerElement.textContent =
+    //         `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    // }
 }
 
 function timeDisplay(time) {
@@ -131,39 +148,51 @@ function initTabloSentenceCounter(maxVisible = 9) {
     container.innerHTML = "";
     const total = allSentences.length;
 
+    // загальний бокс для кнопок
     const boxWrapper = document.createElement("div");
     boxWrapper.classList.add("sentence-box-wrapper");
 
     window.sentenceButtons = [];
+    counterTabloIndex = 0;
 
     if (total <= maxVisible) {
-        newTabloBtn(1, 0, "sentence-box box-current", boxWrapper);
+        newTabloBtn(boxWrapper, 1, 0, "button-color-yellow");
         for (let i = 1; i < total; i++) {
-            newTabloBtn(i + 1, i, "sentence-box box-default", boxWrapper);
+            newTabloBtn(boxWrapper, i + 1, i, "button-color-transparent");
         }
     } else {
-        newTabloBtn(1, 0, "sentence-box box-current", boxWrapper);
+        newTabloBtn(boxWrapper, 1, 0, "button-color-yellow");
         for (let i = 1; i < maxVisible - 2; i++) {
-            newTabloBtn(i + 1, i, "sentence-box box-default", boxWrapper);
+            newTabloBtn(boxWrapper, i + 1, i, "button-color-transparent");
         }
-        newTabloBtn("...", maxVisible - 2, "box-gap", boxWrapper);
-        newTabloBtn(total, maxVisible - 1, "sentence-box box-default", boxWrapper);
+        newTabloBtn(boxWrapper, "...", maxVisible - 2, "button-color-shadow-transparent");
+        newTabloBtn(boxWrapper, total, maxVisible - 1, "button-color-transparent");
     }
 
     container.appendChild(boxWrapper);
 }
 
-function newTabloBtn(lable, index, className, boxWrapper) {
+function newTabloBtn(boxWrapper, lable, index, className) {
     const btn = document.createElement("button");
     //btn.classList.add("sentence-box");
     btn.dataset.position = index;
     btn.textContent = lable;
-    btn.className = className;
+    btn.classList.add("button-32-32", className);
     btn.onclick = () => {
-        console.log("👀 clicked", btn.textContent);
+        const btn_old = window.sentenceButtons[counterTabloIndex];
+        btn_old.className = '';
+        btn_old.classList.value = '';
+        btn_old.classList.add("button-32-32", "button-color-transparent");
+
         const num = parseInt(btn.textContent);
         if (!isNaN(num)) {
+            btn.className = '';
+            btn.classList.value = '';
+            btn.classList.add("button-32-32", "button-color-yellow");
+            console.log("👀 0 ========================= btn.onclick = () => { ", btn);
             currentSentenceIndex = num - 1;
+            counterTabloIndex = btn.dataset.position;
+            console.log("👀 3 ========================= btn.textContent = " + btn.textContent + " ========= counterTabloIndex = " + counterTabloIndex);
             showCurrentSentence(currentSentenceIndex);
         }
     };
@@ -172,14 +201,33 @@ function newTabloBtn(lable, index, className, boxWrapper) {
 }
 
 function applyStatusClass(btn, sentence, isCurrent = false) {
+    // btn.classList.value = '';
     if (isCurrent) {
-        btn.classList.add("box-current", "box-default");
+        // поточне речення
+        // counterTabloIndex = btn.dataset.position;
+        btn.className = '';
+        btn.classList.value = '';
+        btn.classList.add("button-32-32", "button-color-yellow");
+ 
+        // btn.className = "button-32-32 button-color-yellow";
     } else if (sentence.text_check === 0) {
-        btn.classList.add("box-done");
+        // ідеальні (зірка)
+        btn.className = '';
+        btn.classList.value = '';
+        btn.classList.add("button-32-32", "button-color-mint");
+        // btn.className = "button-32-32 button-color-mint";
     } else if (sentence.text_check > 0) {
-        btn.classList.add("box-partial");
+        // виконані але не ідеально (пів зірки)
+        btn.className = '';
+        btn.classList.value = '';
+        btn.classList.add("button-32-32", "button-color-lightgreen");
+        // btn.className = "button-32-32 button-color-lightgreen";
     } else {
-        btn.classList.add("box-default");
+        // не виконані
+        btn.className = '';
+        btn.classList.value = '';
+        btn.classList.add("button-32-32", "button-color-transparent");
+        // btn.className = "button-32-32 button-color-transparent";
     }
 }
 
@@ -193,20 +241,37 @@ function updateTabloSentenceCounter(currentIndex, maxVisible = 9) {
 
     // [1] Если текущая кнопка уже на экране — просто обновляем стили
     if (visibleLabels.includes(String(currentLabel))) {
-        buttons.forEach(btn => {
-            const num = parseInt(btn.textContent);
-            if (isNaN(num)) return;
+        console.log("👀 2 =updateTabloSentenceCounter======================== counterTabloIndex = " + counterTabloIndex);
+        const btn_old = window.sentenceButtons[counterTabloIndex];
+        console.log("👀 2 =updateTabloSentenceCounter======================== counterTabloIndex = ", btn_old);
+        btn_old.className = '';
+        btn_old.classList.value = '';
+        btn_old.classList.add("button-32-32", "button-color-transparent");
+        console.log("👀 2 =updateTabloSentenceCounter======================== btn_old.textContent = " + btn_old.textContent + " ========= counterTabloIndex = " + counterTabloIndex);
 
-            const index = num - 1;
-            btn.className = "sentence-box";
+        counterTabloIndex = visibleLabels.indexOf(String(currentLabel));
+        const btn = window.sentenceButtons[counterTabloIndex];
+        btn.className = '';
+        btn.classList.value = '';
+        btn.classList.add("button-32-32", "button-color-yellow");
+        console.log("👀 2 =updateTabloSentenceCounter======================== btn.textContent = " + btn.textContent + " ========= counterTabloIndex = " + counterTabloIndex);
 
-            if (index === currentIndex) {
-                btn.classList.add("box-current", "box-default");
-            } else {
-                const sentence = allSentences[index];
-                applyStatusClass(btn, sentence, false);
-            }
-        });
+        // return 1; // если двигаетмя стрелаками прибавить 1
+        // buttons.forEach(btn => {
+        //     const num = parseInt(btn.textContent);
+        //     if (isNaN(num)) return;
+
+        //     const index = num - 1;
+        //     // btn.className = "sentence-box";
+
+        //     if (index === currentIndex) {
+        //         btn.className = "button-32-32 button-color-purple";
+        //         // btn.className = "button-32-32 button-color-shadow-transparent";
+        //     } else {
+        //         const sentence = allSentences[index];
+        //         applyStatusClass(btn, sentence, false);
+        //     }
+        // });
     } else {
         // [2] Если нужной кнопки нет — перестраиваем видимые кнопки
         let visibleIndices = [];
@@ -230,12 +295,13 @@ function updateTabloSentenceCounter(currentIndex, maxVisible = 9) {
             visibleIndices.push(total - 1);
         }
 
+        console.log("👀 2 =updateTabloSentenceCounter======== buttons.forEach ========= counterTabloIndex = " + counterTabloIndex);
         buttons.forEach((btn, i) => {
             const value = visibleIndices[i];
-            btn.className = "sentence-box";
+            //btn.className = "sentence-box";
             if (value === "...") {
                 btn.textContent = "...";
-                btn.classList.add("box-gap");
+                btn.className = "button-32-32 button-color-shadow-transparent";
                 btn.disabled = true;
                 btn.removeAttribute("data-position");
             } else {
@@ -245,13 +311,21 @@ function updateTabloSentenceCounter(currentIndex, maxVisible = 9) {
                 btn.disabled = false;
 
                 if (value === currentIndex) {
-                    btn.classList.add("box-current", "box-default");
+                    applyStatusClass(btn, sentence, true);
+                    counterTabloIndex = i;
+            console.log("👀 2 =updateTabloSentenceCounter======== buttons.forEach ========= i = " + i + "counterTabloIndex = " + counterTabloIndex);
+                    // btn.classList.add("box-current", "box-default");
+                    // checkBtn.classList.value = '';
+                    // btn.classList.add(".button-color-transparent");
                 } else {
                     applyStatusClass(btn, sentence, false);
                 }
             }
+            console.log("👀 2 =updateTabloSentenceCounter======== buttons.forEach ========= i = " + i + "counterTabloIndex = " + counterTabloIndex);
         });
+        // return 0;// если двигаемся стрелаками то ничего не добавлять и не отнимать
     }
+    console.log("👀 2 =updateTabloSentenceCounter======== конец ========= counterTabloIndex = " + counterTabloIndex);
 }
 
 
@@ -274,6 +348,8 @@ function checkIfAllCompleted() {
 
 
 // ===== Аудио-функционал =====
+
+// ====== Запись ==============
 // Сначала объявляем stopRecording
 function stopRecording() {
     if (mediaRecorder?.state === 'recording') {
@@ -308,7 +384,7 @@ async function startRecording() {
         const options = {
             mimeType: getSupportedMimeType()
         };
-        console.log("Используемый формат:", options.mimeType);
+        // console.log("Используемый формат:", options.mimeType);
 
         mediaRecorder = new MediaRecorder(stream, options);
         setupVisualizer(stream);
@@ -584,7 +660,7 @@ function initializeDictation() {
 confirmStartBtn.addEventListener('click', () => {
     if (!isAudioLoaded) return;
 
-    console.log("👀 startNewGame()");
+    // console.log("👀 startNewGame()");
 
     // запускаємо годинник
     startTimer();
@@ -637,7 +713,7 @@ function showCurrentSentence(showIndex) {
     userAudioAnswer.innerHTML = '';
 
     // возвращаем доступность кнопки проверки и поля ввода текста
-    disableCheckButton(true);
+    disableCheckButton(2); // кнопка включена
     disableRecordButton(true);
 
     // Установка аудио
@@ -689,6 +765,8 @@ function nextSentence() {
     while (nextIndex < total) {
         const sentence = allSentences[nextIndex];
         if (sentence.text_check === -1) {
+            //
+            console.log("👀 3 ========================= nextSentence() nextIndex = " + nextIndex);
             showCurrentSentence(nextIndex); // ← или твоя функция загрузки предложения
             return;
         }
@@ -707,6 +785,7 @@ function previousSentence() {
     while (prevIndex >= 0) {
         const sentence = allSentences[prevIndex];
         if (sentence.text_check === -1) {
+            console.log("👀 4 ========================= nextSentence() nextIndex = " + prevIndex);
             showCurrentSentence(prevIndex); // ← или твоя функция загрузки предложения
             return;
         }
@@ -803,7 +882,7 @@ function simplifyText(text) {
         // Удаляем ВСЕ апострофы, кавычки и другие похожие символы
         .replace(/[\u0027\u2018\u2019\u0060\u00B4'‘’`´]/g, "")
         // Удаляем остальные ненужные символы
-        .replace(/[.,!?;:"«»()]/g, "")
+        .replace(/[-.,!—?;:—"«»()]/g, "")
         .replace(/\s+/g, " ")
         .trim()
         .split(" ");
@@ -994,20 +1073,42 @@ function playMultipleAudios(sequence) {
 }
 
 function disableCheckButton(active) {
+    // console.log("👀 ----------------disableCheckButton-----------------active = " + active);
     const checkBtn = document.getElementById('checkBtn');
     const userInput = document.getElementById('userInput');
-
-    if (checkBtn) {
-        if (active) {
-            checkBtn.disabled = false;
-            checkBtn.innerHTML = '<img src="/static/icons/test0.svg" alt="Проверить">';
-            if (userInput) userInput.contentEditable = "true";
-        } else {
+    // Сначала удаляем все возможные цветные классы
+    checkBtn.classList.value = '';
+    // checkBtn.classList.remove(
+    //     'button-color-mint',
+    //     'button-color-lightgreen',
+    //     'button-color-yellow'
+    //     // Добавьте другие цветные классы, если они используются
+    // );
+    switch (active) {
+        case 2:
             checkBtn.disabled = true;
-            checkBtn.innerHTML = '<img src="/static/icons/test1.svg" alt="Галочка">';
+            checkBtn.innerHTML = '<i data-lucide="check"></i>';
+            // playBtn.innerHTML = '<i data-lucide="check"></i>';
             if (userInput) userInput.contentEditable = "false";
-        }
+            checkBtn.classList.add('button-color-yellow');
+            // console.log("👀 ----------------disableCheckButton-----------------case 2:", checkBtn);
+            break;
+
+        case 0:
+            checkBtn.disabled = false;
+            checkBtn.innerHTML = '<i data-lucide="star"></i>';
+            if (userInput) userInput.contentEditable = "true";
+            checkBtn.classList.add('button-color-mint');
+            break;
+
+        case 1:
+            checkBtn.disabled = false;
+            checkBtn.innerHTML = '<i data-lucide="star-lightgreen"></i>';
+            if (userInput) userInput.contentEditable = "true";
+            checkBtn.classList.add('button-color-mint');
+            break;
     }
+    lucide.createIcons();
 }
 
 function check(original, userInput, currentKey) {
@@ -1061,17 +1162,19 @@ function check(original, userInput, currentKey) {
             updateCheckResult(currentKey, "text_check", 0);
             currentDictation.phrases_perfect++; // додамо кількість ідеальних
             updateRoundStats(currentDictation.phrases_perfect);
+            disableCheckButton(0);         // отключить кнопку
         } else {
             // все виконано але за декілька спроб
             updateCheckResult(currentKey, "text_check", textAttemptCount);
             currentDictation.phrases_corrected++; // додамо кількість над якими ще можна попрацювати
             updateRoundStats('', currentDictation.phrases_corrected);
+            disableCheckButton(1);         // отключить кнопку
         }
 
         allSentences[currentSentenceIndex].text_check = textAttemptCount === 0 ? 0 : textAttemptCount;
         // updateCurrentButtonStatus(currentSentenceIndex, allSentences[currentSentenceIndex]);
         updateTabloSentenceCounter(currentSentenceIndex);
-        disableCheckButton(false);         // отключить кнопку
+        // disableCheckButton(false);         // отключить кнопку
         // перевести фокус
         recordButton.focus();
     } else {
@@ -1111,18 +1214,18 @@ function checkText() {
 
 // Обработчики событий для inputField
 inputField.addEventListener('keydown', function (event) {
-        // console.log("👀 ----------------keydown-----------------" + event.key);
-     if (event.key === 'Enter' && !event.shiftKey) {
+    // console.log("👀 ----------------keydown-----------------" + event.key);
+    if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         checkText();
         return;
-    } 
+    }
 });
 
 // Горячие клавиши — глобально
-document.addEventListener('keydown', function (event) {    
+document.addEventListener('keydown', function (event) {
     if (event.ctrlKey) {
-    // Проверяем, что Ctrl нажат
+        // Проверяем, что Ctrl нажат
         switch (event.key) {
             case '1':
                 // Проигрываем оригинал
@@ -1154,7 +1257,8 @@ document.addEventListener('keydown', function (event) {
 });
 
 
-// document.getElementById("sentenceCounter").textContent =
+// document.getElementById("
+// ").textContent =
 //     `Предложение ${currentSentenceIndex + 1} / ${sentences.length}`;
 
 document.getElementById("userInput").addEventListener("input", function () {
@@ -1223,3 +1327,132 @@ function clickBtnRestartErrors() {
 function clickBtnBackToList() {
     window.location.href = "/"; // на головну сторінку
 }
+
+
+//  =============== обертка для аудито ===============================================
+document.querySelectorAll(".custom-audio-player").forEach(player => {
+    const audio = player.querySelector("audio.audio-element");
+    const playBtn = player.querySelector(".play-btn");
+    const progressBar = player.querySelector(".progress-bar");
+    const currentTimeElem = player.querySelector(".current-time");
+    const totalTimeElem = player.querySelector(".total-time");
+    const volumeWrapper = player.querySelector(".volume-wrapperﬁ");
+    const volumeSlider = player.querySelector('.volume-slider');
+    const muteBtn = player.querySelector('.mute-btn');
+    const speedSelect = player.querySelector(".speed-select");
+
+    // Инициализация громкости
+    audio.volume = 0.7; // Установите начальную громкость
+    volumeSlider.value = audio.volume;
+
+    // Обработчик воспроизведения/паузы
+    playBtn.addEventListener("click", () => {
+        if (audio.paused) {
+            audio.play();
+            //playBtn.textContent = "⏸";
+            playBtn.innerHTML = '<i data-lucide="pause"></i>';
+        } else {
+            audio.pause();
+            playBtn.innerHTML = '<i data-lucide="play"></i>';
+            // playBtn.textContent = "▶";
+        }
+        lucide.createIcons();
+    });
+
+    // Обработчик громкости
+    volumeSlider.addEventListener('input', () => {
+        audio.volume = volumeSlider.value;
+        updateVolumeIcon(audio.volume, muteBtn);
+    });
+
+
+    // Обработчик кнопки mute
+    muteBtn.addEventListener('click', () => {
+        if (audio.volume > 0) {
+            audio.volume = 0;
+            volumeSlider.value = 0;
+        } else {
+            audio.volume = volumeSlider.dataset.lastVolume || 0.7;
+            volumeSlider.value = audio.volume;
+        }
+        updateVolumeIcon(audio.volume, muteBtn);
+    });
+
+    // Сохраняем последнее значение громкости перед mute
+    volumeSlider.addEventListener('mousedown', () => {
+        if (audio.volume > 0) {
+            volumeSlider.dataset.lastVolume = audio.volume;
+        }
+    });
+
+
+    // Обработчик скорости воспроизведения
+    if (speedSelect) {
+        speedSelect.addEventListener("change", () => {
+            audio.playbackRate = parseFloat(speedSelect.value);
+        });
+    }
+
+    // Обновление прогресса
+    audio.addEventListener("timeupdate", () => {
+        const current = audio.currentTime;
+        const duration = audio.duration;
+        progressBar.value = (current / duration) * 100 || 0;
+        currentTimeElem.textContent = formatTime(current);
+        totalTimeElem.textContent = formatTime(duration || 0);
+    });
+
+    // Перемотка по клику на прогресс-бар
+    progressBar.addEventListener("input", () => {
+        audio.currentTime = (progressBar.value / 100) * audio.duration;
+    });
+
+    // Обновление иконки громкости при загрузке
+    updateVolumeIcon(audio.volume, muteBtn);
+
+
+});
+// Функция для обновления иконки громкости
+function updateVolumeIcon(volume, muteBtn) {
+    let icon;
+    if (volume === 0) {
+        icon = 'volume-x';
+    } else if (volume < 0.3) {
+        icon = 'volume';
+    } else if (volume < 0.6) {
+        icon = 'volume-1';
+    } else {
+        icon = 'volume-2';
+    }
+    muteBtn.innerHTML = `<i data-lucide="${icon}"></i>`;
+    lucide.createIcons();
+}
+
+// Форматирование времени
+function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+}
+
+// Вызов инициализации после загрузки DOM
+document.addEventListener("DOMContentLoaded", function () {
+    initializeSentences();
+    initializeDictation();
+    loadLanguageCodes();
+    // initAudioPlayers(); // Добавьте этот вызов
+});
+// function formatTime(sec) {
+//     let s = sec;
+//     let d = Math.floor(s / 86400);
+//     s = s - d * 86400;
+//     let h = Math.floor(s / 3600);
+//     s = s - h * 3600;
+//     let m = Math.floor(s / 60);
+//     s = s - h * 60;
+//     let time_text = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+//     if (d > 0) {
+//         time_text = `${d}:` + time_text;
+//     }
+//     return time_text;
+// }

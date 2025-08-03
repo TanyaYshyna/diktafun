@@ -1,11 +1,71 @@
 /* variables.css */
 :root {
-  --primary-color: #3498db;       /* Голубой: задания выполнены с первого раза */
-  --secondary-color: #2997e0;     /* Чуть темнее голубой: можно использовать для hover или альтернатив */
-  --background-color: #f3f9fc;    /* Светлый фон всей страницы и кнопок */
-  --text-color: #333333;          /* Стандартный тёмный текст */
-  --error-color: red;             /* Красная рамка для текущего задания */
-  --success-color: green;         /* Зелёный: задания с ошибками */
-  --neutral-border-color: #ccc;   /* Серый: рамка для обычных невыполненных заданий */
-  --gap-text-color: #999999;      /* Цвет троеточий “…” */
+  --color-panel-bg: #fdfdfdff;                 /* светло-бежевый фон панели */
+  --color-hover: #eeede8ff;
+  /*--color-text: rgb(207, 0, 21);*/                     /* основной цвет текста */
+  --color-text: #224156ff;                    /* основной цвет текста */
+  --color-text-secondary: #000000ff;              /* текст-пояснение (например, перевод) */
+  
+  --color-button-gray: #dce2e5ff;  
+  --color-button-mint: #aae7e4ff;  
+  --color-button-lightgreen: #bbf1caff;  
+  --color-button-yellow: #fceba3ff;  
+  --color-button-orange: #f9d6a1ff;  
+  --color-button-pink: #f5c0caff;  
+  --color-button-purple: #c8c9fbff;  
+
+  --color-button-text-gray: #5a5e60ff;  
+  --color-button-text-mint: #28615fff;  
+  --color-button-text-lightgreen: #366f40ff;  
+  --color-button-text-yellow: #7c661eff;  
+  --color-button-text-orange: #80541eff;  
+  --color-button-text-pink: #802c35ff;  
+  --color-button-text-purple: #2b2d67ff;  
+ 
+  --color-button-shadow-gray: #eeede8ff;  
+  --color-button-shadow-mint: rgb(63, 153, 150);  
+  --color-button-shadow-lightgreen: rgb(89, 184, 107);  
+  --color-button-shadow-yellow: #f8cd46ff;  
+  --color-button-shadow-orange: rgb(185, 121, 43);  
+  --color-button-shadow-pink: rgb(190, 66, 78);  
+  --color-button-shadow-purple: rgb(74, 77, 176);  
+
+
+
+  --color-white: #ffffff;
+  --color-light-blue: #cae7fb;               /* светло-голубой фон блоков */
+  --color-blue: #3498db;                     /* основной голубой */
+  --color-blue-hover: #2997e0;               /* наведение на голубую кнопку */
+  --color-text-secondary: #555;              /* текст-пояснение (например, перевод) */
+  --color-border: #ccc;                      /* нейтральные рамки */
+  --color-border-light: #ddd;                /* светлые рамки */
+  --color-border-strong: #aaa;               /* ярко-серые рамки */
+  --color-muted: #999999;                    /* троеточия, неактивные элементы */
+  --color-error: red;                        /* ошибки */
+  --color-success: green;                    /* правильный ответ */
+  --color-bg-light: #f3f9fc;                 /* общий светлый фон */
+  --color-panel-light: #f9f9f9;              /* фон блоков и панелей */
+  --color-panel-muted: #eef7ff;              /* фон под волной */
+  --color-shadow: rgba(0, 0, 0, 0.1);         /* мягкая тень */
+  --color-shadow-strong: rgba(0, 0, 0, 0.3);  /* сильная тень (модалки) */
+  --color-overlay: rgba(0, 0, 0, 0.4);        /* затемнение фона */
+  --color-overlay-dark: rgba(0, 0, 0, 0.7);   /* тёмное затемнение */
+  --color-accent: #f9ebaf;                   /* жёлтая кнопка */
+  --color-accent-hover: #f9e26d;             /* при наведении на жёлтую */
+  --color-highlight: #ffd54f;                /* выделение слова */
+  --color-hover-panel: #e8e8e8;              /* наведение на фейковую кнопку */
+  --color-focus-blue: #4da1d9;               /* синие кнопки в index */
+  --color-focus-blue-hover: #45aef3;         /* hover для index */
+  --color-topbar: #2c3e50;                   /* фон верхней панели */
+  --color-header-text: #1e4870;              /* сине-серый текст */
+  --color-line: #eee;                        /* тонкая светлая линия */
+  --color-tooltip-bg: #333;                  /* фон всплывающей подсказки */
+  --color-tooltip-text: #fff;                /* текст во всплывашке */
+  --color-active-row: #e6f7ff;               /* активная строка в таблице */
+  --color-active-border: #1890ff;            /* синяя полоса в активной строке */
+  --color-yellow-bg: #f8ec93;                /* фон в главной (index) */
+  --color-grey-light: #f8f9fa;               /* левая панель index */
+  --color-grey-hover: #bdbdbd;               /* hover для разделителя */
+  --color-grey: #e0e0e0;                     /* серый фон и разделители */
+  --color-focus-border: #b0c4d8;             /* рамка текстового поля */
 }

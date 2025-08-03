@@ -29,10 +29,10 @@
   color: #333;
 }
 
-#checkBtn {
+/* #checkBtn {
   padding: 12px;
   border-radius: 12px;
-}
+} */
 
 /* аудио пользователя прослушать + текст от аудио пользователя + кнопрока записи аудио */
 .audio-user-panel {
@@ -249,15 +249,20 @@ body.playing-audio::after {
 /* Стили для новой аудио-панели */
 .audio-user-panel {
   display: flex;
-  justify-content: space-between; /* Распределяет пространство между элементами */
-  align-items: flex-start;  /* Выравнивает элементы по верхнему краю */
-  gap: 15px;  /* Отступ между контентом и кнопкой */
+  justify-content: space-between;
+  /* Распределяет пространство между элементами */
+  align-items: flex-start;
+  /* Выравнивает элементы по верхнему краю */
+  gap: 15px;
+  /* Отступ между контентом и кнопкой */
   margin-top: 15px;
 }
 
 .record-btn {
-  margin-left: auto; /* Прижимает кнопку к правому краю */
-  padding: 10px 15px; /* background: #ff4444; */
+  margin-left: auto;
+  /* Прижимает кнопку к правому краю */
+  padding: 10px 15px;
+  /* background: #ff4444; */
   /* color: white; */
   border: none;
   border-radius: 8px;
@@ -266,7 +271,8 @@ body.playing-audio::after {
   align-items: center;
   gap: 8px;
   width: fit-content;
-  white-space: nowrap; /* Запрещает перенос текста в кнопке */
+  white-space: nowrap;
+  /* Запрещает перенос текста в кнопке */
 }
 
 .record-btn.recording {
@@ -293,7 +299,8 @@ body.playing-audio::after {
     width: 100%;
 } */
 #audio_user {
-  height: 40px;  /* Стандартная высота контролов */
+  height: 40px;
+  /* Стандартная высота контролов */
 }
 
 .user-audio-text {
@@ -331,60 +338,86 @@ body.playing-audio::after {
 
 /* ЗАПИСЬ АУДИО КОНЕЦ */
 
+#audio {
+  background-color: var(--color-button-pink);
+  /* или просто конкретный цвет */
+}
+
+#audio_tr {
+  background-color: var(--color-button-purple);
+  /* Фиолетовый фон */
+}
+
+
 /* КНОПКИ НАВИГАЦИИ ПРЕДЛОЖЕНИЙ НАЧАЛО */
 
 /* Общий вид кнопки */
 .sentence-box-wrapper {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 5px;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 5px;
 }
 
 /* Общий вид всех кнопок */
 .sentence-box {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    font-weight: bold;
-    font-size: 14px;
-    border-radius: 6px;
+  font-weight: bold;
+  /* font-size: 14px;
+  border-radius: 6px; */
 
-    background-color: var(--background-color); /* светлый фон */
-    color: var(--text-color); /* основной текст */
-    cursor: default;
-    pointer-events: auto;
+  background-color: var(--color-panel-bg);
+  /* светлый фон */
+  color: var(--text-color);
+  /* основной текст */
+  cursor: default;
+  pointer-events: auto;
 }
 
 /* Стандартная кнопка (задание не выполнено) */
 .box-default {
-    border: 1px solid var(--neutral-border-color); /* серая рамка */
+  border: 1px solid var(--neutral-border-color);
+  /* серая рамка */
 }
 
 /* Выполнено с первого раза */
 .box-done {
-    border: 1px solid var(--primary-color); /* голубая рамка */
-    color: var(--primary-color);            /* голубая цифра */
+  background-color: var(--color-button-mint);
+  color: var(--color-button-text-mint);
+  /* border: 1px solid var(--primary-color);*/
+  /* голубая рамка */
+  color: var(--primary-color);
+  /* голубая цифра */
 }
 
 /* Выполнено с ошибками */
 .box-partial {
-    border: 1px solid var(--success-color); /* зелёная рамка */
-    color: var(--success-color);            /* зелёная цифра */
+  background-color: var(--color-button-lightgreen);
+  color: var(--color-button-text-lightgreen);
+  border: 1px solid var(--success-color);
+  /* зелёная рамка */
+  color: var(--success-color);
+  /* зелёная цифра */
 }
 
 /* Кнопка-пропуск */
 .box-gap {
-    border: none;
-    background-color: transparent;
-    color: var(--gap-text-color); /* серые точки “…” */
+  border: none;
+  background-color: transparent;
+  color: var(--gap-text-color);
+  /* серые точки “…” */
 }
 
 /* Текущая кнопка */
 .box-current {
-    border: 2px solid var(--error-color) !important; /* красная рамка */
+  background-color: var(--color-button-yellow);
+  color: var(--color-button-text-yellow);
+  border: 0 3px 0 0 solid var(--color-button-text-yellow) !important;
+  /* красная рамка */
 }
 
 /* КНОПКИ НАВИГАЦИИ ПРЕДЛОЖЕНИЙ КОНЕЦ */
@@ -399,7 +432,7 @@ body.playing-audio::after {
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   justify-content: center;
   align-items: center;
 }
@@ -416,4 +449,299 @@ body.playing-audio::after {
   padding: 10px 20px;
   font-size: 14px;
 }
+
 /* Модальное окно окончания диктанта КОНЕЦ */
+
+/* табло с часами и текущими результатами круга ------------------*/
+.progress-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Такой же отступ, как между кнопками */
+}
+
+.progress-top,
+.progress-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Расстояние между элементами */
+}
+
+.stat-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 8px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  font-size: 20px;
+  cursor: default;
+  user-select: none;
+  opacity: 1;
+  /* Полное отключение всех интерактивных эффектов */
+  outline: none !important;
+  box-shadow: none !important;
+  transition: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Отключение всех состояний */
+.stat-btn:hover,
+.stat-btn:active,
+.stat-btn:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  background: inherit !important;
+  color: inherit !important;
+}
+
+
+/* Цветовые схемы */
+.check-btn {
+  background: var(--color-button-yellow);
+  color: var(--color-button-text-yellow);
+  padding: 6px 12px;
+  /* Уменьшаем вертикальный padding */
+}
+
+.check-btn .icon {
+  width: 20px;
+  height: 20px;
+  /* Чуть уменьшаем иконки */
+}
+
+
+/* Цветовые схемы */
+.stat-btn.timer {
+  background: var(--color-button-yellow);
+  color: var(--color-button-text-yellow);
+  width: 250px;
+  /* Фиксированная ширина */
+  min-width: 250px;
+  /* Запрет уменьшения */
+  justify-content: flex-start;
+  /* Выравнивание по левому краю */
+}
+
+.stat-btn.circle-number {
+  background: var(--color-button-orange);
+  color: var(--color-button-text-orange);
+}
+
+.stat-btn.perfect {
+  background: var(--color-button-mint);
+  color: var(--color-button-text-mint);
+  width: 60px;
+  /* Фиксированная ширина */
+  min-width: 60px;
+  /* Запрет уменьшения */
+  justify-content: center;
+  /* Центрирование содержимого */
+}
+
+.stat-btn.corrected {
+  background: var(--color-button-lightgreen);
+  color: var(--color-button-text-lightgreen);
+  width: 60px;
+  /* Фиксированная ширина */
+  min-width: 60px;
+  /* Запрет уменьшения */
+  justify-content: center;
+  /* Центрирование содержимого */
+}
+
+.stat-btn.total {
+  background: var(--color-button-gray);
+  color: var(--color-button-text-gray);
+}
+
+.diktation_id {
+  color: var(--color-button-text-gray);
+  width: 60px;
+  /* Фиксированная ширина */
+  min-width: 60px;
+  /* Запрет уменьшения */
+  justify-content: center;
+  /* Центрирование содержимого */
+}
+
+/* Состояния */
+.stat-btn:disabled {
+  opacity: 1;
+  pointer-events: none;
+}
+
+
+.panel-tablo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* Оставляем кнопки в столбик */
+.panel-tablo-1 {
+  display: flex;
+  flex-direction: column;
+  /* Элементы вертикально */
+  gap: 10px;
+  /* Отступ между кнопками */
+}
+
+
+/* ----------------- audio обертка на плееры -----------------------------------*/
+.custom-audio-player {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-panel-bg);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 20px;
+
+  font-family: sans-serif;
+}
+
+.custom-audio-player .controls {
+  display: flex;
+  align-items: center;
+  margin: 0 2px;
+  /* Добавляем небольшой отступ вокруг каждого элемента */
+  gap: 5px;
+}
+
+.custom-audio-player .play-btn,
+.custom-audio-player .current-time,
+.custom-audio-player .total-time,
+.custom-audio-player .mute-btn,
+.custom-audio-player .speed-select {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--color-button-text-gray);
+  margin: 0;
+  padding: 5px;
+  /* Уменьшаем padding если нужно */
+}
+
+.custom-audio-player .progress-bar {
+  flex: 1;
+  appearance: none;
+  height: 6px;
+  background: var(--color-muted);
+  border-radius: 4px;
+}
+
+.custom-audio-player .progress-bar::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.custom-audio-player .time {
+  min-width: 80px;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+/* ================================================== */
+
+.volume-bar {
+  width: 80px;
+  height: 6px;
+  accent-color: var(--color-accent);
+}
+
+.speed-select {
+  font-size: 14px;
+  border-radius: 6px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border-light);
+  background-color: var(--color-panel-bg);
+  color: var(--color-text);
+}
+
+/* ================================================= */
+/* Стили для обертки громкости */
+.volume-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+
+/* Стили для вертикального слайдера громкости */
+.volume-slider {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) rotate(-90deg);
+  transform-origin: bottom center;
+  width: 80px;
+  height: 6px;
+  margin-bottom: 30px;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+  z-index: 100;
+  cursor: pointer;
+}
+
+/* Трек слайдера */
+.volume-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: var(--color-muted);
+  border-radius: 2px;
+}
+
+/* Бегунок слайдера */
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  margin-top: -6px;
+  cursor: pointer;
+}
+
+/* Для Firefox */
+.volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+.volume-slider::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: var(--color-muted);
+  border-radius: 2px;
+}
+
+/* Показываем слайдер при наведении */
+.volume-wrapper:hover .volume-slider,
+.volume-slider:focus {
+  display: block;
+}
+
+/* Иконка громкости */
+.mute-btn {
+  background: none;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

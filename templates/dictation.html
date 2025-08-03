@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Dikte</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style_color.css">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/style_dictation.css">
@@ -11,14 +12,12 @@
 
 <body>
     <div class="topbar">
-        <h1>DikteApp</h1>
-
-        <div class="user-panel">
-            <button id="language-toggle">
-                <img src="{{ url_for('static', filename='flags/ru.svg') }}" width="20">
-                <span>RU</span>
-            </button>
-            <span>Пользователь</span>
+        <div class="topbar">
+            <img src="/static/icons/logo.svg" class="logo">
+        </div>
+        <div class="user-section">
+            <button class="username">Пользователь</button>
+            <button class="streak">🔥 4 дня подряд</button>
         </div>
     </div>
 
@@ -35,72 +34,124 @@
         <!-- Счетчик предложений -->
         <div class="panel-tablo">
             <!-- Добавляем flex-контейнер -->
-            <style>
-                .panel-tablo {
-                    display: flex;
-                    justify-content: space-between;
-                    /* Распределяет пространство между элементами */
-                    align-items: flex-start;
-                    /* Выравнивает по верхнему краю */
-                    width: 100%;
-                }
-
-                /* Оставляем кнопки в столбик */
-                .panel-tablo-1 {
-                    display: flex;
-                    flex-direction: column;
-                    /* Элементы вертикально */
-                    gap: 10px;
-                    /* Отступ между кнопками */
-                }
-
-                /* Можно добавить, если нужно выравнивание текста справа */
-                #diktation_id {
-                    margin-left: auto;
-                    padding-top: 5px;
-                    /* Чтобы текст был на одном уровне с первой кнопкой */
-                }
-            </style>
             <div class="panel-tablo-1">
+                <h2>{{ title_orig }}</h2>  <!-- Диктант: -->
                 <div class="sentence-counter" id="sentenceCounter">
                     <!-- будет подставлено из JS -->
                 </div>
                 <div class="button-group">
-                    <button id="checkPrevios" onclick="previousSentence()">
-                        <img src="{{ url_for('static', filename='icons/previos.svg') }}" alt="Предыдущий" class="icon">
+                    <button id="checkPrevios" class="button-color-yellow" onclick="previousSentence()">
+                    <!-- <button id="checkPrevios" class="check-btn" onclick="previousSentence()"> -->
+                        <i data-lucide="arrow-left"></i>
+                        <!-- <i data-lucide="corner-up-left"></i> -->
+                        <!-- <img src="{{ url_for('static', filename='icons/arrow_back.svg') }}" alt="Предыдущий"
+                            class="icon"> -->
                     </button>
-                    <button id="checkRepit" onclick="clearText()">
-                        <img src="{{ url_for('static', filename='icons/repeat.svg') }}" alt="Повторить" class="icon">
-                    </button>
-                    <button id="checkNext" onclick="nextSentence()">
-                        <img src="{{ url_for('static', filename='icons/next.svg') }}" alt="Следующий" class="icon">
+                    <button id="checkNext" class="button-color-yellow" onclick="nextSentence()">
+                        <!-- <i data-lucide="corner-up-right"></i> -->
+                        <i data-lucide="arrow-right"></i>
+                        <!-- <img src="{{ url_for('static', filename='icons/arrow_forward.svg') }}" alt="Следующий"
+                            class="icon"> -->
                     </button>
                 </div>
             </div>
             <div class="progress-panel">
                 <div class="progress-top">
-                    ⏱ : <span id="timer">00:00:00</span> |
-                    Круг: <span id="circle-number">1</span>
+                    <button class="stat-btn timer" disabled title="Время работы над диктантом">
+                        <i data-lucide="alarm-clock"></i>
+                        <!-- <img src="{{ url_for('static', filename='icons/check_timer.svg') }}" alt="Perfect"> -->
+                        <span id="timer">00:00:00</span>
+                    </button>
                 </div>
+
                 <div class="progress-bottom">
-                    ✅ <span id="count_perfect">0</span> 
-                    🟩 <span id="count_corrected">0</span> 
-                    📋 <span id="count_total">0</span>
+                    <button class="stat-btn perfect" disabled
+                        title="Количество предложений набранных без ошибок с 1-й попытки">
+                        <i data-lucide="star"></i>
+                        <!-- <img src="{{ url_for('static', filename='icons/check_double.svg') }}" alt="Perfect"> -->
+                        <span id="count_perfect">0</span>
+                    </button>
+
+                    <button class="stat-btn corrected" disabled title="Количество набранных предложений">
+                        <i data-lucide="star-half"></i>
+                        <!-- <img src="{{ url_for('static', filename='icons/check.svg') }}" alt="Corrected"> -->
+                        <span id="count_corrected">0</span>
+                    </button>
+
+                    <button class="stat-btn total" disabled title="Общее количество предложений на круге">
+                        <i data-lucide="layers"></i>
+                        <!-- <img src="{{ url_for('static', filename='icons/check_all.svg') }}" alt="Total"> -->
+                        <span id="count_total">0</span>
+                    </button>
+
+                    <button class="stat-btn circle" disabled title="Какой раз проходим диктант">
+                        <i data-lucide="iteration-cw"></i>
+                        <!-- <img src="{{ url_for('static', filename='icons/check_circle.svg') }}" alt="Corrected"> -->
+                        <span id="circle-number">1</span>
+                    </button>
                 </div>
+
+                <h4 id="diktation_id" class="diktation_id">{{ dictation_id }}</h4>
             </div>
-            <h4 id="diktation_id">{{ dictation_id }}</h4>
         </div>
-        <h2> Диктант: {{ title_orig }}</h2>
 
 
         <div style="display: flex; gap: 10px;">
-            <audio id="audio" controls>
-                <!-- Источник будет установлен через JS -->
-                Ваш браузер не поддерживает аудио!
-            </audio>
-            <audio id="audio_tr" controls>
-                <!-- Источник будет установлен через JS -->
-            </audio>
+            <!-- Источник будет установлен через JS -->
+
+            <!-- Плеер оригинал -->
+            <div class="custom-audio-player" data-audio-id="audio1">
+                <audio id="audio" class="audio-element"></audio>
+                <div class="controls">
+                    <span class="language">{{ language_original }}</span>
+                    <button class="play-btn">▶</button>
+                    <span class="current-time">0:00</span>
+                    <input type="range" class="progress-bar" value="0">
+                    <span class="total-time">0:00</span>
+                    <div class="volume-wrapper">
+                        <button class="mute-btn" aria-label="Mute">
+                            <i data-lucide="volume-2"></i>
+                        </button>
+                        <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1">
+                    </div>
+                    <select class="speed-select">
+                        <i data-lucide="snail"></i>
+                        <option value="0.5">0.5×</option>
+                        <option value="0.75">0.75×</option>
+                        <option value="1" selected>1×</option>
+                        <option value="1.25">1.25×</option>
+                        <option value="1.5">1.5×</option>
+                        <option value="2">2×</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Плеер перевод  -->
+            <div class="custom-audio-player" data-audio-id="audio2">
+                <audio id="audio_tr" class="audio-element"></audio>
+                <div class="controls">
+                    <span class="language">{{ language_translation }}</span>
+                    <button class="play-btn">▶</button>
+                    <span class="current-time">0:00</span>
+                    <input type="range" class="progress-bar" value="0">
+                    <span class="total-time">0:00</span>
+                    <div class="volume-wrapper">
+                        <button class="mute-btn" aria-label="Mute">
+                            <i data-lucide="volume-2"></i>
+                        </button>
+                        <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1">
+                    </div>
+                    <select class="speed-select">
+                        <i data-lucide="snail"></i>
+                        <option value="0.5">0.5×</option>
+                        <option value="0.75">0.75×</option>
+                        <option value="1" selected>1×</option>
+                        <option value="1.25">1.25×</option>
+                        <option value="1.5">1.5×</option>
+                        <option value="2">2×</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <!-- тут пользователь набирает тектст -->
@@ -113,8 +164,9 @@
                 <div id="translation">...</div>
             </div>
 
-            <button id="checkBtn" onclick="checkText()">
-                <img src="{{ url_for('static', filename='icons/test0.svg') }}" alt="Проверить" class="icon">
+            <button id="checkBtn" class="button-color-yellow" onclick="checkText()">
+                <i data-lucide="check"></i>
+                <!-- <img src="{{ url_for('static', filename='icons/test0.svg') }}" alt="Проверить" class="icon"> -->
             </button>
         </div>
 
@@ -123,13 +175,44 @@
             <div class="audio-user-content">
                 <canvas id="audioVisualizer" class="audio-visualizer" width="300" height="80"></canvas>
                 <div id="userAudioAnswer" class="text-user-audio"></div>
-                <audio id="audio_user" controls playsinline>
+                <!-- <audio id="audio_user" controls playsinline>
                     Ваш браузер не поддерживает аудио!
-                </audio>
+                </audio>-->
+                <!-- Плеер user  -->
+                <div class="custom-audio-player" data-audio-id="audio2">
+                    <audio id="audio_user" class="audio-element"></audio>
+                    <div class="controls">
+                        <span class="language">
+                            <!-- <i data-lucide="speech"></i> -->
+                            <i data-lucide="baby"></i>
+                        </span>
+                        <button class="play-btn">▶</button>
+                        <span class="current-time">0:00</span>
+                        <input type="range" class="progress-bar" value="0">
+                        <span class="total-time">0:00</span>
+                        <div class="volume-wrapper">
+                            <button class="mute-btn" aria-label="Mute">
+                                <i data-lucide="volume-2"></i>
+                            </button>
+                            <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1">
+                        </div>
+                        <select class="speed-select">
+                            <i data-lucide="snail"></i>
+                            <option value="0.5">0.5×</option>
+                            <option value="0.75">0.75×</option>
+                            <option value="1" selected>1×</option>
+                            <option value="1.25">1.25×</option>
+                            <option value="1.5">1.5×</option>
+                            <option value="2">2×</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <button id="recordButton" class="record-btn">
-                <img src="{{ url_for('static', filename='icons/microphone.svg') }}" alt="Запись">
-                <span id="recordButtonText">Записать аудио</span>
+            <button id="recordButton" class="button-color-purple">
+                <!-- record-btn  -->
+                <i data-lucide="mic"></i>
+                <!-- <img src="{{ url_for('static', filename='icons/microphone.svg') }}" alt="Запись"> -->
+                <!-- <span id="recordButtonText">Записать аудио</span> -->
             </button>
         </div>
 
@@ -137,15 +220,15 @@
     <div id="finishModal" class="modal" style="display: none;">
         <div class="modal-content">
             <h2>Вы завершили диктант за </h2>
-                <div class="progress-top">
-                    ⏱ : <span id="finish_modal_time">00:00:00</span> |
-                    Круг: <span id="finish_modal_circle_number">1</span>
-                </div>
-                <div class="progress-bottom">
-                    ✅ <span id="finish_modal_count_perfect">0</span> 
-                    🟩 <span id="finish_modal_count_corrected">0</span> 
-                    📋 <span id="finish_modal_count_total">0</span>
-                </div>
+            <div class="progress-top">
+                ⏱ : <span id="finish_modal_time">00:00:00</span> |
+                Круг: <span id="finish_modal_circle_number">1</span>
+            </div>
+            <div class="progress-bottom">
+                ✅ <span id="finish_modal_count_perfect">0</span>
+                🟩 <span id="finish_modal_count_corrected">0</span>
+                📋 <span id="finish_modal_count_total">0</span>
+            </div>
             <p>Что вы хотите сделать дальше?</p>
             <div class="modal-buttons">
                 <button id="btnRestartAll" onclick=clickBtnRestartAll()>Пройти всё заново</button>
@@ -155,6 +238,10 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
     <script id="sentences-data" type="application/json">
         {{ sentences | tojson | safe }}
     </script>
