@@ -36,12 +36,21 @@
 
 /* аудио пользователя прослушать + текст от аудио пользователя + кнопрока записи аудио */
 .audio-user-panel {
+  flex-wrap: wrap;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 15px;
   margin-top: 10px;
 }
+@media (max-width: 500px) {
+  #recordButton {
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+  }
+}
+
 
 .audio-user-column {
   display: flex;
@@ -615,7 +624,7 @@ body.playing-audio::after {
 .custom-audio-player .current-time,
 .custom-audio-player .total-time,
 .custom-audio-player .mute-btn,
-.custom-audio-player .speed-select {
+.custom-audio-player .custom-speed-select {
   background: transparent;
   border: none;
   font-size: 20px;
@@ -636,12 +645,91 @@ body.playing-audio::after {
 
 .custom-audio-player .progress-bar::-webkit-slider-thumb {
   appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 20px;
+  height: 20px;
   background: var(--color-accent);
   border-radius: 50%;
   cursor: pointer;
 }
+/* Для оригинального аудио (салатовый) -----------------------------*/
+#audio ~ .controls .progress-bar::-webkit-slider-thumb {
+  background: var(--color-button-lightgreen);
+  border: 1px solid var(--color-button-text-lightgreen); /* Легкая граница для контраста */
+}
+
+/* Для перевода желтый */
+#audio_tr ~ .controls .progress-bar::-webkit-slider-thumb {
+  background: var(--color-button-yellow); /* например, желтый */
+  border: 1px solid  var(--color-button-text-yellow);
+}
+
+/* Для пользовательского аудио (фиолетовый) */
+#audio_user ~ .controls .progress-bar::-webkit-slider-thumb {
+  background: var(--color-button-purple);
+  border: 1px solid  var(--color-button-text-purple);
+}
+
+/* Для Firefox и других браузеров */
+#audio ~ .controls .progress-bar::-moz-range-thumb {
+  background: var(--color-button-lightgreen);
+  border: 1px solid  var(--color-button-text-lightgreen);
+}
+#audio_tr ~ .controls .progress-bar::-moz-range-thumb {
+  background: var(--color-button-yellow);
+  border: 1px solid  var(--color-button-text-yellow);
+}
+#audio_user ~ .controls .progress-bar::-moz-range-thumb {
+  background: var(--color-button-purple);
+  border: 1px solid  var(--color-button-text-purple);
+}
+
+
+/* Цвета текста .language для каждого плеера ----------------------------*/
+.controls .language {
+  font-weight: 800;
+  font-size: 20px;
+  margin-right: 0;
+  min-width: 40px; 
+} 
+/* Фиксированная ширина для выравнивания */
+#audio ~ .controls .language {
+  color: var(--color-button-text-lightgreen); /* Салатовый */
+}
+#audio_tr ~ .controls .language {
+  color: var(--color-button-text-yellow); /* Желтый */
+}
+#audio_user ~ .controls .language {
+  color: var(--color-button-text-purple); /* Фиолетовый */
+}
+
+.custom-audio-player .language {
+  padding-right: 0 !important;
+  margin-right: 2px !important; /* Минимальный отступ перед кнопкой */
+  min-width: auto !important; /* Отключаем фиксированную ширину */
+  display: inline-block;
+}
+
+/* Полный сброс всех горизонтальных промежутков -----------------------------------*/
+.custom-audio-player .controls {
+  gap: 0 !important; /* Убираем flex/grid gaps */
+}
+
+.custom-audio-player .controls > * {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 1px !important;
+  padding-right: 1px !important;
+  border: none !important; /* Если нужно убрать и обводки */
+}
+
+/* Особенно для проблемных элементов */
+.custom-audio-player .language,
+.custom-audio-player .play-btn,
+.custom-audio-player .current-time {
+  min-width: auto !important;
+  width: auto !important;
+}
+
 
 .custom-audio-player .time {
   min-width: 80px;
@@ -657,51 +745,140 @@ body.playing-audio::after {
   accent-color: var(--color-accent);
 }
 
-.speed-select {
+/* -------------------- custom-speed-selec ------ start -------------------------- */
+.custom-speed-select {
+  position: relative;
+  display: inline-block;
+}
+
+.speed-select-button {
+  background-color: var(--color-panel-bg);
+  color: var(--color-button-text-gray);
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  outline: none;
+}
+
+.speed-arrow {
+  width: 16px;
+  height: 16px;
+}
+
+.speed-options {
+  position: absolute;
+  /* top: 100%; */
+  bottom: 100%; /* открытие вверх */
+  left: 0;
+  background-color: var(--color-panel-bg);
+  border: 0;
+  border-radius: 6px;
+  list-style: none;
+  padding: 5px 0;
+  margin: 5px 0 0 0;
+  /* width: 100%; */
+  display: none;
+  z-index: 100;
+}
+
+.custom-speed-select.open .speed-options {
+    display: block;
+}
+
+.speed-options li {
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.speed-options li:hover {
+  background-color: var(--color-button-gray);
+}
+
+/* .speed-options li.selected {
+  background-color: var(--color-button-mint);
+} */
+ #audio ~ .controls .custom-speed-select .speed-options li.selected {
+  background-color: var(--color-button-lightgreen);
+  color: var(--color-button-text-lightgreen);
+}
+#audio_tr ~ .controls .custom-speed-select .speed-options li.selected {
+  background-color: var(--color-button-yellow);
+  color: var(--color-button-text-yellow);
+}
+#audio_user ~ .controls .custom-speed-select .speed-options li.selected {
+  background-color: var(--color-button-purple);
+  color: var(--color-button-text-purple);
+}
+
+.custom-speed-select.active .speed-options {
+  display: block;
+}
+
+/* .speed-select {
   font-size: 14px;
   border-radius: 6px;
   padding: 4px 6px;
   border: 1px solid var(--color-border-light);
   background-color: var(--color-panel-bg);
   color: var(--color-text);
-}
+} */
+/* -------------------- custom-speed-selec ------ end -------------------------- */
 
 /* ================================================= */
 /* Стили для обертки громкости */
-.volume-wrapper {
+/* .volume-wrapper {
   position: relative;
   display: flex;
   align-items: center;
   margin-left: 10px;
+} */
+
+/* Стили для вертикального слайдера громкости ---------------------------*/
+/* Контейнер для иконки и слайдера */
+.volume-wrapper {
+  position: relative;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  margin-left: 0; /* Убрали отступ слева */
+  padding-left: 10px; /* Добавили padding вместо margin */
 }
 
-/* Стили для вертикального слайдера громкости */
 .volume-slider {
   position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%) rotate(-90deg);
-  transform-origin: bottom center;
+  transform: rotate(-90deg);
+  transform-origin: left center; /* Изменено с bottom center */
   width: 80px;
   height: 6px;
-  margin-bottom: 30px;
+  margin: 0;
   background: transparent;
   -webkit-appearance: none;
   appearance: none;
-  display: none;
   z-index: 100;
   cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-bottom: 10px; /* Добавлено для отступа от иконки */
 }
 
-/* Трек слайдера */
+/* Показываем слайдер при наведении */
+.volume-wrapper:hover .volume-slider {
+  opacity: 1;
+}
+
+/* Стили для трека слайдера */
 .volume-slider::-webkit-slider-runnable-track {
-  width: 100%;
   height: 4px;
   background: var(--color-muted);
   border-radius: 2px;
 }
 
-/* Бегунок слайдера */
+/* Стили для бегунка */
 .volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 16px;
@@ -709,39 +886,104 @@ body.playing-audio::after {
   background: var(--color-accent);
   border-radius: 50%;
   margin-top: -6px;
-  cursor: pointer;
 }
 
-/* Для Firefox */
+/* Стили для Firefox */
 .volume-slider::-moz-range-thumb {
   width: 16px;
   height: 16px;
   background: var(--color-accent);
   border-radius: 50%;
   border: none;
-  cursor: pointer;
 }
 
 .volume-slider::-moz-range-track {
-  width: 100%;
   height: 4px;
   background: var(--color-muted);
   border-radius: 2px;
 }
 
-/* Показываем слайдер при наведении */
-.volume-wrapper:hover .volume-slider,
-.volume-slider:focus {
-  display: block;
+
+/* адаптация плееров к сужению окна ------------------------------- */
+/* Основной контейнер плееров */
+.panel > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0; /* Критически важно для правильного переноса */
+  width: 100%; /* Занимает всю доступную ширину */
 }
 
-/* Иконка громкости */
-.mute-btn {
-  background: none;
-  border: none;
-  padding: 5px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Стили для каждого плеера */
+.custom-audio-player {
+  flex: 1 1 300px; /* Базовый размер 300px, но может сжиматься/расти */
+  min-width: 0; /* Разрешает уменьшение */
+  max-width: 100%; /* Не выходит за границы экрана */
+  box-sizing: border-box; /* Учитываем padding в ширине */
 }
+
+/* Адаптация для мобильных устройств */
+.audio-players-wrapper {
+  display: flex;
+  flex-wrap: wrap; /* ВОТ ЭТО НУЖНО */
+  gap: 10px;
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  .custom-audio-player {
+    flex-basis: 100%; /* На узких экранах - вся ширина */
+    margin: 0 0 10px 0; /* Отступ только снизу */
+  }
+  
+  /* Для кнопки записи */
+  .audio-user-panel {
+    flex-direction: column;
+  }
+  
+  #recordButton {
+    width: 100%;
+    margin-top: 10px;
+    justify-content: center;
+  }
+}
+
+/* Гарантируем, что элементы управления не сжимаются */
+.custom-audio-player .controls > * {
+  flex-shrink: 0;
+}
+
+
+#userAudioAnswer {
+  max-height: none;    /* Снимаем ограничения */
+  overflow-y: visible; /* Запрещаем скролл */
+  min-height: 0;       /* Разрешаем сжатие */
+}
+.audio-user-panel {
+  display: flex;
+  gap: 10px;
+  max-height: 120px; /* подбери точное значение */
+  overflow: hidden;
+}
+
+
+/* временно ищем откуда взялась полоса прокрутки --------------------------- */
+/* 
+
+body, html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.modal-content {
+  outline: 2px dashed blue; 
+}
+
+.panel {
+  outline: 2px dashed green; 
+}
+
+.custom-speed-select .speed-options {
+  background: rgba(255, 0, 0, 0.1); 
+} */

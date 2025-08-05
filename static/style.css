@@ -44,60 +44,75 @@ button {
 }
 
 button:hover {
-  border: 1px solid var(--color-hover);       /* появляется “обводка” */
-  box-shadow: 0 3px 0 0 var(--color-hover);   /* нижняя граница толще — имитация */
+    border: 1px solid var(--color-hover);
+    /* появляется “обводка” */
+    box-shadow: 0 3px 0 0 var(--color-hover);
+    /* нижняя граница толще — имитация */
 }
 
 button:active {
-  border: 1px solid var(--color-hover);       /* равномерная рамка */
+    border: 1px solid var(--color-hover);
+    /* равномерная рамка */
 }
 
 /* КВАДРАТНЫЕ кнопки */
-/* transparent */  
+/* transparent */
 .button-32-32 {
     width: 44px;
     height: 44px;
 }
 
 /* кнопки по цветам */
-/* transparent */  
+/* transparent */
 .button-color-transparent {
     background-color: transparent;
     color: var(--color-button-text-gray);
 }
+
 .button-color-transparent:hover {
-  border: 1px solid var(--color-button-shadow-gray);       /* появляется “обводка” */
-  box-shadow: 0 3px 0 0 var(--color-button-shadow-gray);   /* нижняя граница толще — имитация */
-}
-.button-color-transparent:active {
-  border: 1px solid var(--color-button-shadow-gray);       /* равномерная рамка */
+    border: 1px solid var(--color-button-shadow-gray);
+    /* появляется “обводка” */
+    box-shadow: 0 3px 0 0 var(--color-button-shadow-gray);
+    /* нижняя граница толще — имитация */
 }
 
-/* shadow transparent */  
+.button-color-transparent:active {
+    border: 1px solid var(--color-button-shadow-gray);
+    /* равномерная рамка */
+}
+
+/* shadow transparent */
 .button-color-shadow-transparent {
     background-color: transparent;
     color: var(--color-button-gray);
 }
+
 .button-color-shadow-transparent:hover {
-  border: 0;      
-  box-shadow: none;  
-}
-.button-color-shadow-transparent:active {
-  border: 0;    
-  box-shadow: none;   
+    border: 0;
+    box-shadow: none;
 }
 
-/* gray */  
+.button-color-shadow-transparent:active {
+    border: 0;
+    box-shadow: none;
+}
+
+/* gray */
 .button-color-gray {
     background-color: var(--color-button-gray);
     color: var(--color-button-text-gray);
 }
+
 .button-color-gray:hover {
-  border: 1px solid var(--color-button-shadow-gray);       /* появляется “обводка” */
-  box-shadow: 0 3px 0 0 var(--color-button-shadow-gray);   /* нижняя граница толще — имитация */
+    border: 1px solid var(--color-button-shadow-gray);
+    /* появляется “обводка” */
+    box-shadow: 0 3px 0 0 var(--color-button-shadow-gray);
+    /* нижняя граница толще — имитация */
 }
+
 .button-color-gray:active {
-  border: 1px solid var(--color-button-shadow-gray);       /* равномерная рамка */
+    border: 1px solid var(--color-button-shadow-gray);
+    /* равномерная рамка */
 }
 
 /* mint */
@@ -105,12 +120,17 @@ button:active {
     background-color: var(--color-button-mint);
     color: var(--color-button-text-mint);
 }
+
 .button-color-mint:hover {
-  border: 1px solid var(--color-button-shadow-mint);       /* появляется “обводка” */
-  box-shadow: 0 3px 0 0 var(--color-button-shadow-mint);   /* нижняя граница толще — имитация */
+    border: 1px solid var(--color-button-shadow-mint);
+    /* появляется “обводка” */
+    box-shadow: 0 3px 0 0 var(--color-button-shadow-mint);
+    /* нижняя граница толще — имитация */
 }
+
 .button-color-mint:active {
-  border: 1px solid var(--color-button-shadow-mint);       /* равномерная рамка */
+    border: 1px solid var(--color-button-shadow-mint);
+    /* равномерная рамка */
 }
 
 /* lightgreen */
@@ -118,12 +138,17 @@ button:active {
     background-color: var(--color-button-lightgreen);
     color: var(--color-button-text-lightgreen);
 }
+
 .button-color-lightgreen:hover {
-  border: 1px solid var(--color-button-shadow-lightgreen);       /* появляется “обводка” */
-  box-shadow: 0 3px 0 0 var(--color-button-shadow-lightgreen);   /* нижняя граница толще — имитация */
+    border: 1px solid var(--color-button-shadow-lightgreen);
+    /* появляется “обводка” */
+    box-shadow: 0 3px 0 0 var(--color-button-shadow-lightgreen);
+    /* нижняя граница толще — имитация */
 }
+
 .button-color-lightgreen:active {
-  border: 1px solid var(--color-button-shadow-lightgreen);       /* равномерная рамка */
+    border: 1px solid var(--color-button-shadow-lightgreen);
+    /* равномерная рамка */
 }
 
 /* yellow */
@@ -131,12 +156,17 @@ button:active {
     background-color: var(--color-button-yellow);
     color: var(--color-button-text-yellow);
 }
+
 .button-color-yellow:hover {
-  border: 1px solid var(--color-button-shadow-yellow);       /* появляется “обводка” */
-  box-shadow: 0 3px 0 0 var(--color-button-shadow-yellow);   /* нижняя граница толще — имитация */
+    border: 1px solid var(--color-button-shadow-yellow);
+    /* появляется “обводка” */
+    box-shadow: 0 3px 0 0 var(--color-button-shadow-yellow);
+    /* нижняя граница толще — имитация */
 }
+
 .button-color-yellow:active {
-  border: 1px solid var(--color-button-shadow-yellow);       /* равномерная рамка */
+    border: 1px solid var(--color-button-shadow-yellow);
+    /* равномерная рамка */
 }
 
 /* orange */
@@ -144,12 +174,17 @@ button:active {
     background-color: var(--color-button-orange);
     color: var(--color-button-text-orange);
 }
+
 .button-color-orange:hover {
-  border: 1px solid var(--color-button-shadow-orange);       /* появляется “обводка” */
-  box-shadow: 0 3px 0 0 var(--color-button-shadow-orange);   /* нижняя граница толще — имитация */
+    border: 1px solid var(--color-button-shadow-orange);
+    /* появляется “обводка” */
+    box-shadow: 0 3px 0 0 var(--color-button-shadow-orange);
+    /* нижняя граница толще — имитация */
 }
+
 .button-color-orange:active {
-  border: 1px solid var(--color-button-shadow-orange);       /* равномерная рамка */
+    border: 1px solid var(--color-button-shadow-orange);
+    /* равномерная рамка */
 }
 
 /* pink */
@@ -157,12 +192,17 @@ button:active {
     background-color: var(--color-button-pink);
     color: var(--color-button-text-pink);
 }
+
 .button-color-gray:hover {
-  border: 1px solid var(--color-button-shadow-pink);       /* появляется “обводка” */
-  box-shadow: 0 3px 0 0 var(--color-button-shadow-pink);   /* нижняя граница толще — имитация */
+    border: 1px solid var(--color-button-shadow-pink);
+    /* появляется “обводка” */
+    box-shadow: 0 3px 0 0 var(--color-button-shadow-pink);
+    /* нижняя граница толще — имитация */
 }
+
 .button-color-gray:active {
-  border: 1px solid var(--color-button-shadow-pink);       /* равномерная рамка */
+    border: 1px solid var(--color-button-shadow-pink);
+    /* равномерная рамка */
 }
 
 /* purple */
@@ -170,12 +210,17 @@ button:active {
     background-color: var(--color-button-purple);
     color: var(--color-button-text-purple);
 }
+
 .button-color-purple:hover {
-  border: 1px solid var(--color-button-shadow-purple);       /* появляется “обводка” */
-  box-shadow: 0 3px 0 0 var(--color-button-shadow-purple);   /* нижняя граница толще — имитация */
+    border: 1px solid var(--color-button-shadow-purple);
+    /* появляется “обводка” */
+    box-shadow: 0 3px 0 0 var(--color-button-shadow-purple);
+    /* нижняя граница толще — имитация */
 }
+
 .button-color-purple:active {
-  border: 1px solid var(--color-button-shadow-purple);       /* равномерная рамка */
+    border: 1px solid var(--color-button-shadow-purple);
+    /* равномерная рамка */
 }
 
 
@@ -226,7 +271,7 @@ h2 {
     text-align: center;
     color: var(--color-text);
     font-size: 24px;
-    margin: 0 0 5px 0; 
+    margin: 0 0 5px 0;
 }
 
 .text-input {
@@ -241,7 +286,10 @@ h2 {
     font-size: 20px;
     outline: none;
     white-space: pre-wrap;
-}    
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
 
 
 select {
@@ -253,30 +301,47 @@ select {
 }
 
 .topbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .logo {
-  height: 5em;         /* ровно в 5 раз больше высоты строки текста */
-  vertical-align: middle;
+    height: 5em;
+    /* ровно в 5 раз больше высоты строки текста */
+    vertical-align: middle;
 }
 
 .user-section {
-  margin-left: auto;
-  display: flex;
-  gap: 10px;
-  align-items: center;
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+    align-items: center;
 }
-
+.audio-user-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100px; /* или больше, если кнопка крупная */
+  padding-top: 10px; /* чтобы кнопка не прилипала к краю */
+}
+#recordButton {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: auto;
+  padding: 10px 16px;
+  white-space: nowrap;
+  font-size: 16px;
+  box-sizing: border-box;
+}
 /* .user-section button {
   background-color: transparent;
   color: var(--color-text); */
-  /* font-size: 16px; */
-  /* border: none; */
-  /* cursor: pointer; */
-  /* border-radius: 8px; */
+/* font-size: 16px; */
+/* border: none; */
+/* cursor: pointer; */
+/* border-radius: 8px; */
 /* } */
 
 /* .user-section button:hover {

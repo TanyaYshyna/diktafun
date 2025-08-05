@@ -189,10 +189,8 @@ function newTabloBtn(boxWrapper, lable, index, className) {
             btn.className = '';
             btn.classList.value = '';
             btn.classList.add("button-32-32", "button-color-yellow");
-            console.log("👀 0 ========================= btn.onclick = () => { ", btn);
             currentSentenceIndex = num - 1;
             counterTabloIndex = btn.dataset.position;
-            console.log("👀 3 ========================= btn.textContent = " + btn.textContent + " ========= counterTabloIndex = " + counterTabloIndex);
             showCurrentSentence(currentSentenceIndex);
         }
     };
@@ -204,30 +202,24 @@ function applyStatusClass(btn, sentence, isCurrent = false) {
     // btn.classList.value = '';
     if (isCurrent) {
         // поточне речення
-        // counterTabloIndex = btn.dataset.position;
         btn.className = '';
         btn.classList.value = '';
         btn.classList.add("button-32-32", "button-color-yellow");
- 
-        // btn.className = "button-32-32 button-color-yellow";
     } else if (sentence.text_check === 0) {
         // ідеальні (зірка)
         btn.className = '';
         btn.classList.value = '';
         btn.classList.add("button-32-32", "button-color-mint");
-        // btn.className = "button-32-32 button-color-mint";
     } else if (sentence.text_check > 0) {
         // виконані але не ідеально (пів зірки)
         btn.className = '';
         btn.classList.value = '';
         btn.classList.add("button-32-32", "button-color-lightgreen");
-        // btn.className = "button-32-32 button-color-lightgreen";
     } else {
         // не виконані
         btn.className = '';
         btn.classList.value = '';
         btn.classList.add("button-32-32", "button-color-transparent");
-        // btn.className = "button-32-32 button-color-transparent";
     }
 }
 
@@ -241,37 +233,17 @@ function updateTabloSentenceCounter(currentIndex, maxVisible = 9) {
 
     // [1] Если текущая кнопка уже на экране — просто обновляем стили
     if (visibleLabels.includes(String(currentLabel))) {
-        console.log("👀 2 =updateTabloSentenceCounter======================== counterTabloIndex = " + counterTabloIndex);
         const btn_old = window.sentenceButtons[counterTabloIndex];
-        console.log("👀 2 =updateTabloSentenceCounter======================== counterTabloIndex = ", btn_old);
         btn_old.className = '';
         btn_old.classList.value = '';
         btn_old.classList.add("button-32-32", "button-color-transparent");
-        console.log("👀 2 =updateTabloSentenceCounter======================== btn_old.textContent = " + btn_old.textContent + " ========= counterTabloIndex = " + counterTabloIndex);
 
         counterTabloIndex = visibleLabels.indexOf(String(currentLabel));
         const btn = window.sentenceButtons[counterTabloIndex];
         btn.className = '';
         btn.classList.value = '';
         btn.classList.add("button-32-32", "button-color-yellow");
-        console.log("👀 2 =updateTabloSentenceCounter======================== btn.textContent = " + btn.textContent + " ========= counterTabloIndex = " + counterTabloIndex);
 
-        // return 1; // если двигаетмя стрелаками прибавить 1
-        // buttons.forEach(btn => {
-        //     const num = parseInt(btn.textContent);
-        //     if (isNaN(num)) return;
-
-        //     const index = num - 1;
-        //     // btn.className = "sentence-box";
-
-        //     if (index === currentIndex) {
-        //         btn.className = "button-32-32 button-color-purple";
-        //         // btn.className = "button-32-32 button-color-shadow-transparent";
-        //     } else {
-        //         const sentence = allSentences[index];
-        //         applyStatusClass(btn, sentence, false);
-        //     }
-        // });
     } else {
         // [2] Если нужной кнопки нет — перестраиваем видимые кнопки
         let visibleIndices = [];
@@ -295,10 +267,8 @@ function updateTabloSentenceCounter(currentIndex, maxVisible = 9) {
             visibleIndices.push(total - 1);
         }
 
-        console.log("👀 2 =updateTabloSentenceCounter======== buttons.forEach ========= counterTabloIndex = " + counterTabloIndex);
         buttons.forEach((btn, i) => {
             const value = visibleIndices[i];
-            //btn.className = "sentence-box";
             if (value === "...") {
                 btn.textContent = "...";
                 btn.className = "button-32-32 button-color-shadow-transparent";
@@ -313,19 +283,12 @@ function updateTabloSentenceCounter(currentIndex, maxVisible = 9) {
                 if (value === currentIndex) {
                     applyStatusClass(btn, sentence, true);
                     counterTabloIndex = i;
-            console.log("👀 2 =updateTabloSentenceCounter======== buttons.forEach ========= i = " + i + "counterTabloIndex = " + counterTabloIndex);
-                    // btn.classList.add("box-current", "box-default");
-                    // checkBtn.classList.value = '';
-                    // btn.classList.add(".button-color-transparent");
                 } else {
                     applyStatusClass(btn, sentence, false);
                 }
             }
-            console.log("👀 2 =updateTabloSentenceCounter======== buttons.forEach ========= i = " + i + "counterTabloIndex = " + counterTabloIndex);
         });
-        // return 0;// если двигаемся стрелаками то ничего не добавлять и не отнимать
     }
-    console.log("👀 2 =updateTabloSentenceCounter======== конец ========= counterTabloIndex = " + counterTabloIndex);
 }
 
 
@@ -660,14 +623,11 @@ function initializeDictation() {
 confirmStartBtn.addEventListener('click', () => {
     if (!isAudioLoaded) return;
 
-    // console.log("👀 startNewGame()");
-
     // запускаємо годинник
     startTimer();
 
     // Зачиняємо модальне вікно
     startModal.style.display = 'none';
-
 
     // перше коло
     currentDictation.circle_number = 1;
@@ -685,6 +645,8 @@ confirmStartBtn.addEventListener('click', () => {
 
     // Активируем интерфейс
     inputField.focus();
+    console.log("👀 focus set on inputField", inputField);
+    console.log("✅ inputField is editable:", inputField.isContentEditable);
 });
 
 // Инициализация предложений
@@ -729,7 +691,15 @@ function showCurrentSentence(showIndex) {
 
     // Очистка пользовательского ввода
     inputField.innerHTML = "";
+    // requestAnimationFrame(() => inputField.focus());
+    inputField.contentEditable = "true"; // на всякий случай
+    setTimeout(() => {
+        inputField.focus();
+        console.log("👀 Установлен фокус в inputField");
+    }, 0);
     inputField.focus();
+    console.log("👀 focus set on inputField", inputField);
+    console.log("✅ inputField is editable:", inputField.isContentEditable);
     textAttemptCount = 0;
 
 
@@ -765,8 +735,6 @@ function nextSentence() {
     while (nextIndex < total) {
         const sentence = allSentences[nextIndex];
         if (sentence.text_check === -1) {
-            //
-            console.log("👀 3 ========================= nextSentence() nextIndex = " + nextIndex);
             showCurrentSentence(nextIndex); // ← или твоя функция загрузки предложения
             return;
         }
@@ -785,7 +753,6 @@ function previousSentence() {
     while (prevIndex >= 0) {
         const sentence = allSentences[prevIndex];
         if (sentence.text_check === -1) {
-            console.log("👀 4 ========================= nextSentence() nextIndex = " + prevIndex);
             showCurrentSentence(prevIndex); // ← или твоя функция загрузки предложения
             return;
         }
@@ -1078,12 +1045,6 @@ function disableCheckButton(active) {
     const userInput = document.getElementById('userInput');
     // Сначала удаляем все возможные цветные классы
     checkBtn.classList.value = '';
-    // checkBtn.classList.remove(
-    //     'button-color-mint',
-    //     'button-color-lightgreen',
-    //     'button-color-yellow'
-    //     // Добавьте другие цветные классы, если они используются
-    // );
     switch (active) {
         case 2:
             checkBtn.disabled = true;
@@ -1091,7 +1052,6 @@ function disableCheckButton(active) {
             // playBtn.innerHTML = '<i data-lucide="check"></i>';
             if (userInput) userInput.contentEditable = "false";
             checkBtn.classList.add('button-color-yellow');
-            // console.log("👀 ----------------disableCheckButton-----------------case 2:", checkBtn);
             break;
 
         case 0:
@@ -1214,7 +1174,6 @@ function checkText() {
 
 // Обработчики событий для inputField
 inputField.addEventListener('keydown', function (event) {
-    // console.log("👀 ----------------keydown-----------------" + event.key);
     if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         checkText();
@@ -1336,12 +1295,57 @@ document.querySelectorAll(".custom-audio-player").forEach(player => {
     const progressBar = player.querySelector(".progress-bar");
     const currentTimeElem = player.querySelector(".current-time");
     const totalTimeElem = player.querySelector(".total-time");
-    const volumeWrapper = player.querySelector(".volume-wrapperﬁ");
+    // const volumeWrapper = player.querySelector(".volume-wrapperﬁ");
     const volumeSlider = player.querySelector('.volume-slider');
     const muteBtn = player.querySelector('.mute-btn');
-    const speedSelect = player.querySelector(".speed-select");
+    // const speedSelect = player.querySelector(".speed-select");
 
-    // Инициализация громкости
+
+    // Элементы кастомного селектора скорости
+    const speedSelectWrapper = player.querySelector('.custom-speed-select');
+    const speedSelectBtn = speedSelectWrapper?.querySelector('.speed-select-button');
+    const speedSelected = speedSelectWrapper?.querySelector('.speed-selected');
+    const speedOptions = speedSelectWrapper?.querySelector('.speed-options');
+    const nativeSpeedSelect = player.querySelector(".speed-select");
+
+    // Инициализация скорости ------------------------------------------------------
+    // Функция для обновления скорости воспроизведения
+    const updatePlaybackSpeed = (speed) => {
+        audio.playbackRate = parseFloat(speed);
+        if (speedSelected) speedSelected.textContent = `${speed}x`;
+        if (nativeSpeedSelect) nativeSpeedSelect.value = speed;
+    };
+
+    // Инициализация скорости
+    if (speedSelectWrapper) {
+        // Обработчик клика по кнопке селектора
+        speedSelectBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            speedSelectWrapper.classList.toggle('active');
+        });
+
+        // Обработчик выбора скорости
+        speedOptions.querySelectorAll('li').forEach(option => {
+            option.addEventListener('click', () => {
+                const speed = option.dataset.value;
+                updatePlaybackSpeed(speed);
+                speedSelectWrapper.classList.remove('active');
+            });
+        });
+
+        // Инициализация начального значения
+        const initialSpeed = nativeSpeedSelect?.value || '1.0';
+        updatePlaybackSpeed(initialSpeed);
+    }
+
+    // Обработчик изменения скорости в нативном select
+    if (nativeSpeedSelect) {
+        nativeSpeedSelect.addEventListener('change', () => {
+            updatePlaybackSpeed(nativeSpeedSelect.value);
+        });
+    }
+
+    // Инициализация громкости ------------------------------------------------------
     audio.volume = 0.7; // Установите начальную громкость
     volumeSlider.value = audio.volume;
 
@@ -1386,12 +1390,12 @@ document.querySelectorAll(".custom-audio-player").forEach(player => {
     });
 
 
-    // Обработчик скорости воспроизведения
-    if (speedSelect) {
-        speedSelect.addEventListener("change", () => {
-            audio.playbackRate = parseFloat(speedSelect.value);
-        });
-    }
+    // // Обработчик скорости воспроизведения
+    // if (speedSelect) {
+    //     speedSelect.addEventListener("change", () => {
+    //         audio.playbackRate = parseFloat(speedSelect.value);
+    //     });
+    // }
 
     // Обновление прогресса
     audio.addEventListener("timeupdate", () => {
@@ -1412,6 +1416,17 @@ document.querySelectorAll(".custom-audio-player").forEach(player => {
 
 
 });
+
+
+// Закрытие всех селекторов скорости при клике вне их
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.custom-speed-select')) {
+        document.querySelectorAll('.custom-speed-select').forEach(select => {
+            select.classList.remove('active');
+        });
+    }
+});
+
 // Функция для обновления иконки громкости
 function updateVolumeIcon(volume, muteBtn) {
     let icon;
@@ -1436,23 +1451,8 @@ function formatTime(sec) {
 }
 
 // Вызов инициализации после загрузки DOM
-document.addEventListener("DOMContentLoaded", function () {
-    initializeSentences();
-    initializeDictation();
-    loadLanguageCodes();
-    // initAudioPlayers(); // Добавьте этот вызов
-});
-// function formatTime(sec) {
-//     let s = sec;
-//     let d = Math.floor(s / 86400);
-//     s = s - d * 86400;
-//     let h = Math.floor(s / 3600);
-//     s = s - h * 3600;
-//     let m = Math.floor(s / 60);
-//     s = s - h * 60;
-//     let time_text = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-//     if (d > 0) {
-//         time_text = `${d}:` + time_text;
-//     }
-//     return time_text;
-// }
+// document.addEventListener("DOMContentLoaded", function () {
+//     initializeSentences();
+//     initializeDictation();
+//     loadLanguageCodes();
+// });
