@@ -295,6 +295,7 @@ function updateTabloSentenceCounter(currentIndex, maxVisible = 9) {
 
 // ===== пройшли коло =========
 function checkIfAllCompleted() {
+    console.log("👀 renderSentenceCounter вызвана");
     const hasUnfinished = allSentences.some(s => s.text_check === -1);
     if (!hasUnfinished) {
 

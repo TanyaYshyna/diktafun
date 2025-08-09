@@ -67,15 +67,17 @@ button:active {
 .button-color-transparent {
     background-color: transparent;
     color: var(--color-button-text-gray);
+    border: 1px solid transparent; /* зарезервировать место под рамку */
+    box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
+    transition: all 0.2s ease; /* плавность изменений */
+    position: relative; /* если будем делать псевдоэффекты */
 }
-
 .button-color-transparent:hover {
     border: 1px solid var(--color-button-shadow-gray);
     /* появляется “обводка” */
     box-shadow: 0 3px 0 0 var(--color-button-shadow-gray);
     /* нижняя граница толще — имитация */
 }
-
 .button-color-transparent:active {
     border: 1px solid var(--color-button-shadow-gray);
     /* равномерная рамка */
@@ -85,13 +87,15 @@ button:active {
 .button-color-shadow-transparent {
     background-color: transparent;
     color: var(--color-button-gray);
+    border: 1px solid transparent; /* зарезервировать место под рамку */
+    box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
+    transition: all 0.2s ease; /* плавность изменений */
+    position: relative; /* если будем делать псевдоэффекты */
 }
-
 .button-color-shadow-transparent:hover {
     border: 0;
     box-shadow: none;
 }
-
 .button-color-shadow-transparent:active {
     border: 0;
     box-shadow: none;
@@ -101,15 +105,17 @@ button:active {
 .button-color-gray {
     background-color: var(--color-button-gray);
     color: var(--color-button-text-gray);
+    border: 1px solid transparent; /* зарезервировать место под рамку */
+    box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
+    transition: all 0.2s ease; /* плавность изменений */
+    position: relative; /* если будем делать псевдоэффекты */
 }
-
 .button-color-gray:hover {
     border: 1px solid var(--color-button-shadow-gray);
     /* появляется “обводка” */
     box-shadow: 0 3px 0 0 var(--color-button-shadow-gray);
     /* нижняя граница толще — имитация */
 }
-
 .button-color-gray:active {
     border: 1px solid var(--color-button-shadow-gray);
     /* равномерная рамка */
@@ -119,15 +125,17 @@ button:active {
 .button-color-mint {
     background-color: var(--color-button-mint);
     color: var(--color-button-text-mint);
+    border: 1px solid transparent; /* зарезервировать место под рамку */
+    box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
+    transition: all 0.2s ease; /* плавность изменений */
+    position: relative; /* если будем делать псевдоэффекты */
 }
-
 .button-color-mint:hover {
     border: 1px solid var(--color-button-shadow-mint);
     /* появляется “обводка” */
     box-shadow: 0 3px 0 0 var(--color-button-shadow-mint);
     /* нижняя граница толще — имитация */
 }
-
 .button-color-mint:active {
     border: 1px solid var(--color-button-shadow-mint);
     /* равномерная рамка */
@@ -137,15 +145,17 @@ button:active {
 .button-color-lightgreen {
     background-color: var(--color-button-lightgreen);
     color: var(--color-button-text-lightgreen);
+    border: 1px solid transparent; /* зарезервировать место под рамку */
+    box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
+    transition: all 0.2s ease; /* плавность изменений */
+    position: relative; /* если будем делать псевдоэффекты */
 }
-
 .button-color-lightgreen:hover {
     border: 1px solid var(--color-button-shadow-lightgreen);
     /* появляется “обводка” */
     box-shadow: 0 3px 0 0 var(--color-button-shadow-lightgreen);
     /* нижняя граница толще — имитация */
 }
-
 .button-color-lightgreen:active {
     border: 1px solid var(--color-button-shadow-lightgreen);
     /* равномерная рамка */
@@ -155,6 +165,10 @@ button:active {
 .button-color-yellow {
     background-color: var(--color-button-yellow);
     color: var(--color-button-text-yellow);
+    border: 1px solid transparent; /* зарезервировать место под рамку */
+    box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
+    transition: all 0.2s ease; /* плавность изменений */
+    position: relative; /* если будем делать псевдоэффекты */
 }
 
 .button-color-yellow:hover {
@@ -173,15 +187,17 @@ button:active {
 .button-color-orange {
     background-color: var(--color-button-orange);
     color: var(--color-button-text-orange);
+    border: 1px solid transparent; /* зарезервировать место под рамку */
+    box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
+    transition: all 0.2s ease; /* плавность изменений */
+    position: relative; /* если будем делать псевдоэффекты */
 }
-
 .button-color-orange:hover {
     border: 1px solid var(--color-button-shadow-orange);
     /* появляется “обводка” */
     box-shadow: 0 3px 0 0 var(--color-button-shadow-orange);
     /* нижняя граница толще — имитация */
 }
-
 .button-color-orange:active {
     border: 1px solid var(--color-button-shadow-orange);
     /* равномерная рамка */
@@ -191,15 +207,17 @@ button:active {
 .button-color-gray {
     background-color: var(--color-button-pink);
     color: var(--color-button-text-pink);
+    border: 1px solid transparent; /* зарезервировать место под рамку */
+    box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
+    transition: all 0.2s ease; /* плавность изменений */
+    position: relative; /* если будем делать псевдоэффекты */
 }
-
 .button-color-gray:hover {
     border: 1px solid var(--color-button-shadow-pink);
     /* появляется “обводка” */
     box-shadow: 0 3px 0 0 var(--color-button-shadow-pink);
     /* нижняя граница толще — имитация */
 }
-
 .button-color-gray:active {
     border: 1px solid var(--color-button-shadow-pink);
     /* равномерная рамка */
@@ -209,15 +227,17 @@ button:active {
 .button-color-purple {
     background-color: var(--color-button-purple);
     color: var(--color-button-text-purple);
+    border: 1px solid transparent; /* зарезервировать место под рамку */
+    box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
+    transition: all 0.2s ease; /* плавность изменений */
+    position: relative; /* если будем делать псевдоэффекты */
 }
-
 .button-color-purple:hover {
     border: 1px solid var(--color-button-shadow-purple);
     /* появляется “обводка” */
     box-shadow: 0 3px 0 0 var(--color-button-shadow-purple);
     /* нижняя граница толще — имитация */
 }
-
 .button-color-purple:active {
     border: 1px solid var(--color-button-shadow-purple);
     /* равномерная рамка */
@@ -281,7 +301,7 @@ h2 {
     margin: 10px 0;
     border-radius: 8px;
     padding: 10px;
-    background-color: white;
+    background-color: var(-color-white);
     box-shadow: 0 0 20px 10px var(--color-shadow);
     font-size: 20px;
     outline: none;

@@ -207,16 +207,42 @@
     </div>
     <div id="finishModal" class="modal" style="display: none;">
         <div class="modal-content">
-            <h2>Вы завершили диктант за </h2>
-            <div class="progress-top">
-                ⏱ : <span id="finish_modal_time">00:00:00</span> |
-                Круг: <span id="finish_modal_circle_number">1</span>
-            </div>
-            <div class="progress-bottom">
-                ✅ <span id="finish_modal_count_perfect">0</span>
-                🟩 <span id="finish_modal_count_corrected">0</span>
-                📋 <span id="finish_modal_count_total">0</span>
-            </div>
+            <h2>Вы завершили диктант за:</h2>
+
+            <div class="progress-panel">
+                <div class="progress-top">
+                    <button class="stat-btn timer" disabled title="Время работы над диктантом">
+                        <i data-lucide="alarm-clock"></i>
+                        <span id="rez_timer">00:00:00</span>
+                    </button>
+                </div>
+
+                <div class="progress-bottom">
+                    <button class="stat-btn perfect" disabled
+                        title="Количество предложений набранных без ошибок с 1-й попытки">
+                        <i data-lucide="star"></i>
+                        <span id="rez_count_perfect">0</span>
+                    </button>
+
+                    <button class="stat-btn corrected" disabled title="Количество набранных предложений">
+                        <i data-lucide="star-half"></i>
+                        <span id="rez_count_corrected">0</span>
+                    </button>
+
+                    <button class="stat-btn total" disabled title="Общее количество предложений на круге">
+                        <i data-lucide="layers"></i>
+                        <span id="rez_count_total">0</span>
+                    </button>
+
+                    <button class="stat-btn circle" disabled title="Какой раз проходим диктант">
+                        <i data-lucide="iteration-cw"></i>
+                        <span id="rez_circle-number">1</span>
+                    </button>
+                </div>
+            
+
+
+
             <p>Что вы хотите сделать дальше?</p>
             <div class="modal-buttons">
                 <button id="btnRestartAll" onclick=clickBtnRestartAll()>Пройти всё заново</button>

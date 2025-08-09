@@ -22,8 +22,138 @@ let sentenceRows = [];
 let waveSurfer = null;
 let currentRegion = null;
 let wordPointer = 0; // для алгоритма сравнения текущая позиция
+// Получаем значение переменной из :root
+const regionColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--color-button-orange66')
+    .trim(); // убираем пробелы
+const waveColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--color-button-lightgreen')
+    .trim();
+const progressColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--color-button-orange')  // или другую подходящую переменную
+    .trim();
 
 
+// -------------НАВИГАЦИЯ ПО СТРОКАМ ТАБЛМЦЫ --------------------------------------------------
+let selectedKey = null;
+
+function getTbody() {
+    return document.querySelector('#sentences-table tbody');
+}
+
+function getTopRows() {
+    // Только верхние половинки, по ним будем бегать ↑/↓
+    return Array.from(getTbody().querySelectorAll('tr.sentence-row-top'));
+}
+
+function clearSelection() {
+    const tb = getTbody();
+    tb.querySelectorAll('tr.sentence-row.selected, tr.sentence-row.selected-top, tr.sentence-row.selected-bottom')
+        .forEach(tr => {
+            tr.classList.remove('selected', 'selected-top', 'selected-bottom');
+        });
+}
+
+function selectRowByKey(key, { scrollIntoView = true, focusEditable = false } = {}) {
+    const tb = getTbody();
+    const top = tb.querySelector(`tr.sentence-row-top[data-key="${key}"]`);
+    const bottom = tb.querySelector(`tr.sentence-row-bottom[data-key="${key}"]`);
+    if (!top || !bottom) return;
+
+    clearSelection();
+
+    top.classList.add('selected', 'selected-top');
+    bottom.classList.add('selected', 'selected-bottom');
+    selectedKey = key;
+
+    const label = document.getElementById('text-original-row');
+    if (label) {
+        const rowNumber = parseInt(key) + 1; // Преобразуем "001" в 1 и т.д.
+        label.textContent = `(${rowNumber}) ${originalText}`;
+    }
+
+    // Получаем оригинальный текст из выбранной строки
+    const originalText = top.querySelector('.text-original')?.textContent || '';
+
+    // Обновляем поля времени при выборе строки
+    const startTime = parseFloat(top.querySelector('.start-time')?.textContent) || 0;
+    const endTime = parseFloat(top.querySelector('.end-time')?.textContent) || 0;
+
+    document.getElementById('startTime').value = startTime.toFixed(2);
+    document.getElementById('endTime').value = endTime.toFixed(2);
+
+    // Если есть волновой редактор - создаем регион
+    if (waveSurfer) {
+        createRegion(startTime, endTime, key);
+    }
+
+    if (scrollIntoView) {
+        // Аккуратно скроллим к верхней половинке
+        top.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+    
+    if (focusEditable) {
+        // Ставим курсор в поле оригинала (если нужно)
+        const editable = top.querySelector('.text-original[contenteditable="true"]') ||
+            bottom.querySelector('.text-translation[contenteditable="true"]');
+        if (editable) {
+            // маленький трюк, чтобы фокус точно встал
+            editable.focus();
+            const sel = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(editable);
+            range.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+    }
+}
+
+// Делегирование кликов по таблице: клик по любой ячейке активирует пару
+document.addEventListener('click', (e) => {
+    const tr = e.target.closest('#sentences-table tr.sentence-row');
+    if (!tr) return;
+    const key = tr.dataset.key;
+    if (!key) return;
+    selectRowByKey(key, { focusEditable: false });
+});
+
+// Навигация стрелками ↑/↓
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+
+    const rowsTop = getTopRows();
+    if (rowsTop.length === 0) return;
+
+    e.preventDefault();
+
+    let idx = 0;
+    if (selectedKey) {
+        idx = rowsTop.findIndex(r => r.dataset.key === selectedKey);
+        if (idx < 0) idx = 0;
+    }
+
+    if (e.key === 'ArrowUp') {
+        idx = Math.max(0, idx - 1);
+    } else if (e.key === 'ArrowDown') {
+        idx = Math.min(rowsTop.length - 1, idx + 1);
+    }
+
+    const nextKey = rowsTop[idx].dataset.key;
+    selectRowByKey(nextKey, { focusEditable: false });
+});
+
+// При первичной отрисовке — выделим первую строку (если есть)
+function selectFirstRowIfAny() {
+    const rowsTop = getTopRows();
+    if (rowsTop.length > 0) {
+        selectRowByKey(rowsTop[0].dataset.key, { scrollIntoView: false });
+    }
+}
+
+
+
+//------------------ВОЛНА----------------------------------------------------------------------    
 function setupRegionListeners(region) {
     currentRegion = region;
     updateRegionInputs(region);
@@ -34,12 +164,36 @@ function togglePanel(headerElement) {
     panel.classList.toggle('open');
 }
 
+
+// Функция для обновления времени в текущей строке
+function updateCurrentRowTimes(start, end) {
+    if (!selectedKey) return;
+
+    const topRow = getTbody().querySelector(`tr.sentence-row-top[data-key="${selectedKey}"]`);
+    if (topRow) {
+        const startElement = topRow.querySelector('.start-time');
+        const endElement = topRow.querySelector('.end-time');
+
+        if (startElement) startElement.textContent = start.toFixed(2);
+        if (endElement) endElement.textContent = end.toFixed(2);
+    }
+}
+
 function updateRegionInputs(region) {
+    // const newStart = parseFloat(e.target.value);
+    // if (isNaN(newStart)) return;
+
     const startInput = document.getElementById('startTime');
     const endInput = document.getElementById('endTime');
 
     if (startInput) startInput.value = region.start.toFixed(2);
     if (endInput) endInput.value = region.end.toFixed(2);
+
+    // Обновляем значение в таблице
+    // updateCurrentRowTimes(newStart, parseFloat(document.getElementById('endTime').value) || 0);
+    if (region) {
+        updateCurrentRowTimes(region.start, region.end);
+    }
 }
 
 document.getElementById('startTime').addEventListener('input', (e) => {
@@ -56,12 +210,18 @@ document.getElementById('startTime').addEventListener('input', (e) => {
 });
 
 document.getElementById('endTime').addEventListener('input', (e) => {
+    const newEnd = parseFloat(e.target.value);
+    if (isNaN(newEnd)) return;
+
     if (currentRegion) {
         const newEnd = parseFloat(e.target.value);
         if (!isNaN(newEnd)) {
             currentRegion.update({ end: newEnd });
         }
     }
+
+    // Обновляем значение в таблице
+    updateCurrentRowTimes(parseFloat(document.getElementById('startTime').value) || 0, newEnd);
 });
 
 function initWaveSurfer(audioUrl) {
@@ -71,8 +231,8 @@ function initWaveSurfer(audioUrl) {
 
     waveSurfer = WaveSurfer.create({
         container: '#waveform',
-        waveColor: '#a0d8f1',
-        progressColor: 'blue',
+        waveColor: waveColor,
+        progressColor: progressColor,
         height: 100,
         plugins: [
             WaveSurfer.regions.create({
@@ -80,7 +240,7 @@ function initWaveSurfer(audioUrl) {
                     {
                         start: 0,
                         end: 5,
-                        color: 'rgba(255, 0, 0, 0.3)',
+                        color: `${regionColor}66`, // 66 = 40% прозрачности
                         drag: true,
                         resize: true
                     }
@@ -92,7 +252,6 @@ function initWaveSurfer(audioUrl) {
     // updateCurrentTimesUI(0, 5);
 
     waveSurfer.on('ready', () => {
-        console.log('WaveSurfer ready');
         const allRegions = waveSurfer.regions.list;
         const firstRegion = Object.values(allRegions)[0];
 
@@ -100,6 +259,17 @@ function initWaveSurfer(audioUrl) {
             setupRegionListeners(firstRegion);
             updateRegionInputs(firstRegion); // Обновляем поля ввода после создания региона
         }
+
+        // Добавляем обработку выбранной строки при загрузке волны
+        if (selectedKey) {
+            const top = getTbody().querySelector(`tr.sentence-row-top[data-key="${selectedKey}"]`);
+            if (top) {
+                const start = parseFloat(top.querySelector('.start-time')?.textContent) || 0;
+                const end = parseFloat(top.querySelector('.end-time')?.textContent) || waveSurfer.getDuration();
+                createRegion(start, end, selectedKey);
+            }
+        }
+
         // Добавьте сюда код для создания региона при загрузке
         const activeRow = document.querySelector('.row-active');
         if (activeRow) {
@@ -128,17 +298,29 @@ function initWaveSurfer(audioUrl) {
 
     waveSurfer.on('play', () => {
         const btn = document.getElementById("playPauseBtn");
-        if (btn) btn.textContent = "⏸️";
+        if (btn) {
+            // btn.textContent = '<i data-lucide="pause"></i>';
+            btn.innerHTML = '<i data-lucide="pause"></i>';
+            lucide.createIcons();;
+        }
     });
 
     waveSurfer.on('pause', () => {
         const btn = document.getElementById("playPauseBtn");
-        if (btn) btn.textContent = "▶️";
+        if (btn) {
+            // btn.textContent = '<i data-lucide="play"></i>';
+            btn.innerHTML = '<i data-lucide="play"></i>';
+            lucide.createIcons();;
+        }
     });
 
     waveSurfer.on('finish', () => {
         const btn = document.getElementById("playPauseBtn");
-        if (btn) btn.textContent = "▶️";
+        if (btn) {
+            // btn.textContent = '<i data-lucide="play"></i>';
+            btn.innerHTML = '<i data-lucide="play"></i>';
+            lucide.createIcons();;
+        }
     });
 
     waveSurfer.on('audioprocess', (time) => {
@@ -175,7 +357,7 @@ function setupRegionListeners(region) {
 }
 
 function createRegion(start, end, index) {
-    if (!waveSurfer) return;
+    if (!waveSurfer || !waveSurfer.regions) return null;
 
     waveSurfer.regions.clear();
 
@@ -222,12 +404,12 @@ function toggleAudioDependentElements(hasAudio) {
 function onRowClick(index, text) {
     if (!waveSurfer) return;
 
-    // const start = parseFloat(document.querySelector(`.start-time[data-index="${index}"]`)?.value || 0);
-    // const end = parseFloat(document.querySelector(`.end-time[data-index="${index}"]`)?.value || waveSurfer.getDuration() || 1);
     const start = parseFloat(document.querySelector(`.start-time[data-index="${index}"]`)?.value || 0);
     const end = parseFloat(document.querySelector(`.end-time[data-index="${index}"]`)?.value || waveSurfer.getDuration() || 1);
 
-    highlightRow(index);
+    const key = String(index).padStart(3, '0'); // приводим к формату "000", "001" и т.д.
+    selectRowByKey(key, { focusEditable: false });
+
     updateCurrentPhraseUI(text, start, end);
     createRegion(start, end, index);
 }
@@ -404,53 +586,14 @@ async function handleAudioGeneration(key, text, language) {
         return false;
     }
 }
-// async function handleAudioGeneration(key, text, language) {
-//     try {
-//         // Отправляем запрос на сервер для генерации аудио
-//         const response = await fetch('/generate_audio', {
-//             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify({
-//                 dictation_id: currentDictation.id,
-//                 text: text,
-//                 sentence_id: key, // Форматируем как "001"
-//                 language: language
-//             })
-//         });
-
-//         if (!response.ok) {
-//             throw new Error('Ошибка сервера');
-//         }
-
-//         const data = await response.json();
-//         if (!data.success) {
-//             throw new Error(data.error || 'Неизвестная ошибка генерации аудио');
-//         }
-
-//         // Создаем аудио-элемент и сохраняем его
-//         // const audio = new Audio(data.audio_url);
-//         // const audioKey = `${key}_${language}`;
-//         // audioPlayers[audioKey] = audio;
-
-//         return putAudioInPlayer(key, language, data.audio_url);
-//     } catch (error) {
-//         console.error('Ошибка генерации аудио:', error);
-//         return false;
-//     }
-// }
 
 // Функция генерации аудио заданной фразы с обработкой ошибок
 async function putAudioInPlayer(key, language, audio_url) {
     try {
         // Создаем аудио-элемент и сохраняем его
-        console.log("🔄 ----------------------- putAudioInPlayer--1----- key = " + key + ";  language = " + language + ";  audio_url = " + audio_url);
-
         const audio = new Audio(audio_url);
-        console.log("🔄 ----------------------- putAudioInPlayer--2----- audio = " + audio);
         const audioKey = `${key}_${language}`;
-        console.log("🔄 ----------------------- putAudioInPlayer--3----- audioKey = " + audioKey);
         audioPlayers[audioKey] = audio;
-        console.log("🔄 ----------------------- putAudioInPlayer--4----- ");
 
         return true;
     } catch (error) {
@@ -499,6 +642,7 @@ async function createSentenceRow(
     status = ''
 ) {
     const row1 = document.createElement('tr');
+    row1.classList.add('sentence-row', 'sentence-row-top');
     row1.dataset.key = key; // это ключ троки он должен быть в каждой ячейке строки, посколько строка двухуровневая
 
     // (1.1) Ячейка с номером по порядку предложения
@@ -508,7 +652,7 @@ async function createSentenceRow(
         <div id="key">${index + 1}</div>
      `;
     row1.appendChild(keyCell);
-    console.log("🔄 ----------- (1.1) ----- ", index);
+    // console.log("🔄 ----------- (1.1) ----- ", index);
 
     // оригинал -  верхняя часть
     // (1.2) Столбец "Текст (оригинал + перевод)"
@@ -533,8 +677,6 @@ async function createSentenceRow(
             playBtn.disabled = true;
         }
     });
-    console.log("🔄 ----------- (1.2) ----- ", sentence);
-
     // (1.3) Столбец с кнопками генерации аудио
     const audioGenerationOriginal = document.createElement('td');
     audioGenerationOriginal.innerHTML = `
@@ -547,7 +689,7 @@ async function createSentenceRow(
     // Назначаем обработчик для кнопки генерации оригинала
     const genOriginalBtn = audioGenerationOriginal.querySelector('.generate-audio');
     genOriginalBtn.addEventListener('click', async () => {
-        console.log(`++++++++++++++++++Генерация аудио оригинала для строки ${index}`);
+        // console.log(`++++++++++++++++++Генерация аудио оригинала для строки ${index}`);
 
         const text = row1.querySelector('.text-original').textContent.trim();
         if (!text) return;
@@ -574,7 +716,6 @@ async function createSentenceRow(
             genOriginalBtn.disabled = false;
         }
     });
-    console.log("🔄 ----------- (1.3) ----- ");
 
     // (1.4) Столбец с кнопками проигрывания аудио
     const audioCellOriginal = document.createElement('td');
@@ -587,30 +728,22 @@ async function createSentenceRow(
     row1.appendChild(audioCellOriginal);
     // Генерируем аудио для оригинала если нам не дали адрес уже готового аудио
     let originalSuccess = false;
-    console.log("🔄 ----------- (1.4.1) ----- audio_url_original = ", audio_url_original);
     if (audio_url_original === '') {
         // аудио еще нет -- создаем
-        console.log("🔄 ----------- (1.4.2) ----- handleAudioGeneration");
         originalSuccess = await handleAudioGeneration(key, sentence, currentDictation.language_original);
-        console.log("🔄 ----------- (1.4.3) ----- handleAudioGeneration   originalSuccess = ", originalSuccess);
     } else {
         // у нас есть адрес аудио файла просто записываем в плеер
-        console.log("🔄 ----------- (1.4.4) ----- putAudioInPlayer");
         originalSuccess = await putAudioInPlayer(key, currentDictation.language_original, audio_url_original)
-        console.log("🔄 ----------- (1.4.5) ----- putAudioInPlayer  originalSuccess = ", originalSuccess);
     }
     const playBtnOriginal = audioCellOriginal.querySelector('.play-audio');
     if (originalSuccess) {
-        console.log("🔄 ----------- (1.4.6) ----- playBtnOriginal originalSuccess = ", originalSuccess);
         playBtnOriginal.disabled = false;
         playBtnOriginal.querySelector('.status-text').textContent = currentDictation.language_original;
     } else {
-        console.log("🔄 ----------- (1.4.7) ----- playBtnOriginal originalSuccess = ", originalSuccess);
         playBtnOriginal.disabled = true;
         playBtnOriginal.querySelector('.status-text').textContent = 'Ошибка';
         playBtnOriginal.classList.add('error');
     }
-    console.log("🔄 ----------- (1.4.8) -----  playBtnOriginal.querySelector('.status-text').textContent = ", playBtnOriginal.querySelector('.status-text').textContent);
 
 
     // тут надо получить start end status предложения
@@ -628,21 +761,39 @@ async function createSentenceRow(
     const startOriginal = `<span class="start-time audio-dependent-column-display" data-index="${key}">${startTime?.toFixed(2) ?? '–'}</span>`;
     tdStart.innerHTML = startOriginal;
     row1.appendChild(tdStart);
-    console.log("🔄 ----------- (1.5) ----- startTime = ", startTime);
+    // Добавляем в обработчики изменения полей времени
+    document.getElementById('startTime').addEventListener('change', (e) => {
+        if (!selectedKey) return;
+        const value = parseFloat(e.target.value);
+        if (isNaN(value)) return;
+
+        const top = getTbody().querySelector(`tr.sentence-row-top[data-key="${selectedKey}"]`);
+        if (top) {
+            top.querySelector('.start-time').textContent = value.toFixed(2);
+        }
+    });
 
     // (1.6) Создаём и добавляем ячейку для endOriginal
     const tdEnd = document.createElement('td');
     const endOriginal = `<span class="end-time audio-dependent-column-display" data-index="${key}">${endTime?.toFixed(2) ?? '–'}</span>`;
     tdEnd.innerHTML = endOriginal;
     row1.appendChild(tdEnd);
-    console.log("🔄 ----------- (1.6) ----- endTime = ", endTime);
+    // Добавляем в обработчики изменения полей времени
+    document.getElementById('endTime').addEventListener('change', (e) => {
+        if (!selectedKey) return;
+        const value = parseFloat(e.target.value);
+        if (isNaN(value)) return;
 
+        const top = getTbody().querySelector(`tr.sentence-row-top[data-key="${selectedKey}"]`);
+        if (top) {
+            top.querySelector('.end-time').textContent = value.toFixed(2);
+        }
+    });
     // (1.7) Создаём и добавляем ячейку для statusOriginal
     const tdStatus = document.createElement('td');
     const statusOriginal = `<span class="end-time audio-dependent-column-display" data-index="${key}">${status}</span>`;
     tdStatus.innerHTML = statusOriginal;
     row1.appendChild(tdStatus);
-    console.log("🔄 ----------- (1.7) ----- status = ", status);
 
     // // (1.8) Создаём и добавляем ячейку для sourceRadios
     // const tdRadios = document.createElement('td');
@@ -656,11 +807,11 @@ async function createSentenceRow(
     // row1.appendChild(tdRadios);
 
     tbody.appendChild(row1);
-    console.log("🔄 ----------- (1.7) ----- tbody.appendChild(row1) = ");
 
 
     // Вторая строка без первой ячейки ========================================================
     const row2 = document.createElement("tr");
+    row2.classList.add('sentence-row', 'sentence-row-bottom');
     row2.dataset.key = key;
 
     // (2.2) Столбец с текстом (перевод)
@@ -686,7 +837,6 @@ async function createSentenceRow(
             playBtn.disabled = true;
         }
     });
-    console.log("🔄 ----------- (2.2) ----- ", translation);
 
     // (2.3) Столбец с кнопками генерации аудио
     const audioGenerationTranslation = document.createElement('td');
@@ -697,11 +847,10 @@ async function createSentenceRow(
         </button>
     `;
     row2.appendChild(audioGenerationTranslation);
-    console.log("🔄 ----------- (2.3) ----- ");
     // Назначаем обработчик для кнопки генерации перевода
     const genTranslationBtn = audioGenerationTranslation.querySelector('.generate-audio');
     genTranslationBtn.addEventListener('click', async () => {
-        console.log(`Генерация аудио перевода для строки ${key}`);
+        // console.log(`Генерация аудио перевода для строки ${key}`);
 
         const text = row2.querySelector('.text-translation').textContent.trim();
         if (!text) return;
@@ -728,7 +877,6 @@ async function createSentenceRow(
             genTranslationBtn.disabled = false;
         }
     });
-    console.log("🔄 ----------- (2.3.1) ----- ");
 
     // (2.4) Столбец с кнопками проигрывания аудио
     const audioCellTranslation = document.createElement('td');
@@ -748,7 +896,6 @@ async function createSentenceRow(
         // у нас есть адрес аудио файла просто записываем в преер
         translationSuccess = await putAudioInPlayer(key, currentDictation.language_translation, audio_url_translation)
     }
-    console.log("🔄 ----------- (2.4) ----- ");
     // Назначаем обработчик для кнопки play
     const playBtnTranslation = audioCellTranslation.querySelector('.play-audio-tr');
     if (translationSuccess) {
@@ -759,12 +906,8 @@ async function createSentenceRow(
         playBtnTranslation.querySelector('.status-text').textContent = 'Ошибка';
         playBtnTranslation.classList.add('error');
     }
-    console.log("🔄 ----------- (2.4.1) ----- ");
 
     tbody.appendChild(row2);
-    console.log("🔄 ----------- tbody.appendChild(row2); ----- ");
-
-
 
     return row1;
 }
@@ -783,7 +926,7 @@ async function saveJSONToServer(filePath, data) {
         body: JSON.stringify({ path: filePath, data: data })
     });
     const result = await response.json();
-    console.log("✅ Сохранено:", result);
+    // console.log("✅ Сохранено:", result);
 }
 
 async function saveJSON_sentences(dictationId, language, title, sentences) {
@@ -910,7 +1053,7 @@ function setupButtons() {
                 // отримуємо аудіо оригінала
                 // якщо е початок кінець речення із спільного файлу то треба обрізати аудіо
 
-                console.log("✅ audio_url_original:-----------", audio_url_original);
+                // console.log("✅ audio_url_original:-----------", audio_url_original);
 
                 // const saccess_cut_audio = trimAndSaveAudio(startTime, endTime, audio_url_original)
                 saccess_audio_original = await fetch('/trim_audio', {
@@ -953,6 +1096,9 @@ function setupButtons() {
 
         }
 
+        // после того как добавили все строки в tbody
+        selectFirstRowIfAny();
+
         // 📄 2. Создание sentences.json для оригинала
         saveJSON_sentences(dictationId, language_original, title_value, sentences_original)
         // saveJSON_sentences(dictationId, language_original, title_value, '.text-original')
@@ -967,7 +1113,7 @@ function setupButtons() {
     document.addEventListener('click', function (e) {
         const playBtn = e.target.closest('.play-audio, .play-audio-tr');
         if (!playBtn || playBtn.disabled) return;
-        console.log("✅ Обработчик кликов по кнопкам воспроизведения аудио:-----------", playBtn);
+        // console.log("✅ Обработчик кликов по кнопкам воспроизведения аудио:-----------", playBtn);
 
         const lang = playBtn.classList.contains('play-audio-tr') ?
             currentDictation.language_translation :
@@ -1026,8 +1172,8 @@ function initNewDictation() {
     const language_original = langDiv.dataset.original;
     const language_translation = langDiv.dataset.translation;
 
-    console.log("Язык оригинала:", language_original);
-    console.log("Язык перевода:", language_translation);
+    // console.log("Язык оригинала:", language_original);
+    // console.log("Язык перевода:", language_translation);
 
     currentDictation = {
         id: dictation_id,
@@ -1102,13 +1248,15 @@ async function loadExistingDictation(initData) {
     }
 
     // заполнение таблицы фраз
-    renderSentenceTable(original_data, translation_data);
+    renderSentenceTable(original_data?.sentences || [], translation_data?.sentences || []);
+    renderSentenceTable(original_data?.sentences || [], translation_data?.sentences || []);
+    // Навигация по таблице
+    // ===== Выделение текущей пары строк и навигация стрелками =====
 
-    // Обновляем интерфейс
-    // setupButtons();  // если нужно повторно активировать кнопки и слушателей
+
 }
 
-async function renderSentenceTable(original_data, translation_data) {
+async function renderSentenceTable(original_sentences = [], translation_sentences = []) {
     // 1. Получаем пути к папкам с аудио
     const response = await fetch('/generate_path_audio', {
         method: 'POST',
@@ -1123,31 +1271,37 @@ async function renderSentenceTable(original_data, translation_data) {
     const result = await response.json();
     const audio_dir_url_original = "/" + result.audio_dir_original;
     const audio_dir_url_translation = "/" + result.audio_dir_translation;
-    console.log("🔄 audio_dir_url_original ---------     ", audio_dir_url_original);
-    console.log("🔄 audio_dir_url_translation ------     ", audio_dir_url_translation);
 
     // 2. Подготавливаем таблицу
     const tbody = document.querySelector('#sentences-table tbody');
     tbody.innerHTML = '';
 
-    // 3. Проходим по оригинальным предложениям
-    for (const [index, sentence] of original_data.sentences.entries()) {
-        const key = sentence.key;
-        const translationEntry = translation_data.sentences.find(t => t.key === key);
+    // 3. Проверяем, что original_sentences - массив
+    if (!Array.isArray(original_sentences)) {
+        console.error("original_sentences не является массивом:", original_sentences);
+        return;
+    }
+
+    // 4. Проходим по оригинальным предложениям
+    for (const [index, sentence] of original_sentences.entries()) {
+        // Проверяем структуру sentence
+        if (!sentence || typeof sentence !== 'object') {
+            console.error("Некорректная структура предложения:", sentence);
+            continue;
+        }
+
+        const key = sentence.key || index.toString().padStart(3, '0');
+        const translationEntry = translation_sentences.find(t => t?.key === key);
 
         // Данные для оригинального предложения
-        const originalText = sentence.text;
-        const originalAudio = sentence.audio;
+        const originalText = sentence.text || '';
+        const originalAudio = sentence.audio || `${key}.mp3`;
         const audio_url_original = `${audio_dir_url_original}/${originalAudio}`;
-        console.log("🔄 originalAudio -----------    ", originalAudio);
-        console.log("🔄 audio_url_original ------     ", audio_url_original);
 
         // Данные для перевода
         const translationText = translationEntry?.text || '';
-        const translationAudio = translationEntry?.audio || '';
+        const translationAudio = translationEntry?.audio || `${key}.mp3`;
         const audio_url_translation = `${audio_dir_url_translation}/${translationAudio}`;
-        console.log("🔄 translationAudio -----------     ", translationAudio);
-        console.log("🔄 audio_url_translation ------     ", audio_url_translation);
 
         // Пустые значения для start/end/status на первом этапе
         const startTime = 0;
@@ -1168,6 +1322,9 @@ async function renderSentenceTable(original_data, translation_data) {
             status
         );
     }
+
+    // После добавления всех строк выделяем первую
+    selectFirstRowIfAny();
 }
 
 
@@ -1214,7 +1371,6 @@ document.getElementById('recognize_words_btn').addEventListener('click', async (
     }
 
     textOutput.value = "⏳ Распознавание...";
-    console.log("Отправка запроса на распознавание для dictation_id:", dictationId);
 
     try {
         const response = await fetch("/recognize_words", {
@@ -1225,8 +1381,6 @@ document.getElementById('recognize_words_btn').addEventListener('click', async (
             body: JSON.stringify({ dictation_id: dictationId })
         });
 
-        console.log("Получен ответ, статус:", response.status);
-
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             console.error("Ошибка сервера:", errorData);
@@ -1234,7 +1388,6 @@ document.getElementById('recognize_words_btn').addEventListener('click', async (
         }
 
         const result = await response.json();
-        console.log("Результат распознавания:", result);
 
         if (result.error) {
             textOutput.value = "❌ Ошибка: " + result.error;
@@ -1426,7 +1579,6 @@ async function saveTreeData() {
 
     try {
         const fullTree = tree.toDict(true); // Получаем полное дерево
-        console.log("Отправка запроса на save_categories");
 
         // Показываем индикатор загрузки
         $('#btnSelectCategory').prop('disabled', true).text('Сохранение...');

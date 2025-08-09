@@ -249,29 +249,6 @@
     }
 }
 
-/* audio-dependent-column-display
-audio-dependent-column-do-not-display */
-/* В вашем CSS файле */
-/* display: none; */
-/* .audio-dependent-column-display {
- 
-  display: flex;
-}
-#waveWrapper {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 20px; 
-    box-sizing: border-box;
-    width: 100%;
-    margin: 10px 0;
-}
-
-#waveform {
-    flex-grow: 1;
-    height: 60px;
-} */
-
 #audio-controls-container {
     width: 100%;
 }
@@ -284,7 +261,7 @@ audio-dependent-column-do-not-display */
 #waveform {
     width: 100%;
     height: 90px;
-    background: #eef7ff;
+    background: var(--color-panel-bg);
     /* можно убрать — для отладки */
     overflow: hidden;
     /* 🔒 запрет вылезания шторок вниз */
@@ -303,10 +280,10 @@ audio-dependent-column-do-not-display */
 .controls-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 20px;
 }
 
-#playPauseBtn {
+/* #playPauseBtn {
     width: 40px;
     height: 40px;
     font-size: 18px;
@@ -314,19 +291,13 @@ audio-dependent-column-do-not-display */
     cursor: pointer;
     position: relative;
     z-index: 10;
-}
+} */
 
 .time-fields {
     font-size: 14px;
     color: #555;
     white-space: nowrap;
 }
-
-/* wavesurfer-region {
-  max-height: 100%;
-  overflow: hidden;
-  z-index: 1;
-} */
 
 wavesurfer-region {
   top: 0 !important;
@@ -335,32 +306,14 @@ wavesurfer-region {
   z-index: 2;
 }
 
-/* #waveform {
-    border: 2px solid green;
-}
-
-#playPauseBtn {
-    border: 2px solid red;
-} */
-
-#fakeAudioFileBtn {
-    font-size: 18px;
-    padding: 6px 10px;
-    border-radius: 5px;
-    border: 1px solid #aaa;
-    cursor: pointer;
-}
-#fakeAudioFileBtn:hover {
-    background-color: #e8e8e8;
-}
-
 
 /* --------------------прячущиеся панели  НАЧАЛО ----------------------------------- */
 .toggle-panel {
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    border: 1px solid var(--color-button-yellow);
+    color: var(--color-button-text-yellow);
+    border-radius: 8px;
     margin-bottom: 10px;
-    background: #f9f9f9;
+    background: var(--color-panel-bg);
     overflow: hidden;
 }
 
@@ -368,7 +321,7 @@ wavesurfer-region {
     cursor: pointer;
     padding: 8px 12px;
     font-weight: bold;
-    background: #e0e0e0;
+    background: var(--color-button-yellow);
     display: flex;
     align-items: center;
     user-select: none;
@@ -393,3 +346,74 @@ wavesurfer-region {
     display: block;
 }
 /* --------------------прячущиеся панели  КОНЕЦ ----------------------------------- */
+/* --------------------Заголовки оригинал и перевод "вагончиком"  НАЧАЛО ----------------------------------- */
+.form-group-line-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+}
+
+.form-group-line {
+    display: flex;
+    align-items: center;
+    flex: 1 1 300px; /* Минимальная ширина одного "вагончика" */
+    gap: 10px; /* расстояние между лейблом и инпутом */
+}
+
+.form-group-line label {
+    white-space: nowrap; /* чтобы не переносился текст лейбла */
+    min-width: 30px; /* можно регулировать ширину лейбла */
+    text-align: right; /* если хочешь выровнять текст по правому краю */
+}
+
+.text-input {
+    flex: 1; /* растягиваем input */
+}
+
+/* --------------------Заголовки оригинал и перевод "вагончиком"  КОНЕЦ ----------------------------------- */
+/* -------------------- Курсор таблицы  НАЧАЛО ----------------------------------- */
+/* Базовый класс для обеих половинок строки */
+/* tr.sentence-row {
+    transition: background 120ms ease, border-color 120ms ease;
+} */
+
+/* Подсветка активной пары */
+/* tr.sentence-row.selected {
+    background: var(--color-panel-bg, #f7f7ff); 
+    border-left: 2px solid #ffd400;
+    border-right: 2px solid #ffd400;
+} */
+
+/* Верхняя половинка рисует верхнюю грань рамки */
+/* tr.sentence-row.selected-top {
+    border-top: 2px solid #ffd400;
+} */
+
+/* Нижняя половинка рисует нижнюю грань рамки */
+/* tr.sentence-row.selected-bottom {
+    border-bottom: 2px solid #ffd400;
+} */
+
+/* На всякий случай, чтобы рамка не ломалась коллапсом границ */
+/* #sentences-table {
+    border-collapse: separate;
+    border-spacing: 0;
+} */
+
+
+/* Подсветка активной пары */
+tr.sentence-row.selected-top {
+    background: var(--color-panel-bg);
+    border-left: 2px solid #ffd400;
+    border-right: 2px solid #ffd400;
+    border-top: 2px solid #ffd400;
+}
+
+tr.sentence-row.selected-bottom {
+    background: var(--color-panel-bg);
+    border-left: 2px solid #ffd400;
+    border-right: 2px solid #ffd400;
+    border-bottom: 2px solid #ffd400;
+}
+/* -------------------- Курсор таблицы  КОНЕЦ ----------------------------------- */

@@ -11,13 +11,14 @@
   --color-button-lightgreen: #bbf1caff;  
   --color-button-yellow: #fceba3ff;  
   --color-button-orange: #f9d6a1ff;  
+  --color-button-orange66: #f9d6a1;  
   --color-button-pink: #f5c0caff;  
   --color-button-purple: #c8c9fbff;  
 
   --color-button-text-gray: #5a5e60ff;  
   --color-button-text-mint: #28615fff;  
   --color-button-text-lightgreen: #366f40ff;  
-  --color-button-text-yellow: #7c661eff;  
+  --color-button-text-yellow: rgb(197, 161, 41);  
   --color-button-text-orange: #80541eff;  
   --color-button-text-pink: #802c35ff;  
   --color-button-text-purple: #2b2d67ff;  
@@ -30,9 +31,12 @@
   --color-button-shadow-pink: rgb(190, 66, 78);  
   --color-button-shadow-purple: rgb(74, 77, 176);  
 
-
-
   --color-white: #ffffff;
+  --color-shadow: rgba(0, 0, 0, 0.1);         /* мягкая тень */
+  --color-shadow-strong: rgba(0, 0, 0, 0.3);  /* сильная тень (модалки) */
+
+
+
   --color-light-blue: #cae7fb;               /* светло-голубой фон блоков */
   --color-blue: #3498db;                     /* основной голубой */
   --color-blue-hover: #2997e0;               /* наведение на голубую кнопку */

@@ -34,77 +34,81 @@
 
 
     <div class="panel">
+        <h2 id="dictation-id">Новый диктант: </h2>
         <div class="container" style="display: flex">
             <div id="langPair" data-original="{{ original_language }}" data-translation="{{ translation_language }}">
                 {{ original_language }} ⇒ {{ translation_language }}
             </div>
-            <h1 id="dictation-id">Новый диктант: </h1>
-        </div>
+            <div class="container">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="tooltip-wrapper">
+                        <button id="openTreeDialogBtn" onclick="openCategoryModal('root')">⋯</button>
+                        <pre class="tooltip-text">Выбрать категорию</pre> <!-- подсказка -->
+                    </div>
+                    <pre id="modalTitle">Категория: </pre>
+                    <!-- Диалоговое окно для работы с деревом -->
+                    <div id="modalOverlay" class="modal-overlay"></div>
+                    <div id="categoryModal" class="modal" style="display:none;">
+                        <h4>Выберите ветку</h4>
+                        <div id="treeContainer"></div>
 
+                        <div class="tooltip-wrapper">
+                            <button id="btnAddNode"> ➕ </button>
+                            <div class="tooltip-text">Новый элемент</div> <!-- подсказка -->
+                        </div>
 
-        <div class="container">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div class="tooltip-wrapper">
-                    <button id="openTreeDialogBtn" onclick="openCategoryModal('root')">⋯</button>
-                    <pre class="tooltip-text">Выбрать категорию</pre> <!-- подсказка -->
+                        <div class="tooltip-wrapper">
+                            <button id="btnDeleteNode"> 🗑️ </button>
+                            <div class="tooltip-text">Удалить элемент</div> <!-- подсказка -->
+                        </div>
+
+                        <div class="tooltip-wrapper">
+                            <button id="btnCancelCategory">❌ </button>
+                            <div class="tooltip-text">Отмена</div> <!-- подсказка -->
+                        </div>
+
+                        <div class="tooltip-wrapper">
+                            <button id="btnSelectCategory">✅ </button>
+                            <div class="tooltip-text">Выбрать</div> <!-- подсказка -->
+                        </div>
+                    </div>
+                    <!-- онокнчание ---- Диалогового окна для работы с деревом -->
                 </div>
-                <pre id="modalTitle">Категория: </pre>
-                <!-- Диалоговое окно для работы с деревом -->
-                <div id="modalOverlay" class="modal-overlay"></div>
-                <div id="categoryModal" class="modal" style="display:none;">
-                    <h4>Выберите ветку</h4>
-                    <div id="treeContainer"></div>
-
-                    <div class="tooltip-wrapper">
-                        <button id="btnAddNode"> ➕ </button>
-                        <div class="tooltip-text">Новый элемент</div> <!-- подсказка -->
-                    </div>
-
-                    <div class="tooltip-wrapper">
-                        <button id="btnDeleteNode"> 🗑️ </button>
-                        <div class="tooltip-text">Удалить элемент</div> <!-- подсказка -->
-                    </div>
-
-                    <div class="tooltip-wrapper">
-                        <button id="btnCancelCategory">❌ </button>
-                        <div class="tooltip-text">Отмена</div> <!-- подсказка -->
-                    </div>
-
-                    <div class="tooltip-wrapper">
-                        <button id="btnSelectCategory">✅ </button>
-                        <div class="tooltip-text">Выбрать</div> <!-- подсказка -->
-                    </div>
-                </div>
-                <!-- онокнчание ---- Диалогового окна для работы с деревом -->
             </div>
         </div>
 
+
+
         <label>Title:</label>
-        <div class="form-group-line">
-            <label>{{ original_language }}:</label>
-            <input type="text" id="title" required>
-        </div>
-        <div class="form-group-line">
-            <label>{{ translation_language }}:</label>
-            <input type="text" id="title_translation" required>
+        <div class="form-group-line-wrapper">
+            <div class="form-group-line">
+                <label style="color: var(--color-button-text-lightgreen);">{{ original_language }}:</label>
+                <input class="text-input" type="text" id="title" required>
+            </div>
+            <div class="form-group-line">
+                <label style="color: var(--color-button-text-yellow);">{{ translation_language }}:</label>
+                <input class="text-input" type="text" id="title_translation" required>
+            </div>
         </div>
 
         <div class="form-group-line">
-            <label>Загрузить аудио:</label>
+            <label style="color: var(--color-button-text-lightgreen);">Загрузить аудио:</label>
             <!-- <input type="file" id="audioFile" accept="audio/*"> -->
             <!-- Спрятанное настоящее поле выбора -->
             <input type="file" id="audioFile" accept="audio/*" style="display: none;">
 
             <!-- Красивая ложная кнопка -->
-            <button id="fakeAudioFileBtn">...</button>
+            <button id="fakeAudioFileBtn" class="button-color-lightgreen">...</button>
 
             <!-- Показываем статус -->
-            <div id="audioFileStatus" class="small-info">Файл не выбран</div>
+            <div id="audioFileStatus" style="color: var(--color-button-text-lightgreen);">Файл не выбран</div>
         </div>
 
         <div class="toggle-panel">
             <div class="toggle-header" onclick="togglePanel(this)">
-                <span class="arrow">▶</span>
+                <span class="arrow">
+                    <i data-lucide="chevron-right"></i>
+                </span>
                 <span class="title">Аудио</span>
             </div>
             <div class="toggle-content">
@@ -115,7 +119,9 @@
                 </div>
 
                 <div class="controls-row">
-                    <button id="playPauseBtn" onclick="funClick()">▶️</button>
+                    <button id="playPauseBtn" onclick="funClick()" class="button-color-lightgreen">
+                        <i data-lucide="play"></i>
+                    </button>
                     <div class="time-fields">
                         <!-- Start: <span id="startTime">–</span> — End: <span id="endTime">–</span> -->
                         <label for="startTime">Start:</label>
@@ -130,30 +136,33 @@
 
         <div class="toggle-panel inner-toggle">
             <div class="toggle-header" onclick="togglePanel(this)">
-                <span class="arrow">▶</span>
+                <span class="arrow">
+                    <i data-lucide="chevron-right"></i>
+                </span>
                 <span class="title">Распознавание из аудио</span>
             </div>
             <div id="formGroupRaw" class="form-group form-raw toggle-content inner-toggle">
-                <button id="recognize_words_btn">Рспознать слва из аудио</button>
+                <button id="recognize_words_btn" class="button-color-yellow">Рспознать слва из аудио</button>
                 <div class="form-group">
-                    <label>Время-слово:</label>
-                    <textarea id="text_time_word" rows="5"></textarea>
+                    <label  style="color: var(--color-button-text-yellow);">Время-слово:</label>
+                    <textarea id="text_time_word" type="text" rows="5"></textarea>
                 </div>
             </div>
         </div>
 
-
         <div class="toggle-panel">
             <div class="toggle-header" onclick="togglePanel(this)">
-                <span class="arrow">▶</span>
+                <span class="arrow">
+                    <i data-lucide="chevron-right"></i>
+                </span>
                 <span class="title">Текст по фразам</span>
             </div>
             <div id="formGroupRaw" class="form-group form-raw toggle-content">
                 <div class="form-group">
-                    <label>Текст по фразам (/* превод):</label>
-                    <textarea id="text" rows="10"></textarea>
+                    <label style="color: var(--color-button-text-yellow);">Текст по фразам (/* превод):</label>
+                    <textarea id="text" type="text" rows="10"></textarea>
                 </div>
-                <button id="split-btn">Разбить на фразы и озвучить</button>
+                <button id="split-btn" class="button-color-yellow">Разбить на фразы и озвучить</button>
             </div>
         </div>
 
@@ -182,6 +191,12 @@
         window.dictationId = "{{ dictation_id }}";
         window.editMode = {{ edit_mode | tojson }};
     </script> -->
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+
     <script id="init-data" type="application/json">
     {{ {
         "dictation_id": dictation_id,
