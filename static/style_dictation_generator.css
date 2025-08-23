@@ -126,14 +126,6 @@
     /* Выравнивание по верху */
 }
 
-/* #sentences-table .text-original,
-#sentences-table .text-translation {
-    min-height: 24px; /* Минимальная высота ячейки */
-/* padding: 8px;
-    border: 1px solid #eee;
-    border-radius: 4px;
-    background: white;
-} */
 /* Стили для редактируемых текстовых полей */
 #sentences-table .text-original,
 #sentences-table .text-translation {
@@ -145,23 +137,21 @@
     box-sizing: border-box;
     /* Чтобы padding не влиял на ширину */
     margin: 0;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
-    font-size: 16px;
     outline: none;
 }
 
 /* Специфичные стили для оригинального текста */
 #sentences-table .text-original {
+    color: var(--color-button-text-lightgreen);
     font-weight: bold;
+    font-size: 20px;
 }
 
 /* Специфичные стили для перевода */
 #sentences-table .text-translation {
-    color: #555;
-    font-style: italic;
+    color: var(--color-button-text-yellow);
+    font-size: 16px;
+    /* font-style: italic; */
 }
 
 /* Отключаем наследование стилей при вставке */
@@ -180,7 +170,8 @@
 
 .play-audio,
 .play-audio-tr {
-    display: inline-block;
+    display: flex;
+    /* display: inline-block; */
     /* По умолчанию видны */
 }
 
@@ -200,11 +191,18 @@
 .generate-audio,
 .play-audio,
 .play-audio-tr {
+    /* border: none; */
+    /* transition: opacity 0.2s; */
     background: none;
-    border: none;
-    padding: 5px;
+    /* display: flex; */
+    align-items: center;   /* вертикальное выравнивание */
+    gap: 6px; /* расстояние между иконкой и текстом */
+    /* padding: 5px; */
     cursor: pointer;
-    transition: opacity 0.2s;
+    /* border: 1px solid transparent;
+    box-shadow: 0 0 0 0 transparent;
+    transition: all 0.2s ease;
+    position: relative; */
 }
 
 
@@ -234,19 +232,22 @@
 /* Добавить для предотвращения наследования форматирования */
 .text-original,
 .text-translation {
-    font-size: 16px !important;
+    /* ßfont-size: 16px !important; */
     font-family: inherit !important;
     font-weight: normal !important;
     line-height: 1.5 !important;
     white-space: pre-wrap;
     /* Сохраняет переносы строк, но сбрасывает другое форматирование */
-    all: initial;
+    /* all: initial; */
 
     /* Сбрасывает все наследуемые стили */
-    * {
+    /* Для вложенных элементов */
+   /* * {
         all: revert;
-        /* Для вложенных элементов */
-    }
+     } */
+}
+.text-original {
+    color: var(--color-button-text-lightgreen);
 }
 
 #audio-controls-container {
@@ -283,19 +284,10 @@
     gap: 20px;
 }
 
-/* #playPauseBtn {
-    width: 40px;
-    height: 40px;
-    font-size: 18px;
-    flex-shrink: 0;
-    cursor: pointer;
-    position: relative;
-    z-index: 10;
-} */
 
 .time-fields {
-    font-size: 14px;
-    color: #555;
+    font-size: 16px;
+    color: var(--color-button-text-lightgreen);
     white-space: nowrap;
 }
 
@@ -306,16 +298,27 @@ wavesurfer-region {
   z-index: 2;
 }
 
+.time-fields input[type="number"] {
+  color: var(--color-button-text-lightgreen);
+  padding: 4px 6px;    /* компактнее внутри */
+  box-sizing: border-box;
+  font-size: 18px;
+  width: 8ch;   /* 6 символов, включая запятую/точку */
+  text-align: right; /* выравнивание цифр справа */
+}
 
 /* --------------------прячущиеся панели  НАЧАЛО ----------------------------------- */
 .toggle-panel {
     border: 1px solid var(--color-button-yellow);
     color: var(--color-button-text-yellow);
     border-radius: 8px;
-    margin-bottom: 10px;
+    margin-bottom: none;
+    /* margin-bottom: 10px; */
     background: var(--color-panel-bg);
     overflow: hidden;
 }
+
+
 
 .toggle-header {
     cursor: pointer;
@@ -339,12 +342,56 @@ wavesurfer-region {
 
 .toggle-content {
     display: none;
+    align-items: stretch;   /* растянуть по высоте */
     padding: 10px 15px;
 }
 
 .toggle-panel.open .toggle-content {
     display: block;
 }
+
+
+/* --------------------аудио в рядочек паравозиком ----------------------------------- */
+.panels-single {
+  /* width: 100vw;                                 на всю ширину окна */
+  /* вmargin-left:  calc(50% - 50vw);               ыравниваем из центра контейнера 
+  margin-right: calc(50% - 50vw);*/
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+/* 
+.panels-single {
+  display: flex;
+} */
+
+.panels-wagons {
+  display: flex;
+  margin-bottom: 10px;
+  width: 100%;
+  align-items: stretch;   /* растянуть по высоте */
+
+}
+
+.left-panel, .right-panel {
+  flex: 0 0 50%;          /* старт: 50/50 — важно: фиксируем basis */
+  min-width: 200px;     /* не даём схлопнуться */
+}
+
+.resizer {
+  flex: 0 0 6px;          /* чтобы разделитель не сжимался/не рос */
+  cursor: col-resize;
+  background: var(--color-panel-bg);      /* цвет полосы */
+  align-self: stretch;    /* на всю высоту «вагонов» */
+  /* margin: 0 4px; */
+  /* border-radius: 3px; */
+}
+
+/* во время перетаскивания блокируем выделение текста и меняем курсор */
+.panels-wagons.resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+
 /* --------------------прячущиеся панели  КОНЕЦ ----------------------------------- */
 /* --------------------Заголовки оригинал и перевод "вагончиком"  НАЧАЛО ----------------------------------- */
 .form-group-line-wrapper {
@@ -373,33 +420,6 @@ wavesurfer-region {
 
 /* --------------------Заголовки оригинал и перевод "вагончиком"  КОНЕЦ ----------------------------------- */
 /* -------------------- Курсор таблицы  НАЧАЛО ----------------------------------- */
-/* Базовый класс для обеих половинок строки */
-/* tr.sentence-row {
-    transition: background 120ms ease, border-color 120ms ease;
-} */
-
-/* Подсветка активной пары */
-/* tr.sentence-row.selected {
-    background: var(--color-panel-bg, #f7f7ff); 
-    border-left: 2px solid #ffd400;
-    border-right: 2px solid #ffd400;
-} */
-
-/* Верхняя половинка рисует верхнюю грань рамки */
-/* tr.sentence-row.selected-top {
-    border-top: 2px solid #ffd400;
-} */
-
-/* Нижняя половинка рисует нижнюю грань рамки */
-/* tr.sentence-row.selected-bottom {
-    border-bottom: 2px solid #ffd400;
-} */
-
-/* На всякий случай, чтобы рамка не ломалась коллапсом границ */
-/* #sentences-table {
-    border-collapse: separate;
-    border-spacing: 0;
-} */
 
 
 /* Подсветка активной пары */
@@ -417,3 +437,36 @@ tr.sentence-row.selected-bottom {
     border-bottom: 2px solid #ffd400;
 }
 /* -------------------- Курсор таблицы  КОНЕЦ ----------------------------------- */
+.table-button-original {
+    color: var(--color-button-text-lightgreen) !important;
+}
+
+/* .audio-source { 
+    border:0; 
+    margin-left: 12px; 
+    display:flex; 
+    gap:12px; 
+    align-items:center; 
+}
+.apply-audio { 
+    margin-left: 12px; 
+} */
+
+/* -------------------- Радио НАЧАЛО ----------------------------------- */
+.audio-actions {
+  display: flex;           /* располагаем элементы в ряд */
+  align-items: flex-start; /* прижимаем кнопку к верху списка радио */
+  gap: 20px;               /* расстояние между радио и кнопкой */
+}
+
+.audio-source label {
+  border:0; 
+  display: block;      /* каждая метка на своей строке */
+  margin-bottom: 6px;  /* чуть отступа между вариантами */
+}
+
+.audio-source {
+  border: none;   /* убираем рамку */
+  /* padding: 0;     убираем лишние отступы */
+  /* margin: 0;      если нужен компактный вариант */
+}

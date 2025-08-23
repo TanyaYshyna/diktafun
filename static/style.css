@@ -41,6 +41,10 @@ button {
     cursor: pointer;
     font-size: 20px;
     border-radius: 8px;
+    border: 1px solid transparent; /* зарезервировать место под рамку */
+    box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
+    transition: all 0.2s ease; /* плавность изменений */
+    position: relative; /* если будем делать псевдоэффекты */
 }
 
 button:hover {
