@@ -96,6 +96,10 @@ button:active {
     transition: all 0.2s ease; /* плавность изменений */
     position: relative; /* если будем делать псевдоэффекты */
 }
+.button-color-shadow-transparent:focus { 
+    outline: 2px solid var(--color-button-text-gray); 
+    outline-offset: 2px; 
+}
 .button-color-shadow-transparent:hover {
     border: 0;
     box-shadow: none;
@@ -113,6 +117,10 @@ button:active {
     box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
     transition: all 0.2s ease; /* плавность изменений */
     position: relative; /* если будем делать псевдоэффекты */
+}
+.button-color-gray:focus { 
+    outline: 2px solid var(--color-button-text-gray); 
+    outline-offset: 2px; 
 }
 .button-color-gray:hover {
     border: 1px solid var(--color-button-shadow-gray);
@@ -134,6 +142,10 @@ button:active {
     transition: all 0.2s ease; /* плавность изменений */
     position: relative; /* если будем делать псевдоэффекты */
 }
+.button-color-mint:focus { 
+    outline: 2px solid var(--color-button-text-mint); 
+    outline-offset: 2px; 
+}
 .button-color-mint:hover {
     border: 1px solid var(--color-button-shadow-mint);
     /* появляется “обводка” */
@@ -154,11 +166,19 @@ button:active {
     transition: all 0.2s ease; /* плавность изменений */
     position: relative; /* если будем делать псевдоэффекты */
 }
+.button-color-lightgreen:focus { 
+    outline: 2px solid var(--color-button-text-lightgreen); 
+    outline-offset: 2px; 
+}
 .button-color-lightgreen:hover {
     border: 1px solid var(--color-button-shadow-lightgreen);
     /* появляется “обводка” */
     box-shadow: 0 3px 0 0 var(--color-button-shadow-lightgreen);
     /* нижняя граница толще — имитация */
+}
+.button-color-yellow:focus { 
+    outline: 2px solid var(--color-button-text-lightgreen); 
+    outline-offset: 2px; 
 }
 .button-color-lightgreen:active {
     border: 1px solid var(--color-button-shadow-lightgreen);
@@ -169,19 +189,22 @@ button:active {
 .button-color-yellow {
     background-color: var(--color-button-yellow);
     color: var(--color-button-text-yellow);
+    /* box-shadow: 0 0 0 3px var(--color-button-text-yellow);  */
     border: 1px solid transparent; /* зарезервировать место под рамку */
     box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
     transition: all 0.2s ease; /* плавность изменений */
     position: relative; /* если будем делать псевдоэффекты */
 }
-
+.button-color-yellow:focus { 
+    outline: 2px solid var(--color-button-text-yellow); 
+    outline-offset: 2px; 
+}
 .button-color-yellow:hover {
     border: 1px solid var(--color-button-shadow-yellow);
     /* появляется “обводка” */
     box-shadow: 0 3px 0 0 var(--color-button-shadow-yellow);
     /* нижняя граница толще — имитация */
 }
-
 .button-color-yellow:active {
     border: 1px solid var(--color-button-shadow-yellow);
     /* равномерная рамка */
@@ -196,6 +219,10 @@ button:active {
     transition: all 0.2s ease; /* плавность изменений */
     position: relative; /* если будем делать псевдоэффекты */
 }
+.button-color-orange:focus { 
+    outline: 2px solid var(--color-button-text-orange); 
+    outline-offset: 2px; 
+}
 .button-color-orange:hover {
     border: 1px solid var(--color-button-shadow-orange);
     /* появляется “обводка” */
@@ -208,7 +235,7 @@ button:active {
 }
 
 /* pink */
-.button-color-gray {
+.button-color-pink {
     background-color: var(--color-button-pink);
     color: var(--color-button-text-pink);
     border: 1px solid transparent; /* зарезервировать место под рамку */
@@ -216,13 +243,17 @@ button:active {
     transition: all 0.2s ease; /* плавность изменений */
     position: relative; /* если будем делать псевдоэффекты */
 }
-.button-color-gray:hover {
+.button-color-pink:focus { 
+    outline: 2px solid var(--color-button-text-pink); 
+    outline-offset: 2px; 
+}
+.button-color-pink:hover {
     border: 1px solid var(--color-button-shadow-pink);
     /* появляется “обводка” */
     box-shadow: 0 3px 0 0 var(--color-button-shadow-pink);
     /* нижняя граница толще — имитация */
 }
-.button-color-gray:active {
+.button-color-pink:active {
     border: 1px solid var(--color-button-shadow-pink);
     /* равномерная рамка */
 }
@@ -235,6 +266,10 @@ button:active {
     box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
     transition: all 0.2s ease; /* плавность изменений */
     position: relative; /* если будем делать псевдоэффекты */
+}
+.button-color-purple:focus { 
+    outline: 2px solid var(--color-button-text-purple); 
+    outline-offset: 2px; 
 }
 .button-color-purple:hover {
     border: 1px solid var(--color-button-shadow-purple);
@@ -307,7 +342,7 @@ h2 {
     padding: 10px;
     background-color: var(-color-white);
     box-shadow: 0 0 20px 10px var(--color-shadow);
-    font-size: 20px;
+    font-size: 22px;
     outline: none;
     white-space: pre-wrap;
     max-width: 100%;

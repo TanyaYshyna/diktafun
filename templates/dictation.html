@@ -45,7 +45,7 @@
                     </button>
                     <button id="checkNext" class="button-color-yellow" onclick="nextSentence()">
                         <i data-lucide="arrow-right"></i>
-                   </button>
+                    </button>
                 </div>
             </div>
             <div class="progress-panel">
@@ -89,7 +89,9 @@
                 <audio id="audio" class="audio-element"></audio>
                 <div class="controls">
                     <span class="language">{{ language_original }}</span>
-                    <button class="play-btn">▶</button>
+                    <button class="play-btn">
+                        <i data-lucide="play"></i>
+                    </button>
                     <span class="current-time">0:00</span>
                     <input type="range" class="progress-bar" value="0">
                     <span class="total-time">0:00</span>
@@ -120,7 +122,9 @@
                 <audio id="audio_tr" class="audio-element"></audio>
                 <div class="controls">
                     <span class="language">{{ language_translation }}</span>
-                    <button class="play-btn">▶</button>
+                    <button class="play-btn">
+                        <i data-lucide="play"></i>
+                    </button>
                     <span class="current-time">0:00</span>
                     <input type="range" class="progress-bar" value="0">
                     <span class="total-time">0:00</span>
@@ -148,11 +152,14 @@
         </div>
 
         <!-- тут пользователь набирает тектст -->
-        <div id="userInput" contenteditable="true" class="text-input"></div>
+        <!-- <div id="userInput" contenteditable="true" class="text-input"></div> -->
+        <div id="userInput" contenteditable="true" class="text-input" spellcheck="false" autocorrect="off"
+            autocapitalize="off" autocomplete="off" aria-autocomplete="none" data-gramm="false"
+            data-enable-grammarly="false"></div>
         <div class="result-panel">
             <div class="text-column">
                 <!-- Поле с правильной подсказкой -->
-                <div id="correctAnswer" class="text-output">...</div>
+                <div id="correctAnswer" class="word-correct">...</div>
                 <!-- Перевод — показывать только при 100% правильности -->
                 <div id="translation">...</div>
             </div>
@@ -163,41 +170,44 @@
         </div>
 
         <!-- тут пользователь записывает ацдио -->
-                <div class="custom-audio-player" data-audio-id="audio_user">
-                    <audio id="audio_user" class="audio-element"></audio>
-                    <div class="controls">
-                        <span class="language">
-                            <i data-lucide="baby"></i>
-                        </span>
-                        <button class="play-btn">▶</button>
-                        <span class="current-time">0:00</span>
-                        <input type="range" class="progress-bar" value="0">
-                        <span class="total-time">0:00</span>
-                         <div class="volume-wrapper">
-                            <button class="mute-btn" aria-label="Mute">
-                                <i data-lucide="volume-2"></i>
-                            </button>
-                            <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1">
-                        </div>
-                        <div class="custom-speed-select">
-                            <button class="speed-select-button">
-                                <span class="speed-selected">1×</span>
-                                <i data-lucide="chevron-down" class="speed-arrow"></i>
-                            </button>
-                            <ul class="speed-options">
-                                <li data-value="0.5">0.5×</li>
-                                <li data-value="0.75">0.75×</li>
-                                <li data-value="1" class="selected">1×</li>
-                                <li data-value="1.5">1.5×</li>
-                                <li data-value="2">2×</li>
-                            </ul>
-                        </div>
-                    </div> 
+        <div class="custom-audio-player" data-audio-id="audio_user" style="display: none;">
+            <audio id="audio_user" class="audio-element"></audio>
+            <div class="controls">
+                <span class="language">
+                    <i data-lucide="baby"></i>
+                </span>
+                <button class="play-btn">
+                    <i data-lucide="play"></i>
+                </button>
+                <span class="current-time">0:00</span>
+                <input type="range" class="progress-bar" value="0">
+                <span class="total-time">0:00</span>
+                <div class="volume-wrapper">
+                    <button class="mute-btn" aria-label="Mute">
+                        <i data-lucide="volume-2"></i>
+                    </button>
+                    <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1">
                 </div>
+                <div class="custom-speed-select">
+                    <button class="speed-select-button">
+                        <span class="speed-selected">1×</span>
+                        <i data-lucide="chevron-down" class="speed-arrow"></i>
+                    </button>
+                    <ul class="speed-options">
+                        <li data-value="0.5">0.5×</li>
+                        <li data-value="0.75">0.75×</li>
+                        <li data-value="1" class="selected">1×</li>
+                        <li data-value="1.5">1.5×</li>
+                        <li data-value="2">2×</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
         <div class="audio-user-panel">
             <div class="audio-user-content">
                 <canvas id="audioVisualizer" class="audio-visualizer" width="300" height="80"></canvas>
-                <div id="userAudioAnswer" class="text-user-audio"></div> 
+                <div id="userAudioAnswer" class="text-user-audio"></div>
             </div>
             <button id="recordButton" class="button-color-purple">
                 <i data-lucide="mic"></i>
@@ -205,65 +215,77 @@
         </div>
 
     </div>
+
+
     <div id="finishModal" class="modal" style="display: none;">
         <div class="modal-content">
-            <h2>Вы завершили диктант за:</h2>
+            <h2>Вы завершили диктант с результатом:</h2>
 
-            <div class="progress-panel">
+            <div class="finish-modal-progress-panel" class="progress-panel">
                 <div class="progress-top">
                     <button class="stat-btn timer" disabled title="Время работы над диктантом">
                         <i data-lucide="alarm-clock"></i>
-                        <span id="rez_timer">00:00:00</span>
+                        <span id="finish_modal_timer">00:00:00</span>
                     </button>
                 </div>
 
-                <div class="progress-bottom">
+                <div class="finish-modal-progress-bottom">
                     <button class="stat-btn perfect" disabled
                         title="Количество предложений набранных без ошибок с 1-й попытки">
                         <i data-lucide="star"></i>
-                        <span id="rez_count_perfect">0</span>
+                        <span id="finish_modal_count_perfect">0</span>
                     </button>
 
                     <button class="stat-btn corrected" disabled title="Количество набранных предложений">
                         <i data-lucide="star-half"></i>
-                        <span id="rez_count_corrected">0</span>
+                        <span id="finish_modal_count_corrected">0</span>
                     </button>
 
                     <button class="stat-btn total" disabled title="Общее количество предложений на круге">
                         <i data-lucide="layers"></i>
-                        <span id="rez_count_total">0</span>
+                        <span id="finish_modal_count_total">0</span>
                     </button>
 
                     <button class="stat-btn circle" disabled title="Какой раз проходим диктант">
                         <i data-lucide="iteration-cw"></i>
-                        <span id="rez_circle-number">1</span>
+                        <span id="finish_modal_circle_number">1</span>
                     </button>
                 </div>
-            
+            </div>
 
 
 
-            <p>Что вы хотите сделать дальше?</p>
-            <div class="modal-buttons">
-                <button id="btnRestartAll" onclick=clickBtnRestartAll()>Пройти всё заново</button>
-                <button id="btnRestartErrors" onclick=clickBtnRestartErrors()>Повторить ошибки</button>
-                <button id="btnBackToList" onclick=clickBtnBackToList()>Вернуться к списку</button>
+
+            <h1>Что вы хотите сделать дальше?</h1>
+            <div class="finish-modal-modal-buttons">
+                <button id="btnRestartErrors" onclick=clickBtnRestartErrors() class="button-color-pink">
+                    <i data-lucide="bug"></i>
+                    <i data-lucide="reply"></i>
+                    Повторить только предложения где были ошибки
+                </button>
+                <button id="btnRestartAll" onclick=clickBtnRestartAll() class="button-color-mint">
+                    <i data-lucide="reply-all"></i>
+                    Пройти всё заново
+                </button>
+                <button id="btnBackToList" onclick=clickBtnBackToList() class="button-color-yellow">
+                    <i data-lucide="text-quote"></i>
+                    Вернуться к списку диктантов
+                </button>
             </div>
         </div>
-    </div>
 
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        lucide.createIcons();
-    </script>
-    <script id="sentences-data" type="application/json">
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <script>
+            lucide.createIcons();
+        </script>
+        <script id="sentences-data" type="application/json">
         {{ sentences | tojson | safe }}
     </script>
-    <script>
-        const LANGUAGE_ORIGINAL = "{{ language_original }}";
-        const LANGUAGE_CODES_URL = "{{ url_for('static', filename='data/language-codes.json') }}";
-    </script>
-    <script src="{{ url_for('static', filename='script_dictation.js') }}"></script>
+        <script>
+            const LANGUAGE_ORIGINAL = "{{ language_original }}";
+            const LANGUAGE_CODES_URL = "{{ url_for('static', filename='data/language-codes.json') }}";
+        </script>
+        <script src="{{ url_for('static', filename='script_dictation.js') }}"></script>
 
 </body>
 

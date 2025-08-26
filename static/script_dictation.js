@@ -1,3 +1,4 @@
+//    console.log("👀 renderSentenceCounter вызвана");
 const inputField = document.getElementById('userInput');
 const checkNextDiv = document.getElementById('checkNext');
 const checkPreviosDiv = document.getElementById('checkPrevios');
@@ -7,7 +8,8 @@ const audio = document.getElementById('audio');
 const audio_tr = document.getElementById('audio_tr');
 const rawJson = document.getElementById("sentences-data").textContent;
 const sentences = JSON.parse(rawJson);
-const playSequence = "oto";  // Для старта предложения (o=оригинал, t=перевод)
+const playSequenceStart = "oto";  // Для старта предложения (o=оригинал, t=перевод)
+const playSequenceTypo = "o";  // Для старта предложения (o=оригинал, t=перевод)
 const successSequence = "ot"; // Для правильного ответа (можно изменить на "o" или "to")
 
 let allSentences = sentences; // ← из JSON
@@ -104,10 +106,27 @@ function updateDictationTimerDisplay(elapsed) {
     // }
 }
 
-function timeDisplay(time) {
-    const hours = Math.floor(elapsed / 1440000);
-    const minutes = Math.floor(elapsed / 60000);
-    const seconds = Math.floor((elapsed % 60000) / 1000);
+// function timeDisplay(time) {
+//     const hours = Math.floor(elapsed / 1440000);
+//     const minutes = Math.floor(elapsed / 60000);
+//     const seconds = Math.floor((elapsed % 60000) / 1000);
+//     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+// }
+
+// function timeDisplay(ms) {
+//   if (!Number.isFinite(ms) || ms < 0) ms = 0;
+//   const totalSec = Math.floor(ms / 1000);
+//   const hours = Math.floor(totalSec / 3600);
+//   const minutes = Math.floor((totalSec % 3600) / 60);
+//   const seconds = totalSec % 60;
+//   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+// }
+function timeDisplay(ms) {
+    if (!Number.isFinite(ms) || ms < 0) ms = 0;
+    const totalSec = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSec / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const seconds = totalSec % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
@@ -142,7 +161,6 @@ async function loadLanguageCodes() {
 }
 
 // ===== Табло функций ========
-//    console.log("👀 renderSentenceCounter вызвана");
 function initTabloSentenceCounter(maxVisible = 9) {
     const container = document.getElementById("sentenceCounter");
     container.innerHTML = "";
@@ -295,12 +313,12 @@ function updateTabloSentenceCounter(currentIndex, maxVisible = 9) {
 
 // ===== пройшли коло =========
 function checkIfAllCompleted() {
-    console.log("👀 renderSentenceCounter вызвана");
     const hasUnfinished = allSentences.some(s => s.text_check === -1);
     if (!hasUnfinished) {
-
-        // document.getElementById("finish_modal_time").textContent = timeDisplay(currentDictation.timerInterval);
-        document.getElementById("finish_modal_circle_number").textContent = timeDisplay(currentDictation.dictationTimerInterval);
+        // console.log("👀 timerInterval = " + timerInterval);
+        document.getElementById("finish_modal_timer").textContent = timeDisplay(currentDictation.dictationTimerInterval);
+        stopTimer();
+        document.getElementById("finish_modal_circle_number").textContent = currentDictation.circle_number;
         document.getElementById("finish_modal_count_perfect").textContent = currentDictation.phrases_perfect;
         document.getElementById("finish_modal_count_corrected").textContent = currentDictation.phrases_corrected;
         document.getElementById("finish_modal_count_total").textContent = currentDictation.phrases_total;
@@ -314,6 +332,11 @@ function checkIfAllCompleted() {
 // ===== Аудио-функционал =====
 
 // ====== Запись ==============
+document.getElementById('recordButton').addEventListener('click', () => {
+    const box = document.querySelector('.custom-audio-player[data-audio-id="audio_user"]');
+    if (box) box.style.display = 'flex';
+}, { once: true });
+
 // Сначала объявляем stopRecording
 function stopRecording() {
     if (mediaRecorder?.state === 'recording') {
@@ -348,7 +371,6 @@ async function startRecording() {
         const options = {
             mimeType: getSupportedMimeType()
         };
-        // console.log("Используемый формат:", options.mimeType);
 
         mediaRecorder = new MediaRecorder(stream, options);
         setupVisualizer(stream);
@@ -642,12 +664,10 @@ confirmStartBtn.addEventListener('click', () => {
         currentDictation.phrases_total);
 
     // Воспроизводим последовательность OTO как и требовалось
-    playMultipleAudios(playSequence); // "oto"
+    playMultipleAudios(playSequenceStart); // "oto"
 
     // Активируем интерфейс
     inputField.focus();
-    console.log("👀 focus set on inputField", inputField);
-    console.log("✅ inputField is editable:", inputField.isContentEditable);
 });
 
 // Инициализация предложений
@@ -699,8 +719,6 @@ function showCurrentSentence(showIndex) {
         console.log("👀 Установлен фокус в inputField");
     }, 0);
     inputField.focus();
-    console.log("👀 focus set on inputField", inputField);
-    console.log("✅ inputField is editable:", inputField.isContentEditable);
     textAttemptCount = 0;
 
 
@@ -713,7 +731,7 @@ function showCurrentSentence(showIndex) {
         audioLoaded++;
         if (audioLoaded === totalAudio) {
             // Даем небольшую задержку для стабильности
-            setTimeout(() => playMultipleAudios(playSequence), 300);
+            setTimeout(() => playMultipleAudios(playSequenceStart), 300);
         }
     }
 
@@ -736,15 +754,13 @@ function nextSentence() {
     while (nextIndex < total) {
         const sentence = allSentences[nextIndex];
         if (sentence.text_check === -1) {
-            showCurrentSentence(nextIndex); // ← или твоя функция загрузки предложения
+            showCurrentSentence(nextIndex); //функция загрузки предложения
             return;
         }
         nextIndex++;
     }
-
     checkIfAllCompleted();
     // Если не нашли — либо в конце, либо все выполнены
-    console.log("✅ Все предложения завершены или больше нет непройденных.");
 }
 
 // Функция переходу до поперднього речення
@@ -754,7 +770,7 @@ function previousSentence() {
     while (prevIndex >= 0) {
         const sentence = allSentences[prevIndex];
         if (sentence.text_check === -1) {
-            showCurrentSentence(prevIndex); // ← или твоя функция загрузки предложения
+            showCurrentSentence(prevIndex); // функция загрузки предложения
             return;
         }
         prevIndex--;
@@ -816,7 +832,7 @@ document.addEventListener("DOMContentLoaded", function () {
     loadLanguageCodes();
 
     // Проверка поддерживаемых аудиоформатов
-    console.group("Поддержка аудиоформатов:");
+    //console.group("Поддержка аудиоформатов:");
     const formatsToCheck = [
         'audio/mp4; codecs="mp4a.40.2"', // AAC
         'audio/webm; codecs=opus',       // Opus
@@ -824,14 +840,14 @@ document.addEventListener("DOMContentLoaded", function () {
         'audio/wav'                      // WAV (для тестирования)
     ];
 
-    formatsToCheck.forEach(format => {
-        console.log(`${format}:`, MediaRecorder.isTypeSupported(format));
-    });
-    console.groupEnd();
+    // formatsToCheck.forEach(format => {
+    //     console.log(`${format}:`, MediaRecorder.isTypeSupported(format));
+    // });
+    // console.groupEnd();
 
     // Дополнительная информация о браузере
-    console.log("Браузер:", navigator.userAgent);
-    console.log("Языковые коды загружены:", languageCodes);
+    // console.log("Браузер:", navigator.userAgent);
+    // console.log("Языковые коды загружены:", languageCodes);
 });
 
 inputField.addEventListener('input', function () {
@@ -842,6 +858,7 @@ inputField.addEventListener('input', function () {
         restoreCursorPosition(inputField, cursorPos);
     }
 });
+
 
 // -----------Функции для работы с текстом -----------------------------------------
 function simplifyText(text) {
@@ -902,8 +919,8 @@ function renderResult(original, userVerified) {
         });
     }
     else {
-        // checkNextDiv.focus();
-        recordButton.focus();
+        checkNextDiv.focus();
+        // recordButton.focus();
     }
 
     correctAnswerDiv.innerHTML = correctLine.join("");
@@ -1040,6 +1057,7 @@ function playMultipleAudios(sequence) {
     playNext(); // Запускаем процесс
 }
 
+
 function disableCheckButton(active) {
     // console.log("👀 ----------------disableCheckButton-----------------active = " + active);
     const checkBtn = document.getElementById('checkBtn');
@@ -1064,9 +1082,9 @@ function disableCheckButton(active) {
 
         case 1:
             checkBtn.disabled = false;
-            checkBtn.innerHTML = '<i data-lucide="star-lightgreen"></i>';
+            checkBtn.innerHTML = '<i data-lucide="star-half"></i>';
             if (userInput) userInput.contentEditable = "true";
-            checkBtn.classList.add('button-color-mint');
+            checkBtn.classList.add('button-color-lightgreen');
             break;
     }
     lucide.createIcons();
@@ -1148,6 +1166,7 @@ function check(original, userInput, currentKey) {
 
 function checkText() {
     const original = allSentences[currentSentenceIndex].text;
+    const translation = allSentences[currentSentenceIndex].translation;
     const userInput = inputField.innerText;
     const currentKey = allSentences[currentSentenceIndex].key;
     const result = check(original, userInput, currentKey);
@@ -1167,6 +1186,7 @@ function checkText() {
     correctAnswerDiv.style.display = "block";
     if (allCorrect) {
         translationDiv.style.display = "block";
+        translationDiv.textContent = translation;
         setTimeout(() => playMultipleAudios(successSequence), 500); // "ot" с задержкой
     } else {
         translationDiv.style.display = "none";
@@ -1217,14 +1237,17 @@ document.addEventListener('keydown', function (event) {
 });
 
 
-// document.getElementById("
-// ").textContent =
-//     `Предложение ${currentSentenceIndex + 1} / ${sentences.length}`;
-
 document.getElementById("userInput").addEventListener("input", function () {
-    document.getElementById("correctAnswer").style.display = "none";
-    document.getElementById("translation").style.display = "none";
+    if (document.getElementById("correctAnswer").style.display != "none") {
+        // Воспроизводим последовательность O, тут может в дальнейшем быть условие от пользователя воспроизводить или нет
+        playMultipleAudios(playSequenceTypo); // "t"
+
+        document.getElementById("correctAnswer").style.display = "none";
+        document.getElementById("translation").style.display = "none";
+    }
 });
+
+
 
 // Кнопки модального вікна вкінці диктанту -----------------------------------
 // (1) Граймо далі з початку 
@@ -1287,6 +1310,7 @@ function clickBtnRestartErrors() {
 function clickBtnBackToList() {
     window.location.href = "/"; // на головну сторінку
 }
+
 
 
 //  =============== обертка для аудито ===============================================
@@ -1450,10 +1474,3 @@ function formatTime(sec) {
     const s = Math.floor(sec % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
 }
-
-// Вызов инициализации после загрузки DOM
-// document.addEventListener("DOMContentLoaded", function () {
-//     initializeSentences();
-//     initializeDictation();
-//     loadLanguageCodes();
-// });

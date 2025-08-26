@@ -16,17 +16,21 @@
 }
 
 #correctAnswer {
-  font-style: italic;
+  font-size: 20px;
+  color:  var(--color-button-text-lightgreen);
   padding: 6px 10px;
-  border: 1px dashed #ccc;
   border-radius: 6px;
-  color: #555;
   max-width: 100%;
+  /* font-style: italic; */
+  /* border: 1px dashed #ccc; */
 }
 
 #translation {
-  font-size: 16px;
-  color: #333;
+  font-size: 18px;
+  color: var(--color-button-text-yellow);
+  padding: 6px 10px;
+  border-radius: 6px;
+  max-width: 100%;
 }
 
 /* #checkBtn {
@@ -967,23 +971,28 @@ body.playing-audio::after {
 }
 
 
-/* временно ищем откуда взялась полоса прокрутки --------------------------- */
-/* 
+/* Центрируем всю панель прогресса ---------------------------------------------------------*/
+/* .finish-modal-progress-panel {
+    display: flex;
+    flex-direction: column; */
+    /* align-items: center;   центр по горизонтали */
+    /* justify-content: center; центр по вертикали (если нужно в модалке)
+    text-align: center; 
+}*/
 
-body, html {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Кнопки под вопросом – в столбик по центру */
+.finish-modal-modal-buttons {
+    display: flex;
+    align-items: stretch;   /* кнопки будут растягиваться по ширине контейнера */
+    flex-direction: column; /* столбиком */
+    align-items: center;    /* центрируем */
+    gap: 12px;              /* расстояние между кнопками */
+    margin-top: 20px;
 }
 
-.modal-content {
-  outline: 2px dashed blue; 
+/* Чтобы сами кнопки не растягивались на всю ширину */
+.finish-modal-modal-buttons button {
+    width: auto;            /* ширина по содержимому */
+    min-width: 250px;       /* можно задать одинаковую минимальную ширину */
+    text-align: center;
 }
-
-.panel {
-  outline: 2px dashed green; 
-}
-
-.custom-speed-select .speed-options {
-  background: rgba(255, 0, 0, 0.1); 
-} */
