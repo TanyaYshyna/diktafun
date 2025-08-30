@@ -1,0 +1,23 @@
+{
+  "language": "en",
+  "speaker": "auto",
+  "title": "phrasal verbs - look ...",
+  "sentences": [
+    {
+      "key": "002",
+      "text": "He quickly looked through the newspaper before leaving.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "002.mp3"
+    },
+    {
+      "key": "003",
+      "text": "We need to look ahead and make a plan for the future.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "003.mp3"
+    }
+  ]
+}

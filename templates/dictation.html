@@ -68,12 +68,17 @@
                         <span id="count_corrected">0</span>
                     </button>
 
+                    <button class="stat-btn corrected-audio" disabled title="Сколько предложений прошло аудио контроль">
+                        <i data-lucide="mic"></i>
+                        <span id="count_audio">0</span>
+                    </button>
+
                     <button class="stat-btn total" disabled title="Общее количество предложений на круге">
                         <i data-lucide="layers"></i>
                         <span id="count_total">0</span>
                     </button>
 
-                    <button class="stat-btn circle" disabled title="Какой раз проходим диктант">
+                    <button id="btn-circle-number" class="stat-btn circle" title="Какой раз проходим диктант">
                         <i data-lucide="iteration-cw"></i>
                         <span id="circle-number">1</span>
                     </button>
@@ -169,50 +174,49 @@
             </button>
         </div>
 
-        <!-- тут пользователь записывает ацдио -->
-        <div class="custom-audio-player" data-audio-id="audio_user" style="display: none;">
-            <audio id="audio_user" class="audio-element"></audio>
-            <div class="controls">
-                <span class="language">
-                    <i data-lucide="baby"></i>
-                </span>
-                <button class="play-btn">
-                    <i data-lucide="play"></i>
-                </button>
-                <span class="current-time">0:00</span>
-                <input type="range" class="progress-bar" value="0">
-                <span class="total-time">0:00</span>
-                <div class="volume-wrapper">
-                    <button class="mute-btn" aria-label="Mute">
-                        <i data-lucide="volume-2"></i>
-                    </button>
-                    <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1">
-                </div>
-                <div class="custom-speed-select">
-                    <button class="speed-select-button">
-                        <span class="speed-selected">1×</span>
-                        <i data-lucide="chevron-down" class="speed-arrow"></i>
-                    </button>
-                    <ul class="speed-options">
-                        <li data-value="0.5">0.5×</li>
-                        <li data-value="0.75">0.75×</li>
-                        <li data-value="1" class="selected">1×</li>
-                        <li data-value="1.5">1.5×</li>
-                        <li data-value="2">2×</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
 
         <div class="audio-user-panel">
+
             <div class="audio-user-content">
-                <canvas id="audioVisualizer" class="audio-visualizer" width="300" height="80"></canvas>
+                <div class="audio-user-content-buttons">
+                    <button class="stat-btn grupp-audio" disabled>
+                        <i data-lucide="percent"></i>
+                        <span id="count_percent">0</span>
+                    </button>
+
+                    <canvas id="audioVisualizer" class="audio-visualizer grupp-audio" width="300" height="80"></canvas>
+
+                    <!-- отображение процесса записи -->
+                    <button id="recordButton" class="button-color-purple grupp-audio">
+                        <i data-lucide="mic"></i>
+                        <span id="recordStateIcon" class="state-icon"></span>
+                        <!-- <i data-lucide="square" id="recordIconSquare"></i>></i> -->
+                    </button>
+                </div>
+
                 <div id="userAudioAnswer" class="text-user-audio"></div>
             </div>
-            <button id="recordButton" class="button-color-purple">
-                <i data-lucide="mic"></i>
-            </button>
+
+
+            <!-- таблица с результатами записи -->
+            <table id="sentences-table">
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Предложение (оригинал/перевод)</th>
+                        <th>Аудио</th>
+                        <th>% совпадения</th>
+                        <th>Зачтено</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Строки будут добавляться через JavaScript -->
+                </tbody>
+            </table>
+
         </div>
+
+
 
     </div>
 
@@ -236,9 +240,14 @@
                         <span id="finish_modal_count_perfect">0</span>
                     </button>
 
-                    <button class="stat-btn corrected" disabled title="Количество набранных предложений">
+                    <button class="stat-btn corrected" disabled title="Количество набраныных предложений">
                         <i data-lucide="star-half"></i>
                         <span id="finish_modal_count_corrected">0</span>
+                    </button>
+
+                    <button class="stat-btn corrected-audio" disabled title="Сколько предложений прошло аудио контроль">
+                        <i data-lucide="mic"></i>
+                        <span id="finish_modal_count_audio">0</span>
                     </button>
 
                     <button class="stat-btn total" disabled title="Общее количество предложений на круге">

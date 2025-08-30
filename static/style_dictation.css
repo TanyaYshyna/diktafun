@@ -294,10 +294,16 @@ body.playing-audio::after {
 
 .audio-visualizer {
   width: 200px;
-  height: 30px;
-  /* background: #f0f0f0; */
-  border-radius: 4px;
-  margin: 5px 0;
+  height: 40px;
+  background: var(--color-button-purple); 
+  border-radius: 8px;
+  margin-left: 5px;
+}
+/* Контейнер с тремя элементами */
+.audio-user-content-buttons {
+  display: flex;          /* в ряд */
+  align-items: flex-start; /* ВЫРОВНЯТЬ ПО ВЕРХУ */
+  /* gap: 12px;               расстояние между ними */
 }
 
 .audio-user-content {
@@ -361,6 +367,12 @@ body.playing-audio::after {
   /* Фиолетовый фон */
 }
 
+/* Базовые цвета таблицы — меняй под себя */
+#sentences-table {
+  color: var(--color-button-text-purple);
+  border: 1px solid var(--color-button-purple);
+  border-collapse: collapse;    /* одна общая граница */
+}
 
 /* КНОПКИ НАВИГАЦИИ ПРЕДЛОЖЕНИЙ НАЧАЛО */
 
@@ -530,9 +542,9 @@ body.playing-audio::after {
 .stat-btn.timer {
   background: var(--color-button-yellow);
   color: var(--color-button-text-yellow);
-  width: 250px;
+  width: 310px;
   /* Фиксированная ширина */
-  min-width: 250px;
+  min-width: 310px;
   /* Запрет уменьшения */
   justify-content: flex-start;
   /* Выравнивание по левому краю */
@@ -557,12 +569,17 @@ body.playing-audio::after {
 .stat-btn.corrected {
   background: var(--color-button-lightgreen);
   color: var(--color-button-text-lightgreen);
-  width: 60px;
-  /* Фиксированная ширина */
-  min-width: 60px;
-  /* Запрет уменьшения */
-  justify-content: center;
-  /* Центрирование содержимого */
+  width: 60px; /* Фиксированная ширина */
+  min-width: 60px; /* Запрет уменьшения */
+  justify-content: center; /* Центрирование содержимого */
+}
+
+.stat-btn.corrected-audio {
+  background: var(--color-button-purple);
+  color: var(--color-button-text-purple);
+  width: 60px; /* Фиксированная ширина */
+  min-width: 60px; /* Запрет уменьшения */
+  justify-content: center; /* Центрирование содержимого */
 }
 
 .stat-btn.total {
@@ -668,10 +685,10 @@ body.playing-audio::after {
 }
 
 /* Для пользовательского аудио (фиолетовый) */
-#audio_user ~ .controls .progress-bar::-webkit-slider-thumb {
+/* #audio_user ~ .controls .progress-bar::-webkit-slider-thumb {
   background: var(--color-button-purple);
   border: 1px solid  var(--color-button-text-purple);
-}
+} */
 
 /* Для Firefox и других браузеров */
 #audio ~ .controls .progress-bar::-moz-range-thumb {
@@ -682,10 +699,10 @@ body.playing-audio::after {
   background: var(--color-button-yellow);
   border: 1px solid  var(--color-button-text-yellow);
 }
-#audio_user ~ .controls .progress-bar::-moz-range-thumb {
+/* #audio_user ~ .controls .progress-bar::-moz-range-thumb {
   background: var(--color-button-purple);
   border: 1px solid  var(--color-button-text-purple);
-}
+} */
 
 
 /* Цвета текста .language для каждого плеера ----------------------------*/
@@ -702,9 +719,9 @@ body.playing-audio::after {
 #audio_tr ~ .controls .language {
   color: var(--color-button-text-yellow); /* Желтый */
 }
-#audio_user ~ .controls .language {
-  color: var(--color-button-text-purple); /* Фиолетовый */
-}
+/* #audio_user ~ .controls .language {
+  color: var(--color-button-text-purple); 
+} *//* Фиолетовый */
 
 .custom-audio-player .language {
   padding-right: 0 !important;
@@ -814,10 +831,10 @@ body.playing-audio::after {
   background-color: var(--color-button-yellow);
   color: var(--color-button-text-yellow);
 }
-#audio_user ~ .controls .custom-speed-select .speed-options li.selected {
+/* #audio_user ~ .controls .custom-speed-select .speed-options li.selected {
   background-color: var(--color-button-purple);
   color: var(--color-button-text-purple);
-}
+} */
 
 .custom-speed-select.active .speed-options {
   display: block;
@@ -966,8 +983,8 @@ body.playing-audio::after {
 .audio-user-panel {
   display: flex;
   gap: 10px;
-  max-height: 120px; /* подбери точное значение */
-  overflow: hidden;
+  /* max-height: 120px; подбери точное значение
+  overflow: hidden; */
 }
 
 
@@ -996,3 +1013,15 @@ body.playing-audio::after {
     min-width: 250px;       /* можно задать одинаковую минимальную ширину */
     text-align: center;
 }
+
+/* для стилизации счетчика:---------------------------------------------------- */
+/* .audio-counter {
+    margin-left: 4px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.button-color-purple.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+} */
