@@ -84,7 +84,7 @@
                     </button>
                 </div>
 
-                <h4 id="diktation_id" class="diktation_id">{{ dictation_id }}</h4>
+                <h4 id="diktation_id">{{ dictation_id }}</h4>
             </div>
         </div>
 
@@ -170,7 +170,7 @@
             </div>
 
             <button id="checkBtn" class="button-color-yellow" onclick="checkText()">
-                <i data-lucide="check"></i>
+                <i data-lucide="book-open-check"></i>
             </button>
         </div>
 
@@ -179,44 +179,38 @@
 
             <div class="audio-user-content">
                 <div class="audio-user-content-buttons">
-                    <button class="stat-btn grupp-audio" disabled>
-                        <i data-lucide="percent"></i>
-                        <span id="count_percent">0</span>
-                    </button>
-
-                    <canvas id="audioVisualizer" class="audio-visualizer grupp-audio" width="300" height="80"></canvas>
-
-                    <!-- отображение процесса записи -->
+                    <div id="userAudioTablo" class="text-user-audio">
+                        <i data-lucide="mic"></i>
+                        <i data-lucide="mic"></i>
+                        <i data-lucide="check"></i>
+                        <i data-lucide="check"></i>
+                        <i data-lucide="check"></i>
+                    </div>
                     <button id="recordButton" class="button-color-purple grupp-audio">
                         <i data-lucide="mic"></i>
                         <span id="recordStateIcon" class="state-icon"></span>
                         <!-- <i data-lucide="square" id="recordIconSquare"></i>></i> -->
                     </button>
                 </div>
+                <div class="audio-user-content-buttons">
+
+                    <button class="stat-btn grupp-audio" disabled>
+                        <i data-lucide="percent"></i>
+                        <span id="count_percent">0</span>
+                    </button>
+
+                    <!-- отображение процесса записи -->
+                    <canvas id="audioVisualizer" class="audio-visualizer" width="300" height="80"></canvas>
+                    <button id="userPlay" class="button-color-purple">
+                        <i data-lucide="play"></i>
+                    </button>
+
+                </div>
 
                 <div id="userAudioAnswer" class="text-user-audio"></div>
             </div>
 
-
-            <!-- таблица с результатами записи -->
-            <table id="sentences-table">
-                <thead>
-                    <tr>
-                        <th>№</th>
-                        <th>Предложение (оригинал/перевод)</th>
-                        <th>Аудио</th>
-                        <th>% совпадения</th>
-                        <th>Зачтено</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Строки будут добавляться через JavaScript -->
-                </tbody>
-            </table>
-
         </div>
-
-
 
     </div>
 

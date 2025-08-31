@@ -33,11 +33,6 @@
   max-width: 100%;
 }
 
-/* #checkBtn {
-  padding: 12px;
-  border-radius: 12px;
-} */
-
 /* аудио пользователя прослушать + текст от аудио пользователя + кнопрока записи аудио */
 .audio-user-panel {
   flex-wrap: wrap;
@@ -128,21 +123,6 @@
 }
 
 
-/* РЎС‚РёР»Рё РґР»СЏ С‚Р°Р±Р»РёС†С‹ */
-#sentences-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 20px 0;
-}
-
-
-
-#sentences-table th,
-#sentences-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  vertical-align: middle;
-}
 
 
 
@@ -168,23 +148,6 @@
   margin: 0 2px;
 }
 
-
-
-/* РЎС‚РёР»Рё РґР»СЏ С‚Р°Р±Р»РёС†С‹ */
-/* РЎС‚РёР»Рё С‚Р°Р±Р»РёС†С‹ */
-#sentences-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-
-
-#sentences-table th,
-#sentences-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  vertical-align: top;
-}
 
 
 
@@ -288,9 +251,6 @@ body.playing-audio::after {
   /* Запрещает перенос текста в кнопке */
 }
 
-.record-btn.recording {
-  background: #4CAF50;
-}
 
 .audio-visualizer {
   width: 200px;
@@ -365,13 +325,6 @@ body.playing-audio::after {
 #audio_tr {
   background-color: var(--color-button-purple);
   /* Фиолетовый фон */
-}
-
-/* Базовые цвета таблицы — меняй под себя */
-#sentences-table {
-  color: var(--color-button-text-purple);
-  border: 1px solid var(--color-button-purple);
-  border-collapse: collapse;    /* одна общая граница */
 }
 
 /* КНОПКИ НАВИГАЦИИ ПРЕДЛОЖЕНИЙ НАЧАЛО */
@@ -587,14 +540,10 @@ body.playing-audio::after {
   color: var(--color-button-text-gray);
 }
 
-.diktation_id {
-  color: var(--color-button-text-gray);
-  width: 60px;
-  /* Фиксированная ширина */
-  min-width: 60px;
-  /* Запрет уменьшения */
-  justify-content: center;
-  /* Центрирование содержимого */
+#diktation_id {
+  color: var(--color-button-gray);
+  width: 60px;/* Фиксированная ширина */
+  min-width: 60px;/* Запрет уменьшения */
 }
 
 /* Состояния */
@@ -716,6 +665,10 @@ body.playing-audio::after {
 #audio ~ .controls .language {
   color: var(--color-button-text-lightgreen); /* Салатовый */
 }
+#userAudioTablo {
+  color: var(--color-button-purple); /* Желтый */
+}
+
 #audio_tr ~ .controls .language {
   color: var(--color-button-text-yellow); /* Желтый */
 }
@@ -1014,14 +967,84 @@ body.playing-audio::after {
     text-align: center;
 }
 
-/* для стилизации счетчика:---------------------------------------------------- */
-/* .audio-counter {
-    margin-left: 4px;
-    font-weight: bold;
-    font-size: 14px;
+/* для стилизации аудио записи:---------------------------------------------------- */
+.audio-user-panel { margin-top: 16px; }
+
+.audio-user-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;            /* расстояние между рядами */
 }
 
-.button-color-purple.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-} */
+/* Каждый ряд — горизонтальный флекс */
+.audio-user-content-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* В первом ряду — табло слева, запись справа */
+.audio-user-content-buttons:first-child {
+  justify-content: space-between;
+}
+
+.text-user-audio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#recordButton,
+#userPlay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  min-width: 44px;
+}
+
+.audio-visualizer { flex: 1 1 auto; max-width: 420px; }
+
+
+
+/* кнопки чек и запись аудио полоьзователем ------------------------- */
+/* Запрет наведения/обводки для отключённой кнопки проверки */
+#checkBtn.disabled,
+#checkBtn:disabled {
+  pointer-events: none;      /* курсор не активен */
+  outline: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  cursor: default;
+}
+/* если у .button-color-* есть hover-эффекты — гасим их для disabled */
+#checkBtn:disabled:hover,
+#checkBtn.disabled:hover {
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+
+
+
+/* Запрет наведения/обводки для отключённой кнопки записи */
+#recordButton.disabled,
+#recordButton:disabled {
+  pointer-events: none;      /* курсор не активен */
+  outline: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  cursor: default;
+}
+
+/* На всякий случай — если .button-color-purple что-то красит на :hover */
+.button-color-purple.disabled:hover,
+#recordButton:disabled:hover {
+  box-shadow: none !important;
+  transform: none !important;
+  background: inherit !important; /* не перекрашиваемся на hover */
+}
+
+#audioVisualizer[hidden] { display: none !important; }
