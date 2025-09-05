@@ -27,7 +27,7 @@
 
 #translation {
   font-size: 18px;
-  color: var(--color-button-text-yellow);
+  color: var(--color-button-gray);
   padding: 6px 10px;
   border-radius: 6px;
   max-width: 100%;
@@ -461,8 +461,9 @@ body.playing-audio::after {
   outline: none !important;
   box-shadow: none !important;
   transition: none !important;
-  -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight: transparent !important;
 }
+/* -color */
 
 /* Отключение всех состояний */
 .stat-btn:hover,
@@ -495,17 +496,15 @@ body.playing-audio::after {
 .stat-btn.timer {
   background: var(--color-button-yellow);
   color: var(--color-button-text-yellow);
-  width: 310px;
-  /* Фиксированная ширина */
-  min-width: 310px;
-  /* Запрет уменьшения */
+  width: 330px; /* Фиксированная ширина */
+  min-width: 330px; /* Запрет уменьшения */
   justify-content: flex-start;
   /* Выравнивание по левому краю */
 }
 
-.stat-btn.circle-number {
-  background: var(--color-button-orange);
-  color: var(--color-button-text-orange);
+#btn-circle-number {
+  /* background: var(--color-button-orange); */
+  color: var(--color-button-text-yellow);
 }
 
 .stat-btn.perfect {
@@ -1048,3 +1047,141 @@ body.playing-audio::after {
 }
 
 #audioVisualizer[hidden] { display: none !important; }
+
+
+
+
+/* ----------- модальные окна----------------------------------------------------- */
+/* Стили для модального окна с прокруткой */
+.modal-content {
+    max-height: 80vh; /* 80% высоты экрана */
+    overflow-y: auto; /* Вертикальная прокрутка */
+    padding: 20px;
+    width: 90%;
+    max-width: 1000px; /* Максимальная ширина */
+}
+
+/* Стили для таблицы внутри модального окна */
+#sentences-table, #final-sentences-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 14px;
+}
+
+#sentences-table th, #final-sentences-table th,
+#sentences-table td, #final-sentences-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border: 1px solid var(--color-panel-bg);
+}
+
+#sentences-table th, #final-sentences-table th {
+    background-color: var(--color-panel-bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Уменьшаем ширину некоторых колонок */
+#sentences-table th:nth-child(1), #final-sentences-table th:nth-child(1),
+#sentences-table td:nth-child(1), #final-sentences-table td:nth-child(1) {
+    width: 30px; /* Выбор */
+}
+
+#sentences-table th:nth-child(2), #final-sentences-table th:nth-child(2),
+#sentences-table td:nth-child(2), #final-sentences-table td:nth-child(2) {
+    width: 50px; /* Код */
+}
+
+#final-sentences-table th:nth-child(3),
+#final-sentences-table td:nth-child(3),
+#final-sentences-table th:nth-child(4),
+#final-sentences-table td:nth-child(4) {
+    width: 60px; /* Статусы */
+}
+
+/* Контрол для перемешивания */
+.mix-control {
+    margin: 15px 0;
+    padding: 10px;
+    background-color: var(--color-panel-bg);
+    border-radius: 5px;
+}
+
+.mix-control label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.mix-control input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+#sentences-table thead { display: none; }
+
+
+/* Индикаторы в углах ---------------------------------------------------*/
+/* Стили для иконок статуса */
+.status-icon-corner {
+  position: absolute;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1; /* Иконки под номером */
+}
+
+/* Номер поверх иконок */
+.button-32-32 span {
+  position: relative;
+  z-index: 2; /* Номер выше иконок */
+}
+
+/* Размеры контейнеров */
+.text-status-perfect,
+.text-status-corrected {
+  width: 20px;
+  height: 20px;
+  top: 0px;
+  left: 0px;
+}
+
+.audio-status-done {
+  width: 16px;
+  height: 16px;
+  bottom: 1px;
+  left: 1px;
+}
+
+/* Увеличиваем размер SVG иконок */
+.status-icon-corner svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.audio-status-done svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* Цвета */
+.text-status-perfect {
+  color: var(--color-button-text-mint);
+}
+
+.text-status-corrected {
+  color: var(--color-button-text-lightgreen);
+}
+
+.audio-status-done {
+  color: var(--color-button-text-purple);
+}
+
+/* Активная кнопка */
+.button-active {
+  background-color: var(--color-button-yellow) !important;
+}

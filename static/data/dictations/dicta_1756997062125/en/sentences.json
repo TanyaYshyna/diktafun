@@ -1,0 +1,263 @@
+{
+  "language": "en",
+  "speaker": "auto",
+  "title": "Sick",
+  "sentences": [
+    {
+      "key": "000",
+      "text": "\"I cannot go to school today,\"",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "000.mp3"
+    },
+    {
+      "key": "001",
+      "text": "Said little Peggy Ann McKay.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "001.mp3"
+    },
+    {
+      "key": "002",
+      "text": "\"I have the measles and the mumps,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "002.mp3"
+    },
+    {
+      "key": "003",
+      "text": "A gash, a rash and purple bumps.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "003.mp3"
+    },
+    {
+      "key": "004",
+      "text": "My mouth is wet, my throat is dry,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "004.mp3"
+    },
+    {
+      "key": "005",
+      "text": "I'm going blind in my right eye.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "005.mp3"
+    },
+    {
+      "key": "006",
+      "text": "My tonsils are as big as rocks,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "006.mp3"
+    },
+    {
+      "key": "007",
+      "text": "I've counted sixteen chicken pox",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "007.mp3"
+    },
+    {
+      "key": "008",
+      "text": "And there's one more—that's seventeen,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "008.mp3"
+    },
+    {
+      "key": "009",
+      "text": "And don't you think my face looks green?",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "009.mp3"
+    },
+    {
+      "key": "010",
+      "text": "My leg is cut—my eyes are blue—",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "010.mp3"
+    },
+    {
+      "key": "011",
+      "text": "It might be instamatic flu.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "011.mp3"
+    },
+    {
+      "key": "012",
+      "text": "I cough and sneeze and gasp and choke,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "012.mp3"
+    },
+    {
+      "key": "013",
+      "text": "I'm sure that my left leg is broke—",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "013.mp3"
+    },
+    {
+      "key": "014",
+      "text": "My hip hurts when I move my chin,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "014.mp3"
+    },
+    {
+      "key": "015",
+      "text": "My belly button's caving in,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "015.mp3"
+    },
+    {
+      "key": "016",
+      "text": "My back is wrenched, my ankle's sprained,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "016.mp3"
+    },
+    {
+      "key": "017",
+      "text": "My 'pendix pains each time it rains.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "017.mp3"
+    },
+    {
+      "key": "018",
+      "text": "My nose is cold, my toes are numb.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "018.mp3"
+    },
+    {
+      "key": "019",
+      "text": "I have a sliver in my thumb.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "019.mp3"
+    },
+    {
+      "key": "020",
+      "text": "My neck is stiff, my voice is weak,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "020.mp3"
+    },
+    {
+      "key": "021",
+      "text": "I hardly whisper when I speak.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "021.mp3"
+    },
+    {
+      "key": "022",
+      "text": "My tongue is filling up my mouth,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "022.mp3"
+    },
+    {
+      "key": "023",
+      "text": "I think my hair is falling out.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "023.mp3"
+    },
+    {
+      "key": "024",
+      "text": "My elbow's bent, my spine ain't straight,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "024.mp3"
+    },
+    {
+      "key": "025",
+      "text": "My temperature is one-o-eight.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "025.mp3"
+    },
+    {
+      "key": "026",
+      "text": "My brain is shrunk, I cannot hear,",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "026.mp3"
+    },
+    {
+      "key": "027",
+      "text": "There is a hole inside my ear.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "027.mp3"
+    },
+    {
+      "key": "028",
+      "text": "I have a hangnail, and my heart is—what?",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "028.mp3"
+    },
+    {
+      "key": "029",
+      "text": "What's that? What's that you say?",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "029.mp3"
+    },
+    {
+      "key": "030",
+      "text": "You say today is. . .Saturday?",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "030.mp3"
+    },
+    {
+      "key": "031",
+      "text": "G'bye, I'm going out to play!\"",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "031.mp3"
+    }
+  ]
+}

@@ -25,10 +25,38 @@
     <div id="startModal" class="modal">
         <div class="modal-content">
             <h2>Готовы начать диктант?</h2>
-            <button id="confirmStartBtn" tabindex="0" aria-disabled="true">Начать диктант</button>
+
+            <!-- Контрол перемешивания -->
+            <div class="mix-control">
+                <label>
+                    <input type="checkbox" id="mixCheckbox">
+                    <i data-lucide="shuffle"></i>
+                    Перемешивать предложения
+                </label>
+            </div>
+
+            <button id="confirmStartBtn" tabindex="0" aria-disabled="true">
+                <i data-lucide="play"></i>
+                Начать диктант
+            </button>
+
+            <!-- Таблица с прокруткой -->
+            <div class="table-container">
+                <table id="sentences-table">
+                    <thead>
+                        <tr>
+                            <th>Выбор</th>
+                            <th>Код</th>
+                            <th>Предложение</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Строки будут добавляться через JavaScript -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-
 
     <div class="panel">
         <!-- Счетчик предложений -->
@@ -40,10 +68,10 @@
                     <!-- будет подставлено из JS -->
                 </div>
                 <div class="button-group">
-                    <button id="checkPrevios" class="button-color-yellow" onclick="previousSentence()">
+                    <button id="checkPrevios" class="button-color-yellow button-32-32" onclick="previousSentence()">
                         <i data-lucide="arrow-left"></i>
                     </button>
-                    <button id="checkNext" class="button-color-yellow" onclick="nextSentence()">
+                    <button id="checkNext" class="button-color-yellow button-32-32" onclick="nextSentence()">
                         <i data-lucide="arrow-right"></i>
                     </button>
                 </div>
@@ -78,7 +106,7 @@
                         <span id="count_total">0</span>
                     </button>
 
-                    <button id="btn-circle-number" class="stat-btn circle" title="Какой раз проходим диктант">
+                    <button id="btn-circle-number" class="stat-btn" title="Какой раз проходим диктант">
                         <i data-lucide="iteration-cw"></i>
                         <span id="circle-number">1</span>
                     </button>
@@ -186,7 +214,7 @@
                         <i data-lucide="check"></i>
                         <i data-lucide="check"></i>
                     </div>
-                    <button id="recordButton" class="button-color-purple grupp-audio">
+                    <button id="recordButton" class="button-color-purple">
                         <i data-lucide="mic"></i>
                         <span id="recordStateIcon" class="state-icon"></span>
                         <!-- <i data-lucide="square" id="recordIconSquare"></i>></i> -->
@@ -194,7 +222,7 @@
                 </div>
                 <div class="audio-user-content-buttons">
 
-                    <button class="stat-btn grupp-audio" disabled>
+                    <button class="stat-btn"  style="color: var(--color-button-purple);" disabled>
                         <i data-lucide="percent"></i>
                         <span id="count_percent">0</span>
                     </button>
@@ -257,18 +285,32 @@
             </div>
 
 
+            <label class="mix-flag">
+                <input type="checkbox" id="finish_modal_mixCheckbox" checked>
+                Перемешивать (mix)
+            </label>
+            <table id="finish_modal_sentences_table">
+                <thead>
+                    <tr>
+                        <th>Выбор</th>
+                        <th>Код</th>
+                        <th>Текст</th>
+                        <th>Аудио</th>
+                        <th>Предложение</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Строки будут добавляться через JavaScript -->
+                </tbody>
+            </table>
 
 
             <h1>Что вы хотите сделать дальше?</h1>
             <div class="finish-modal-modal-buttons">
-                <button id="btnRestartErrors" onclick=clickBtnRestartErrors() class="button-color-pink">
+                <button id="btnRestartErrors" onclick=clickBtnRestart() class="button-color-pink">
                     <i data-lucide="bug"></i>
                     <i data-lucide="reply"></i>
-                    Повторить только предложения где были ошибки
-                </button>
-                <button id="btnRestartAll" onclick=clickBtnRestartAll() class="button-color-mint">
-                    <i data-lucide="reply-all"></i>
-                    Пройти всё заново
+                    ГРАЙМО ДАЛІ
                 </button>
                 <button id="btnBackToList" onclick=clickBtnBackToList() class="button-color-yellow">
                     <i data-lucide="text-quote"></i>
