@@ -1,4 +1,6 @@
-//    console.log("👀 renderSentenceCounter вызвана");
+// console.log("👀 renderSentenceCounter вызвана");
+// checkNextDiv.focus();
+// recordButton.focus();
 const circleBtn = document.getElementById('btn-circle-number');
 const inputField = document.getElementById('userInput');
 const checkNextDiv = document.getElementById('checkNext');
@@ -43,8 +45,10 @@ let currentSentence = 0;   // текущее предложение из allSent
 // индексы 9ти кнопок  (
 // уже или равен selectedSentences по размеру, 
 // индекс массива id="sentenceCounter">)
+let counterTabloBtn; // кнопка на которой текущая позиция курсора
 let counterTabloIndex = 0; // текущая позиция курсора
 let counterTabloIndex_old = 0; // предыдущая позиция курсора
+let buttonsTablo = [];
 
 // номер круга
 let circle_number = 1;
@@ -86,6 +90,9 @@ const userAudioVisualizer = document.getElementById('userAudioVisualizer');
 // Живой буфер распознанного текста (final + interim)
 const count_percent = document.getElementById('count_percent');
 const recordButton = document.getElementById('recordButton');
+// Инициализация кнопки
+recordButton.addEventListener('click', toggleRecording);
+
 const recordStateIcon = document.getElementById('recordStateIcon'); // запись/пауза
 const AUTO_STOP_ENABLED = true;
 const AUTO_STOP_THRESHOLD = 80;     // 95%
@@ -661,8 +668,6 @@ const setText = (id, val) => {
 
 const updateStatsUIFor = (circle = null) => {
     const s = statsLite(circle);
-    // console.debug('(5) decreaseAudioCounter() circle = ', circle);
-    // console.debug('(5) decreaseAudioCounter() s = ', s);
     setText('count_perfect', s.perfect);
     setText('count_corrected', s.corrected);
     setText('count_total', s.total);
@@ -796,7 +801,8 @@ function initTabloSentenceCounter(maxVisible = 9) {
     const boxWrapper = document.createElement("div");
     boxWrapper.classList.add("sentence-box-wrapper");
 
-    window.sentenceButtons = [];
+    // window.sentenceButtons = [];
+    buttonsTablo = [];
     counterTabloIndex = 0;
 
     if (total <= maxVisible) {
@@ -816,17 +822,22 @@ function initTabloSentenceCounter(maxVisible = 9) {
     container.appendChild(boxWrapper);
 }
 
+// окремо створююэмо 9 кнопок. Потім лише будемо змінювати назву
 function newTabloBtn(boxWrapper, lable, index, className) {
     const btn = document.createElement("button");
-    //btn.classList.add("sentence-box");
     btn.dataset.position = index;
     btn.textContent = lable;
     btn.classList.add("button-32-32", className);
     btn.onclick = () => {
-        const btn_old = window.sentenceButtons[counterTabloIndex];
-        btn_old.className = '';
-        btn_old.classList.value = '';
-        btn_old.classList.add("button-32-32", "button-color-transparent");
+        counterTabloIndex_old = counterTabloIndex;
+
+        const s_old = makeByKeyMap(allSentences).get(selectedSentences[currentSentenceIndex]);
+        const btn_old = buttonsTablo[counterTabloIndex_old];
+        applyStatusClass(btn_old, s_old);
+        // const btn_old = buttonsTablo[counterTabloIndex];
+        // btn_old.className = '';
+        // btn_old.classList.value = '';
+        // btn_old.classList.add("button-32-32", "button-color-transparent");
 
         const num = parseInt(btn.textContent);
         if (!isNaN(num)) {
@@ -834,19 +845,20 @@ function newTabloBtn(boxWrapper, lable, index, className) {
             btn.classList.value = '';
             btn.classList.add("button-32-32", "button-color-yellow");
             currentSentenceIndex = num - 1;
-            counterTabloIndex = btn.dataset.position;
+            counterTabloIndex = parseInt(btn.dataset.position);
+            counterTabloBtn = btn;
             showCurrentSentence(counterTabloIndex, currentSentenceIndex);
         }
     };
     boxWrapper.appendChild(btn);
-    window.sentenceButtons.push(btn);
+    // window.sentenceButtons.push(btn);
+    buttonsTablo.push(btn);
 }
 
 function applyStatusClass(btn, s, isCurrent = false) {
     btn.className = '';
     btn.classList.value = '';
-    btn.innerHTML = s.serial_number; // Просто номер
-    // console.log("👀 --------- [  ]  --------------- s = ", s);
+    btn.innerHTML = s.serial_number;
 
     // Базовый класс
     btn.classList.add("button-32-32");
@@ -904,43 +916,30 @@ function applyStatusClass(btn, s, isCurrent = false) {
 }
 
 
-// function updateTabloSentenceCounter(currentIndex, maxVisible = 9) {
 function updateTabloSentenceCounter(newTabloIndex, newSentenceIndex, maxVisible = 9) {
     const total = selectedSentences.length;
-    const buttonsTablo = window.sentenceButtons;
+    // const buttonsTablo = window.sentenceButtons;
     if (!buttonsTablo || buttonsTablo.length === 0) return;
+    console.log("👀 [2] updateTabloSentenceCounter() -------- buttonsTablo ", buttonsTablo);
+   console.log("👀 [2] updateTabloSentenceCounter() -------- newTabloIndex ", newTabloIndex);
 
     const visibleLabels = buttonsTablo.map(btn => btn.textContent);// список номеров которые видно на екране сейчас
     const currentLabel = buttonsTablo[newTabloIndex].textContent;
     const b1 = buttonsTablo[1].textContent;
     const bn = buttonsTablo[maxVisible - 2].textContent;
-    // console.log("👀 updateTabloSentenceCounter() --------------- [0] --------------- currentLabel = ", currentLabel);
-    // if (currentLabel === "..."|| (b1 === "..." && b1 === "...") ){
     if (currentLabel === "...") {
-        // [2] Если нужной кнопки нет — перестраиваем видимые кнопки
-        console.log("👀 ------ [2]  --------- currentLabel = ", currentLabel);
         let visibleIndices = [];
-        // console.log("👀 updateTabloSentenceCounter() --------------- [2] ---------------");
-
-        // if (newSentenceIndex > (maxVisible-3) && newSentenceIndex < (total - maxVisible+3)) {
-
-        // }
-        console.log("👀 ------ [2]  --------- newTabloIndex = ", newTabloIndex);
-        console.log("👀 ------ [2]  --------- maxVisible - 2 = ", maxVisible - 2);
 
         if (newSentenceIndex < maxVisible - 2) {
-            console.log("👀 ------ [2]  -1-------- ");
             visibleIndices.push(0);
             for (let i = 1; i < maxVisible - 2; i++) visibleIndices.push(i);
             visibleIndices.push("...");
             visibleIndices.push(total - 1);
         } else if (newSentenceIndex > total - (maxVisible - 2)) {
-            console.log("👀 ------ [2]  -2-------- ");
             visibleIndices.push(0);
             visibleIndices.push("...");
             for (let i = total - maxVisible + 2; i < total; i++) visibleIndices.push(i);
         } else {
-            console.log("👀 ------ [2]  -3-------- ");
             visibleIndices.push(0);
             visibleIndices.push("...");
             for (let i = newSentenceIndex; i < newSentenceIndex + (maxVisible - 4); i++) {
@@ -949,7 +948,6 @@ function updateTabloSentenceCounter(newTabloIndex, newSentenceIndex, maxVisible 
             visibleIndices.push("...");
             visibleIndices.push(total - 1);
         }
-        console.log("👀 ------ [2]  -4-------- visibleIndices = ", visibleIndices);
 
         buttonsTablo.forEach((btn, i) => {
             const value = visibleIndices[i];
@@ -964,14 +962,12 @@ function updateTabloSentenceCounter(newTabloIndex, newSentenceIndex, maxVisible 
                 btn.dataset.position = value;
                 btn.disabled = false;
 
-                // if (value === newTabloIndex) {
                 if (value === newSentenceIndex) {
                     applyStatusClass(btn, s, true);
                     counterTabloIndex = i;
-                    // console.log("👀 updateTabloSentenceCounter() --------------- [2] [" + i + "] --------------- counterTabloIndex =", counterTabloIndex);
+                    counterTabloBtn = btn;
                 } else {
                     applyStatusClass(btn, s, false);
-                    // console.log("👀 updateTabloSentenceCounter() --------------- [2] [" + i + "] ---------------",);
                 }
             }
         });
@@ -979,24 +975,16 @@ function updateTabloSentenceCounter(newTabloIndex, newSentenceIndex, maxVisible 
     } else {
         // [1] Если текущая кнопка уже на экране — то текущую пререрисовываем без Активности
         // новую делаем Активной
-
         counterTabloIndex = newTabloIndex;
-        // console.log("👀 updateTabloSentenceCounter() --------------- [1] ---------------");
 
         const s_old = makeByKeyMap(allSentences).get(selectedSentences[currentSentenceIndex]);
         const btn_old = buttonsTablo[counterTabloIndex_old];
         applyStatusClass(btn_old, s_old);
-        // console.log("👀 updateTabloSentenceCounter() --------------- [1] --------------- s_old", s_old);
-        // console.log("👀 updateTabloSentenceCounter() --------------- [1] --------------- btn_old", btn_old);
 
-        //counterTabloIndex = visibleLabels.indexOf(String(newTabloIndex));
         const btn = buttonsTablo[newTabloIndex];
-        // console.log("👀 updateTabloSentenceCounter() --------------- [1] --------------- btn", btn);
-        // const s = makeByKeyMap(allSentences).get(selectedSentences[btn.textContent - 1]);
+        counterTabloBtn = btn;
         const s = makeByKeyMap(allSentences).get(selectedSentences[newSentenceIndex]);
         applyStatusClass(btn, s, true);
-        // console.log("👀 updateTabloSentenceCounter() --------------- [1] --------------- s", s);
-        // console.log("👀 updateTabloSentenceCounter() --------------- [1] --------------- btn", btn);
     }
 }
 
@@ -1021,7 +1009,6 @@ function checkIfAllCompleted() {
     renderSelectionTable('finish_modal_sentences_table', true);
 
     document.getElementById("finishModal").style.display = "flex";
-
 }
 
 
@@ -1103,10 +1090,19 @@ function decreaseAudioCounter() {
                 recordButton.classList.add('disabled');
             }
             // Обновляем статистику в верхней панели
-            console.debug('(4) decreaseAudioCounter() 563');
             updateStats();
-        }
 
+            // поставим фиолетовую птичку у "текущего предложения" в "табло предложений"
+            const btn = buttonsTablo[counterTabloIndex];
+            applyStatusClass(btn, currentSentence, true);
+            //applyStatusClass(counterTabloBtn, currentSentence, true);
+
+            // курсор на кнопку "следующее предложение"
+            checkNextDiv.focus();
+        } else {
+            // нуля не достигли но фокус надо оставить на этй кнопке
+            recordButton.focus();
+        }
         return true;
     }
     return false;
@@ -1275,7 +1271,7 @@ function saveRecording(cause = undefined) {
     renderUserAudioTablo();
 
     // ⬇️ добавлено: обновим «значок» у микрофона при достаточном числе зачтённых
-    updateLessonPassedMark();
+    // updateLessonPassedMark();
 
     // сбрасываем буфер
     srLiveText = '';
@@ -1410,11 +1406,6 @@ function disableRecordButton(active) {
     }
 }
 
-
-// Инициализация кнопки
-recordButton.addEventListener('click', toggleRecording);
-
-
 function setupVisualizer(stream) {
     const canvas = audioVisualizer;               // у тебя уже есть ссылка по id
     if (!canvas) return;
@@ -1502,17 +1493,8 @@ function stopVisualization() {
     }
 }
 
-// перенумерация строк
-function renumberAttemptRows(tbody) {
-    const rows = tbody.querySelectorAll('tr');
-    rows.forEach((tr, i) => {
-        const cell = tr.querySelector('td'); // первая ячейка
-        if (cell) cell.textContent = String(i); // если нужно с 1: String(i+1)
-    });
-}
-
-
 // Показываем/скрываем отметку рядом с микрофоном, когда lesson сдан
+// удалить? устарела
 function updateLessonPassedMark() {
     const micButton = document.getElementById('recordButton');
     if (!micButton) return;
@@ -1536,7 +1518,7 @@ function updateLessonPassedMark() {
 // ===== Аудио-функционал КОНЕЦ =====
 
 
-// ===== Инициализация диктанта ===== 
+// ===== Инициализация диктанта =================================================================== 
 function initializeDictation() {
     // Рисуем таблицу так, чтобы ВСЁ было отмечено
     renderSelectionTable('sentences-table');
@@ -1571,9 +1553,6 @@ function startNewGame() {
 
     currentSentenceIndex = 0;
     showCurrentSentence(0, 0);
-
-    // Воспроизводим последовательность OTO как и требовалось
-    // playMultipleAudios(playSequenceStart); // "oto"
 
     // Активируем интерфейс
     inputField.focus();
@@ -1655,7 +1634,7 @@ function showCurrentSentence(showTabloIndex, showSentenceIndex) {
     renderUserAudioTablo();
 
     // Обновляем отметку о выполнении
-    updateLessonPassedMark();
+    // updateLessonPassedMark();
 
     audioVisualizer.style.display = 'block';
     count_percent.style.display = 'block';
@@ -1671,12 +1650,21 @@ function showCurrentSentence(showTabloIndex, showSentenceIndex) {
     // включаем кнопку проверки и поле ввода текста
     if (currentSentence.perfect === 1) {
         inputField.innerHTML = currentSentence.text;
+        // correctAnswerDiv.innerHTML = currentSentence.text_translation;
+        correctAnswerDiv.style.display = "block";
+        correctAnswerDiv.textContent = currentSentence.text_translation;
+        correctAnswerDiv.style.color = 'var(--color-button-gray)';
         disableCheckButton(0);
     } else if (currentSentence.corrected === 1) {
         inputField.innerHTML = currentSentence.text;
+        // correctAnswerDiv.innerHTML = currentSentence.text_translation;
+        correctAnswerDiv.style.display = "block";
+        correctAnswerDiv.textContent = currentSentence.text_translation;
+        correctAnswerDiv.style.color = 'var(--color-button-gray)';
         disableCheckButton(1);
     } else {
         inputField.innerHTML = "";
+        correctAnswerDiv.textContent = "";
         disableCheckButton(2);
     }
 
@@ -1716,28 +1704,22 @@ function showCurrentSentence(showTabloIndex, showSentenceIndex) {
 
 // Функция переходу до наступного речення
 function nextSentence() {
-    console.log("👀 nextSentence() ----------------- ");
+    console.log("👀 [1] nextSentence() -------- selectedSentences ", selectedSentences);
+    console.log("👀 [1] nextSentence() -------- counterTabloIndex_old ", counterTabloIndex_old);
+    console.log("👀 [1] nextSentence() -------- counterTabloIndex ", counterTabloIndex);
     const total = selectedSentences.length;
-    console.log("👀 nextSentence() ----------------- total = ", total);
-    console.log("👀 nextSentence() ----------------- counterTabloIndex_old_old = ", counterTabloIndex_old);
-    console.log("👀 nextSentence() ----------------- ");
     counterTabloIndex_old = counterTabloIndex;
     let newTabloIndex = counterTabloIndex + 1; // по кнопкам
     let newSentenceIndex = currentSentenceIndex + 1; // по списку выбранных чеком ключей к предложениям
-    console.log("👀 nextSentence() ----------------- counterTabloIndex_old = ", counterTabloIndex_old);
-    console.log("👀 nextSentence() ----------------- counterTabloIndex = ", counterTabloIndex);
-    console.log("👀 nextSentence() ----------------- newTabloIndex = ", newTabloIndex);
-    console.log("👀 nextSentence() ----------------- newSentenceIndex = ", newSentenceIndex);
 
     if (newSentenceIndex < total) {
         updateTabloSentenceCounter(newTabloIndex, newSentenceIndex);
-        showCurrentSentence(newTabloIndex, newSentenceIndex);//функция загрузки предложения
+        showCurrentSentence(newTabloIndex, newSentenceIndex); // функция загрузки предложения
     }
 
     const s = statsLite(circle_number);
     const sum = s.perfect + s.corrected;
     if (newSentenceIndex === total && sum === total) {
-        // updateTabloSentenceCounter(newTabloIndex);
         checkIfAllCompleted();
     }
 
@@ -1746,21 +1728,14 @@ function nextSentence() {
 
 // Функция переходу до поперднього речення
 function previousSentence() {
-    console.log("👀 previousSentence() ----------------- ");
-    console.log("👀 previousSentence() ----------------- counterTabloIndex_old_old = ", counterTabloIndex_old);
     counterTabloIndex_old = counterTabloIndex;
     let newTabloIndex = counterTabloIndex - 1; // по кнопкам
     let newSentenceIndex = currentSentenceIndex - 1; // по списку выбранных чеком ключей к предложениям
-    console.log("👀 previousSentence() ----------------- counterTabloIndex_old = ", counterTabloIndex_old);
-    console.log("👀 previousSentence() ----------------- counterTabloIndex = ", counterTabloIndex);
-    console.log("👀 previousSentence() ----------------- newTabloIndex = ", newTabloIndex);
-    console.log("👀 previousSentence() ----------------- newSentenceIndex = ", newSentenceIndex);
 
     if (newSentenceIndex >= 0) {
         updateTabloSentenceCounter(newTabloIndex, newSentenceIndex);
         showCurrentSentence(newTabloIndex, newSentenceIndex);
     }
-
 }
 
 // Функция очистки текста
@@ -1915,7 +1890,7 @@ function renderResult(original, userVerified) {
             foundError = true;
         } else if (word.type === "raw_user") {
             // ничего не добавляем — они игнорируются в подсказке
-            console.log("👀 function renderResult(...) ---------------- word.type = " + word.type, word);
+            // console.log("👀 function renderResult(...) ---------------- word.type = " + word.type, word);
         }
     });
 
@@ -1926,8 +1901,9 @@ function renderResult(original, userVerified) {
         });
     }
     else {
-        checkNextDiv.focus();
-        // recordButton.focus();
+        // checkNextDiv.focus();
+        recordButton.focus();
+        console.log("👀 2122 recordButton.focus()");
     }
 
     correctAnswerDiv.innerHTML = correctLine.join("");
@@ -2157,7 +2133,11 @@ function check(original, userInput, currentKey) {
         }
 
         // Обновить табло и шапку:
-        // if (typeof updateTabloSentenceCounter === 'function') updateTabloSentenceCounter(currentSentenceIndex);
+        // поставим звездочку или полузвкздочку у "текущего предложения" в "табло предложений"
+        const btn = buttonsTablo[counterTabloIndex];
+        applyStatusClass(btn, currentSentence, true);
+        // applyStatusClass(counterTabloBtn, currentSentence, true);
+
         if (typeof syncCircleButton === 'function') syncCircleButton();
         else if (typeof updateStatsUIFor === 'function') updateStatsUIFor(circle_number);
 
@@ -2185,11 +2165,14 @@ function checkText() {
 
     correctAnswerDiv.style.display = "block";
     if (allCorrect) {
-        translationDiv.style.display = "block";
-        translationDiv.textContent = translation;
-        translationDiv.style.color = 'var(--color-button-text-gray)';
+        correctAnswerDiv
+        // translationDiv.style.display = "block";
+        // translationDiv.textContent = translation;
+        // translationDiv.style.color = 'var(--color-button-text-gray)';
+        correctAnswerDiv.style.display = "block";
+        correctAnswerDiv.textContent = translation;
+        correctAnswerDiv.style.color = 'var(--color-button-gray)';
         setTimeout(() => playMultipleAudios(successSequence), 500); // "ot" с задержкой
-        // NEW:disableCheckButton(2);  блокируем кнопку до следующего ввода пользователем
     } else {
         translationDiv.style.display = "none";
     }
@@ -2287,6 +2270,14 @@ function clickBtnRestart() {
 
     // собираем список и обновляем служебные поля
     prepareGameFromTable("finish_modal_sentences_table");
+
+    // назначаем круг всем НЕ perfect, обнуляем corrected                                   // [+]
+    allSentences.forEach(s => {
+        if (selectedSentences.includes(s.kay)) {                                                          // [+]
+            s.circle = circle_number;
+            s.corrected = 0;
+        }
+    });
 
     if (selectedSentences.length === 0) {
         alert("Вы не выбрали ни одного предложения.");
