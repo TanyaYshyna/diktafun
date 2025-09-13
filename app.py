@@ -2,7 +2,7 @@
 import os
 import json
 
-from flask import Flask, render_template, url_for, abort, redirect, flash
+from flask import Flask, session, render_template, url_for, abort, redirect, flash
 from flask import render_template, redirect, url_for, flash
 from forms import RegistrationForm  # Убедитесь, что forms.py существует
 from flask import send_from_directory
@@ -21,17 +21,53 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.abspath('instance
 app.config['SECRET_KEY'] = 'ваш-новый-секретный-ключ-12345'  # из app0.py
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# app.config['UPLOAD_FOLDER'] = 'static/audio'
-# DATA_DIR = os.path.join("static", "data")
-db = SQLAlchemy(app)
-    
-from models import User
-from flask_login import LoginManager, login_required
-from flask_login import login_user, current_user
-from forms import LoginForm  # Добавьте если отсутствует
 
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
+# db = SQLAlchemy(app)
+    
+# from models import User
+# from flask_login import LoginManager, login_required
+# from flask_login import login_user, current_user
+
+# login_manager = LoginManager(app)
+# login_manager.login_view = 'login'
+from config import USE_DATABASE
+from flask_login import LoginManager, login_required, current_user
+
+# Инициализация базы данных или заглушки
+if USE_DATABASE:
+    # РЕЖИМ С БАЗОЙ ДАННЫХ
+    from models import User
+    from flask_login import login_user
+    
+    db = SQLAlchemy(app)
+    login_manager = LoginManager(app)
+    login_manager.login_view = 'login'
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+
+else:
+    # РЕЖИМ БЕЗ БАЗЫ ДАННЫХ (ЗАГЛУШКА)
+    from user_stub import User
+    
+    # Заглушка для login_manager
+    login_manager = LoginManager(app)
+    login_manager.login_view = 'login'
+    
+    # Заглушка для user_loader
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.get(user_id)
+    
+    # Заглушка для login_user (просто возвращает пользователя)
+    def login_user(user, remember=False):
+        return user
+
+# Теперь импортируем current_user после определения режима
+from flask_login import current_user
+
+from forms import LoginForm  # Добавьте если отсутствует
 
 
 # Добавьте этот маршрут
@@ -55,6 +91,10 @@ def profile():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if not USE_DATABASE:
+        flash('Регистрация отключена в тестовом режиме. Используйте вход с test@example.com / test')
+        return redirect(url_for('login'))
+    
     form = RegistrationForm()
     if form.validate_on_submit():
         user = User(
@@ -71,9 +111,9 @@ def register():
     return render_template('register.html', form=form)
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return User.query.get(int(user_id))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -82,18 +122,26 @@ def login():
         return redirect(url_for('index'))
 
     form = LoginForm()
-    print(f"CSRF токен валиден: {form.validate_on_submit()}")  # Для отладки
     
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        print(f"Найден пользователь: {user}")  # Проверка существования
-        if user and user.check_password(form.password.data):
-            login_user(user)
-            print("✅ Успешный вход!")  # Должен появиться в консоли
-            return redirect(url_for('index'))
+        if USE_DATABASE:
+            # Режим с базой данных
+            user = User.query.filter_by(email=form.email.data).first()
+            if user and user.check_password(form.password.data):
+                login_user(user)
+                flash('Успешный вход!')
+                return redirect(url_for('index'))
+            else:
+                flash('Неверный email или пароль')
         else:
-            print("❌ Ошибка: неверный email или пароль")
-            flash('Неверный email или пароль')
+            # Режим с заглушкой - всегда успешный вход
+            user = User.query_filter_by(email=form.email.data).first()
+            if user and user.check_password(form.password.data):
+                login_user(user)
+                flash('Успешный вход (тестовый режим)!')
+                return redirect(url_for('index'))
+            else:
+                flash('В тестовом режиме используйте email: test@example.com, пароль: test')
     
     return render_template('login.html', form=form)
 
@@ -101,26 +149,21 @@ def login():
 # Тестовая проверка БД
 @app.route('/test_db')
 def test_db():
+    if not USE_DATABASE:
+        return "Тестовый режим - база данных отключена"
     try:
         db.session.execute('SELECT 1')
         return "✅ База работает!"
     except Exception as e:
         return f"❌ Ошибка БД: {str(e)}"
 
-
-
-
-
-
-
-
-
-
-
-
-# Test SSH push
-
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
+    # Создаем таблицы только в режиме с базой данных
+    if USE_DATABASE:
+        with app.app_context():
+            db.create_all()
+            print("✅ Таблицы базы данных созданы (если не существовали)")
+    else:
+        print("🚀 Запуск в тестовом режиме (без базы данных)")
+    
+    app.run(debug=True, port=5000)
