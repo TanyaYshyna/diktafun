@@ -1,3 +1,13 @@
+// Берём контейнер для сетки карточек
+const GRID = document.getElementById('dictationsGrid');
+
+// Извлечь href из строки с готовым <a ...>...</a>
+// (на случай, если у тебя link/link_red приходят как HTML)
+function hrefFromHTML(html) {
+  const m = /href="([^"]+)"/.exec(html || '');
+  return m ? m[1] : '#';
+}
+
 
 // ================ шапка выбор языка ========================
 // Обработчик выбора языка
@@ -116,9 +126,10 @@ function initFancyTree() {
 
  
                 // 🔍 Находим диктанты с такими ID
-                const filtered = allDictations.filter(d => ids.includes(d.id));
+                const filteredDictations = allDictations.filter(d => ids.includes(d.id));
 
-                renderDictationList(filtered, language_original, language_translation);
+                // renderDictationList(filtered, language_original, language_translation);
+                renderDictationsGrid(filteredDictations);
                 updateUIForSelectedNode(node);
 
                 // Показываем путь к узлу
@@ -241,48 +252,149 @@ function getFlagImg(lang) {
 }
 
 
-function renderDictationList(dictations, language_original, language_translation) {
-    const container = document.getElementById("dictationList");
-    container.innerHTML = "";
+// function renderDictationList(dictations, language_original, language_translation) {
+//     const container = document.getElementById("dictationList");
+//     container.innerHTML = "";
 
-    if (dictations.length === 0) {
-        container.innerHTML = "<p>Нет диктантов в этой категории.</p>";
-        return;
-    }
+//     if (dictations.length === 0) {
+//         container.innerHTML = "<p>Нет диктантов в этой категории.</p>";
+//         return;
+//     }
 
-    dictations.forEach(d => {
-        const div = document.createElement("div");
-        div.classList.add("dictation-item");
+//     dictations.forEach(d => {
+//         const div = document.createElement("div");
+//         div.classList.add("dictation-item");
 
-        console.group(`📄 Диктант: ${d.title || "без названия"}`);
-        console.log("🟨 ID:", d.id);
-        console.log("🟩 parent_key:", d.parent_key);
-        console.log("🌐 language:", d.language);
-        console.log("🌐 languages:", d.languages);
-        console.log("📘 level:", d.level);
-        console.groupEnd();
+//         console.group(`📄 Диктант: ${d.title || "без названия"}`);
+//         console.log("🟨 ID:", d.id);
+//         console.log("🟩 parent_key:", d.parent_key);
+//         console.log("🌐 language:", d.language);
+//         console.log("🌐 languages:", d.languages);
+//         console.log("📘 level:", d.level);
+//         console.groupEnd();
 
-        // --- Язык (основной флаг) ---
-        const langIcon = getFlagImg(language_original);
+//         // --- Язык (основной флаг) ---
+//         const langIcon = getFlagImg(language_original);
 
-        // --- Переводы (массив языков) ---
-        const translations = getFlagImg(language_translation);
+//         // --- Переводы (массив языков) ---
+//         const translations = getFlagImg(language_translation);
 
-        // --- Ссылка на диктант ---
-        const link = `<a href="/dictation/${d.id}/${language_original}/${language_translation}">Открыть</a>`;
-        const link_red = `<a href="/dictation_generator/${d.id}/${language_original}/${language_translation}">Открыть для редактирования</a>`;
+//         // --- Ссылка на диктант ---
+//         const link = `<a href="/dictation/${d.id}/${language_original}/${language_translation}">Открыть</a>`;
+//         const link_red = `<a href="/dictation_generator/${d.id}/${language_original}/${language_translation}">Открыть для редактирования</a>`;
 
-        div.innerHTML = `
-            <div class="diktation_panel">
-                <div><strong>${d.title}</strong></div>
-                <div>Язык: ${langIcon} ⇒ ${translations}</div>
-                <div>Уровень: ${d.level || '—'}</div>
-                <div>${link}</div>
-                <div>${link_red}</div>
-            </div>
-        `;
+//         div.innerHTML = `
+//             <div class="diktation_panel">
+//                 <div><strong>${d.title}</strong></div>
+//                 <div>Язык: ${langIcon} ⇒ ${translations}</div>
+//                 <div>Уровень: ${d.level || '—'}</div>
+//                 <div>${link}</div>
+//                 <div>${link_red}</div>
+//             </div>
+//         `;
 
-        container.appendChild(div);
-    });
+//         container.appendChild(div);
+//     });
+// }
+
+// Подхватим твои старые поля, чтобы извлечь href
+
+
+// -------- Список диктантов на ветке ----------------------------------
+// --------------- DOM-ВЕРСИЯ РЕНДЕРА КАРТОЧЕК ------------------
+
+// Извлечь href из строки с готовым <a ...>...</a>
+// (на случай, если у тебя link/link_red приходят как HTML)
+function hrefFromHTML(html) {
+  const m = /href="([^"]+)"/.exec(html || '');
+  return m ? m[1] : '#';
 }
 
+// Путь к обложке диктанта:
+// 1) если в JSON есть d.cover — используем его,
+// 2) иначе пытаемся подставить стандартный путь по id,
+// 3) если картинка не найдётся — в onerror подменим на плейсхолдер.
+function coverPath(d) {
+  if (d.cover) return d.cover;
+  if (d.preview_image) return d.preview_image; // если вдруг так хранится
+  if (d.id) return `dictations/${d.id}/cover.webp`;
+  return 'images/placeholder-cover.svg';
+}
+
+// Собрать одну карточку диктанта как DOM-дерево
+function createCardDOM(d) {
+  // Ссылки «открыть» и «редактировать»
+  const openUrl = d.openUrl || (d.link ? hrefFromHTML(d.link) : '#');
+  const editUrl = d.editUrl || (d.link_red ? hrefFromHTML(d.link_red) : openUrl);
+
+  // <article class="short-card">
+  const card = document.createElement('article');
+  card.className = 'short-card';
+
+  // Цвет рамки из JSON: d.color, например "var(--color-button-orange)" или "#aabbcc"
+  if (d.color) card.style.setProperty('--card-accent', d.color);
+
+  // <a class="short-thumb" href="..."><img .../></a>
+  const thumb = document.createElement('a');
+  thumb.className = 'short-thumb';
+  thumb.href = openUrl;
+  thumb.setAttribute('aria-label', `Открыть диктант: ${d.title || ''}`);
+
+  const img = document.createElement('img');
+  img.src = coverPath(d);
+  img.alt = d.title || 'Обложка диктанта';
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.onerror = () => { img.src = 'images/placeholder-cover.svg'; };
+
+  thumb.appendChild(img);
+  card.appendChild(thumb);
+
+  // <h3 class="short-title"><a href="...">Название</a></h3>
+  const h3 = document.createElement('h3');
+  h3.className = 'short-title';
+  const titleLink = document.createElement('a');
+  titleLink.href = openUrl;
+  titleLink.textContent = d.title || 'Без названия';
+  h3.appendChild(titleLink);
+  card.appendChild(h3);
+
+  // <div class="short-meta">Язык ... • Уровень ...</div>
+  const meta = document.createElement('div');
+  meta.className = 'short-meta';
+  const langLeft  = d.langIcon || d.language_original || '';
+  const langRight = d.translations || d.language_translation || '';
+  meta.textContent = `Язык: ${langLeft} ⇒ ${langRight} • Уровень: ${d.level || '—'}`;
+  card.appendChild(meta);
+
+  // Кнопка-иконка редактирования (ссылка)
+  const edit = document.createElement('a');
+  edit.className = 'short-edit';
+  edit.href = editUrl;
+  edit.title = 'Редактировать';
+  edit.setAttribute('aria-label', 'Редактировать');
+  // lucide-иконка
+  edit.innerHTML = `<i data-lucide="pencil-ruler"></i>`;
+  card.appendChild(edit);
+
+  return card;
+}
+
+// Отрисовать всю сетку
+function renderDictationsGrid(dictations) {
+  if (!GRID) {
+    console.warn('#dictationsGrid не найден в DOM');
+    return;
+  }
+  GRID.innerHTML = '';
+
+  dictations.forEach(d => {
+    const card = createCardDOM(d);
+    GRID.appendChild(card);
+  });
+
+  // Обновить иконки Lucide (если библиотека подключена на странице)
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}

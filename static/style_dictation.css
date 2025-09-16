@@ -205,14 +205,15 @@ body.playing-audio::after {
 
 #confirmStartBtn {
   /* padding: 12px 24px; */
-  font-size: 20px;
+  font-size: 30px;
   background: var(--color-button-lightgreen);
   color: var(--color-button-text-lightgreen);
   border: none;
   border-radius: 6px;
   box-shadow: var(--color-button-shadow-lightgreen);
-  /* cursor: pointer;
-  margin-top: 20px; */
+  /* margin: 0 auto; Центрирование кнопки если нужно */
+  /* cursor: pointer;*/
+  margin-top: 50px; 
 }
 
 #confirmStartBtn:focus {
@@ -260,8 +261,8 @@ body.playing-audio::after {
 
 
 #btn-count-percent {
-  width: 70px;
-  flex: 0 0 auto;
+  width: 100px;
+  flex: 0 0 100px;
   /* ни не растёт, ни не сжимается */
 }
 
@@ -1181,6 +1182,7 @@ body.playing-audio::after {
 /* Активная кнопка */
 .button-active {
   background-color: var(--color-button-yellow) !important;
+  border: 4px solid var(--color-button-shadow-yellow) !important; 
 }
 
 
@@ -1236,6 +1238,7 @@ body.playing-audio::after {
 .panel-сheckbox {
   display: flex;
   flex-direction: column;
+  font-weight: 700; 
   gap: 5px;
   min-width: 200px;
 }
@@ -1395,8 +1398,8 @@ body.playing-audio::after {
   /* занимает все доступное пространство */
   overflow-y: auto;
   /* прокрутка только здесь */
-  margin-top: 20px;
-  max-height: 50vh;
+  margin-top: 4px;
+  /* max-height: 50vh; */
   /* ограничиваем высоту таблицы */
 }
 
@@ -1640,3 +1643,74 @@ body.playing-audio::after {
 /* #userPlay {
   flex: 0 0 auto;
 } */
+
+.button-group {
+  display: flex;
+  align-items: center; /* выравнивание по вертикали */
+  gap: 8px; /* отступ между элементами */
+}
+
+#checkPrevios,#checkNext{
+ display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 22px;
+  height: 50px;
+  padding: 0; /* убираем внутренние отступы */
+ 
+}
+
+/* Поля ввода для аудио сначала ошибка и вкрнце ---------------------------------------------------*/
+.play-sequence-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    /* margin-bottom: 6px; */
+    padding: 8px;
+    background-color: var(--color-background-light);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.play-sequence-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.play-sequence-item label {
+    font-size: 14px;
+    /* font-weight: 700;  */
+    color: var(--color-text);
+    min-width: 140px;
+}
+
+.play-sequence-input {
+    padding: 5px 8px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 6px;
+    font-size: 14px;
+    /* font-weight: 700;  */
+    font-family: 'Inter', monospace;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    width: 80px;
+    text-align: center;
+    text-transform: lowercase;
+}
+
+.play-sequence-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-border-light);
+}
+
+.play-sequence-input:invalid {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 1px var(--color-border-light);
+}
+
+.play-sequence-input::placeholder {
+    color: var(--color-text-secondary);
+    opacity: 0.7;
+}

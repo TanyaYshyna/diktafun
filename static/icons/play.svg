@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" preserveAspectRatio="xMinYMin" xmlns:bx="https://boxy-svg.com">
-  <defs>
-    <bx:guide x="9.54" y="-12.232" angle="90"/>
-  </defs>
-  <path d="M 8.446 3.621 Q 9.466 1.856 10.486 3.621 L 15.435 12.18 Q 16.455 13.945 14.414 13.945 L 4.518 13.945 Q 2.477 13.945 3.497 12.18 Z" bx:shape="triangle 2.477 1.856 13.978 12.089 0.5 0.146 1@8f311021" style="fill: rgb(252, 0, 0); stroke: rgb(252, 0, 0); transform-origin: 9.372px 8.224px;" transform="matrix(0, -1, -1, 0, 3.755911, -0.091159)"/>
-</svg>

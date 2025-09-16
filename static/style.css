@@ -70,20 +70,20 @@ button:active {
 /* transparent */
 .button-color-transparent {
     background-color: transparent;
-    color: var(--color-button-text-gray);
+    color: var(--color-button-text-transparent);
     border: 1px solid transparent; /* зарезервировать место под рамку */
     box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
     transition: all 0.2s ease; /* плавность изменений */
     position: relative; /* если будем делать псевдоэффекты */
 }
 .button-color-transparent:hover {
-    border: 1px solid var(--color-button-shadow-gray);
+    border: 1px solid var(--color-button-shadow-transparent);
     /* появляется “обводка” */
-    box-shadow: 0 3px 0 0 var(--color-button-shadow-gray);
+    box-shadow: 0 3px 0 0 var(--color-button-shadow-transparent);
     /* нижняя граница толще — имитация */
 }
 .button-color-transparent:active {
-    border: 1px solid var(--color-button-shadow-gray);
+    border: 1px solid var(--color-button-shadow-transparent);
     /* равномерная рамка */
 }
 

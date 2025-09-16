@@ -15,6 +15,7 @@
   --color-button-pink: #f5c0caff;  
   --color-button-purple: #c8c9fbff;  
 
+  --color-button-text-transparent: rgb(165, 175, 179);  
   --color-button-text-gray: #5a5e60ff;  
   --color-button-text-mint: #28615fff;  
   --color-button-text-lightgreen: #366f40ff;  
@@ -23,6 +24,7 @@
   --color-button-text-pink: #802c35ff;  
   --color-button-text-purple: rgb(63, 66, 147);  
  
+  --color-button-shadow-transparent: #eeede8ff;  
   --color-button-shadow-gray: #eeede8ff;  
   --color-button-shadow-mint: rgb(63, 153, 150);  
   --color-button-shadow-lightgreen: rgb(89, 184, 107);  
