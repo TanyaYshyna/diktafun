@@ -4,9 +4,9 @@
 <head>
     <title>Генератор диктантов</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style_color.css">
-    <link rel="stylesheet" href="/static/style.css">
-    <link rel="stylesheet" href="/static/style_dictation_generator.css">
+    <link rel="stylesheet" href="/static/css/style_color.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style_dictation_generator.css">
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -27,8 +27,15 @@
             <img src="/static/icons/logo.svg" class="logo">
         </div>
         <div class="user-section">
-            <button class="username">Пользователь</button>
-            <button class="streak">🔥 4 дня подряд</button>
+            {% if current_user %} {# ← current_user теперь доступен автоматически! #}
+            <a href="{{ url_for('user.profile') }}" class="username">
+                {{ current_user.username }} {# ← работает! #}
+            </a>
+            <button class="streak">🔥 {{ current_user.streak_days }} дней подряд</button>
+            <a href="{{ url_for('user.logout') }}">Выйти</a>
+            {% else %}
+            <a href="{{ url_for('user.login') }}">Войти</a>
+            {% endif %}
         </div>
     </div>
 
@@ -249,7 +256,7 @@
         "audio_words": audio_words
      } | tojson }}
     </script>
-    <script src="{{ url_for('static', filename='script_dictation_generator.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script_dictation_generator.js') }}"></script>
 </body>
 
 </html>

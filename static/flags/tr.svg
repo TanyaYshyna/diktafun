@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" preserveAspectRatio="xMinYMin">
-  <rect width="24" height="16" style="stroke: rgb(0, 0, 0); stroke-width: 1; stroke-opacity: 0; fill: rgb(252, 42, 30);"/>
+  <rect width="24" height="16" style="fill: #e30a17; stroke-opacity: 0;"/>
+  <circle cx="9.5" cy="8" r="4" style="fill: #ffffff; stroke-opacity: 0;"/>
+  <circle cx="10.5" cy="8" r="3.2" style="fill: #e30a17; stroke-opacity: 0;"/>
+  <!-- Звезда упрощенно - вместо сложной формы белый круг -->
 </svg>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" preserveAspectRatio="xMinYMin">
+  <rect width="24" height="16" style="fill: #de2910; stroke-opacity: 0;"/>
+  
+  <!-- Большая звезда (в левом верхнем углу) -->
+  <polygon points="4,4 5,7 8,7 5.5,8.8 6.5,12 4,10.2 1.5,12 2.5,8.8 0,7 3,7" style="fill: #ffde00; stroke-opacity: 0;"/>
+  
+  <!-- Маленькая звезда 1 (правее и ниже большой) -->
+  <polygon points="10,6 10.6,7.2 12,7.2 10.8,8 11.2,9.4 10,8.6 8.8,9.4 9.2,8 8,7.2 9.4,7.2" style="fill: #ffde00; stroke-opacity: 0;"/>
+  
+  <!-- Маленькая звезда 2 (еще правее и ниже) -->
+  <polygon points="12,8 12.6,9.2 14,9.2 12.8,10 13.2,11.4 12,10.6 10.8,11.4 11.2,10 10,9.2 11.4,9.2" style="fill: #ffde00; stroke-opacity: 0;"/>
+  
+  <!-- Маленькая звезда 3 (правее и выше) -->
+  <polygon points="12,4 12.6,5.2 14,5.2 12.8,6 13.2,7.4 12,6.6 10.8,7.4 11.2,6 10,5.2 11.4,5.2" style="fill: #ffde00; stroke-opacity: 0;"/>
+  
+  <!-- Маленькая звезда 4 (еще правее и выше) -->
+  <polygon points="14,2 14.6,3.2 16,3.2 14.8,4 15.2,5.4 14,4.6 12.8,5.4 13.2,4 12,3.2 13.4,3.2" style="fill: #ffde00; stroke-opacity: 0;"/>
+</svg>

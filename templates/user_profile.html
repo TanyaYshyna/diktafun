@@ -1,0 +1,68 @@
+{% extends "user.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style_user_profile.css') }}">
+{% endblock %}
+
+
+
+{% block content %}
+<h2>Личный кабинет</h2>
+
+<form id="profile-form" method="POST">
+    <!-- УБРАЛА action - будет отправлять на тот же URL -->
+    <div class="profile-info">
+        <p><strong>Имя:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+    </div>
+
+    <div class="language-settings">
+        <h3>Настройки языков</h3>
+        <div id="language-selector-container"></div>
+
+        <div class="form-actions">
+            <button type="submit" id="save-changes-btn" class="btn btn-primary" disabled>
+                Сохранить изменения
+            </button>
+            <button type="button" id="cancel-changes-btn" class="btn btn-secondary" style="display: none;">
+                Отмена
+            </button>
+        </div>
+    </div>
+
+    <!-- Скрытые поля для формы -->
+    <input type="hidden" id="native-lang-input" name="native_language" value="{{ user.native_language }}">
+    <input type="hidden" id="learning-langs-input" name="learning_languages" value="{{ user.learning_languages|join(',') }}">
+    <input type="hidden" id="current-learning-input" name="current_learning" value="{{ user.learning_language }}">
+</form>
+
+
+<!-- Скрытый элемент с данными -->
+<div id="language-data" data-native-lang="{{ user.native_language }}"
+    data-learning-langs="{{ user.learning_languages|join(',') }}"  
+    data-current-learning="{{ user.learning_language }}" 
+    style="display: none;">
+</div>
+<div id="language-config" data-language-data='{{ language_data | tojson }}'
+    data-native-language="{{ user.native_language }}" 
+    data-learning-languages='{{ user.learning_languages | tojson }}' 
+    data-current-learning="{{ user.learning_language }}" 
+    style="display: none;">
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Получаем данные из data-атрибутов
+    const configElement = document.getElementById('language-config');
+    const LANGUAGE_DATA = JSON.parse(configElement.dataset.languageData);
+    const LANGUAGE_ORIGINAL = configElement.dataset.languageOriginal;
+    const USER_LANGUAGE_DATA = {
+        nativeLanguage: configElement.dataset.nativeLanguage,
+        learningLanguages: JSON.parse(configElement.dataset.learningLanguages),
+        currentLearning: configElement.dataset.currentLearning
+    };
+</script>
+<script src="{{ url_for('static', filename='js/languageSelector.js') }}"></script>
+<script src="{{ url_for('static', filename='js/script_profile.js') }}"></script>
+{% endblock %}

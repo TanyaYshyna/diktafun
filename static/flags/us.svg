@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 24 16"
+   preserveAspectRatio="xMinYMin"
+   version="1.1"
+   id="svg17"
+   sodipodi:docname="us.svg"
+   inkscape:version="1.4.2 (ebf0e940, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs17" />
+  <sodipodi:namedview
+     id="namedview17"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="18.384776"
+     inkscape:cx="11.91203"
+     inkscape:cy="7.9141567"
+     inkscape:window-width="1592"
+     inkscape:window-height="792"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg17" />
+  <!-- Синие полосы -->
+  <rect
+     width="24"
+     height="16.016676"
+     style="fill:#3c3b6e;stroke-width:1.33403;stroke-opacity:0"
+     id="rect1"
+     x="0"
+     y="0" />
+  <!-- Красные полосы -->
+  <rect
+     y="1.7796305"
+     width="24"
+     height="1.7796305"
+     style="fill:#b22234;stroke-width:1.33403;stroke-opacity:0"
+     id="rect2"
+     x="0" />
+  <rect
+     y="5.3388915"
+     width="24"
+     height="1.7796305"
+     style="fill:#b22234;stroke-width:1.33403;stroke-opacity:0"
+     id="rect3"
+     x="0" />
+  <rect
+     y="8.8981524"
+     width="24"
+     height="1.7796305"
+     style="fill:#b22234;stroke-width:1.33403;stroke-opacity:0"
+     id="rect4"
+     x="0" />
+  <rect
+     y="12.457414"
+     width="24"
+     height="1.7796305"
+     style="fill:#b22234;stroke-width:1.33403"
+     id="rect5"
+     x="0" />
+  <!-- Белые полосы -->
+  <rect
+     y="0"
+     width="24"
+     height="1.7796305"
+     style="fill:#ffffff;stroke-width:1.33403;stroke-opacity:0"
+     id="rect6"
+     x="0" />
+  <rect
+     y="3.5592611"
+     width="24"
+     height="1.7796305"
+     style="fill:#ffffff;stroke-width:1.33403;stroke-opacity:0"
+     id="rect7"
+     x="0" />
+  <rect
+     y="7.1185222"
+     width="24"
+     height="1.7796305"
+     style="fill:#ffffff;stroke-width:1.33403;stroke-opacity:0"
+     id="rect8"
+     x="0" />
+  <rect
+     y="10.677783"
+     width="24"
+     height="1.7796305"
+     style="fill:#ffffff;stroke-width:1.33403;stroke-opacity:0"
+     id="rect9"
+     x="0" />
+  <rect
+     y="14.237044"
+     width="24"
+     height="1.7796305"
+     style="fill:#ffffff;stroke-width:1.33403;stroke-opacity:0"
+     id="rect10"
+     x="0" />
+  <!-- Синий кантон -->
+  <rect
+     width="10"
+     height="7.119"
+     style="fill:#3c3b6e;stroke-width:1.02925;stroke-opacity:0"
+     id="rect11"
+     x="-6.64987e-08"
+     y="0" />
+  <!-- Белые звезды (упрощенные) -->
+  <text
+     x="1.4456072"
+     y="3.0983207"
+     style="font-size:1.5px;fill:#ffffff"
+     id="text11">★</text>
+  <text
+     x="3.4456072"
+     y="3.0983207"
+     style="font-size:1.5px;fill:#ffffff"
+     id="text12">★</text>
+  <text
+     x="5.4456072"
+     y="3.0983207"
+     style="font-size:1.5px;fill:#ffffff"
+     id="text13">★</text>
+  <text
+     x="7.4456072"
+     y="3.0983207"
+     style="font-size:1.5px;fill:#ffffff"
+     id="text14">★</text>
+  <text
+     x="2.4456072"
+     y="5.098321"
+     style="font-size:1.5px;fill:#ffffff"
+     id="text15">★</text>
+  <text
+     x="4.4456072"
+     y="5.098321"
+     style="font-size:1.5px;fill:#ffffff"
+     id="text16">★</text>
+  <text
+     x="6.4456072"
+     y="5.098321"
+     style="font-size:1.5px;fill:#ffffff"
+     id="text17">★</text>
+</svg>

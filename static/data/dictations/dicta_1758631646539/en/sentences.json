@@ -1,0 +1,87 @@
+{
+  "language": "en",
+  "speaker": "auto",
+  "title": "I wish",
+  "sentences": [
+    {
+      "key": "000",
+      "text": "I wish I were at home now.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "000.mp3"
+    },
+    {
+      "key": "001",
+      "text": "I wish I had a car.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "001.mp3"
+    },
+    {
+      "key": "002",
+      "text": "I wish we were on vacation.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "002.mp3"
+    },
+    {
+      "key": "003",
+      "text": "I wish she knew English better.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "003.mp3"
+    },
+    {
+      "key": "004",
+      "text": "I wish it were warm today.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "004.mp3"
+    },
+    {
+      "key": "005",
+      "text": "I wish he were here.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "005.mp3"
+    },
+    {
+      "key": "006",
+      "text": "I wish I had more time.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "006.mp3"
+    },
+    {
+      "key": "007",
+      "text": "I wish they were rich.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "007.mp3"
+    },
+    {
+      "key": "008",
+      "text": "I wish I could help you.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "008.mp3"
+    },
+    {
+      "key": "009",
+      "text": "I wish we had a dog.",
+      "start": "",
+      "end": "",
+      "status": "",
+      "audio": "009.mp3"
+    }
+  ]
+}

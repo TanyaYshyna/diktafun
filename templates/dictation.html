@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <title>Dikte</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style_color.css">
-    <link rel="stylesheet" href="/static/style.css">
-    <link rel="stylesheet" href="/static/style_dictation.css">
+    <link rel="stylesheet" href="/static/css/style_color.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style_dictation.css">
 </head>
 
 <body>
@@ -16,125 +16,183 @@
             <img src="/static/icons/logo.svg" class="logo">
         </div>
         <div class="user-section">
-            <button class="username">Пользователь</button>
-            <button class="streak">🔥 4 дня подряд</button>
+            {% if current_user %} {# ← current_user теперь доступен автоматически! #}
+            <a href="{{ url_for('user.profile') }}" class="username">
+                {{ current_user.username }} {# ← работает! #}
+            </a>
+            <button class="streak">🔥 {{ current_user.streak_days }} дней подряд</button>
+            <a href="{{ url_for('user.logout') }}">Выйти</a>
+            {% else %}
+            <a href="{{ url_for('user.login') }}">Войти</a>
+            {% endif %}
         </div>
     </div>
 
-
-    <div id="startModal" class="modal">
+    <!-- Модальное окно выбора предложений -->
+    <div id="start-modal" class="modal">
         <div class="modal-content">
             <!-- Верхняя часть - без прокрутки -->
-            <div class="modal-header">
-                <!-- <div class="panel-start">
-                    <h2>Вы готовы?</h2>
-                    <button id="confirmStartBtn" tabindex="0" onclick=startGame()>
-                        <i data-lucide="play"></i>
-                        S T A R T
-                    </button>
-                    <button id="btnBackToList" onclick=clickBtnBackToList() class="button-color-yellow">
-                        <i data-lucide="text-quote"></i>
-                    </button>
-                </div> -->
-
-                <div class="panel-tablo">
-
-                    <div class="panel-сheckbox">
-                        <!-- Поля для настройки последовательности воспроизведения -->
-                        <div class="play-sequence-container">
-                            <label>Аудио проигрываем:</label>
-                            <div class="play-sequence-item">
-                                <label>при старте:</label>
-                                <input type="text" id="playSequenceStart" class="play-sequence-input" maxlength="5"
-                                    placeholder="oto" pattern="[to]*"
-                                    title="Используйте только буквы 't' (translation) и 'o' (original)">
+            <!-- +------+------+---+
+                 | 1111 | 2222 | 3 |
+                 |      +----------+
+                 |      |    4444  |
+                 +------+----------+
+                 | 5555 |    6666  |
+                 +------+          +
+                 | 7777 |          |
+                 +------+----------+-->
+            <table>
+                <colgroup>
+                    <col width="1"> <!-- Первый столбец по размеру содержимого -->
+                    <col> <!-- Второй столбец займет оставшееся пространство -->
+                    <col width="1"> <!-- последний столбец по размеру содержимого -->
+                </colgroup>
+                <tbody>
+                    <tr>
+                        <!-- <td rowspan="2">1111</td> -->
+                        <td rowspan="2">
+                            <!-- Поля для настройки последовательности воспроизведения -->
+                            <div class="play-sequence-container">
+                                <label>Аудио проигрываем:</label>
+                                <div class="play-sequence-item">
+                                    <label>при старте:</label>
+                                    <input type="text" id="playSequenceStart" class="play-sequence-input" maxlength="5"
+                                        placeholder="oto" pattern="[to]*"
+                                        title="Используйте только буквы 't' (translation) и 'o' (original)">
+                                </div>
+                                <div class="play-sequence-item">
+                                    <label>при ошибке:</label>
+                                    <input type="text" id="playSequenceTypo" class="play-sequence-input" maxlength="5"
+                                        placeholder="o" pattern="[to]*"
+                                        title="Используйте только буквы 't' (translation) и 'o' (original)">
+                                </div>
+                                <div class="play-sequence-item">
+                                    <label>при успехе:</label>
+                                    <input type="text" id="playSequenceSuccess" class="play-sequence-input"
+                                        maxlength="5" placeholder="ot" pattern="[to]*"
+                                        title="Используйте только буквы 't' (translation) и 'o' (original)">
+                                </div>
                             </div>
-                            <div class="play-sequence-item">
-                                <label>при ошибке:</label>
-                                <input type="text" id="playSequenceTypo" class="play-sequence-input" maxlength="5"
-                                    placeholder="o" pattern="[to]*"
-                                    title="Используйте только буквы 't' (translation) и 'o' (original)">
+
+                        </td>
+                        <!-- <td>2222</td> -->
+                        <td>
+                            <button id="confirmStartBtn" tabindex="0" onclick=startGame()>
+                                <!-- <i data-lucide="play"></i> -->
+                                S T A R T
+                            </button>
+                        </td>
+                        <!-- <td>3333</td> -->
+                        <td>
+                            <button id="btnBackToList" onclick=clickBtnBackToList() class="button-color-yellow">
+                                <i data-lucide="text-quote"></i>
+                            </button>
+
+                        </td>
+                    </tr>
+                    <tr>
+                        <!-- <td>4444</td> -->
+                        <td colspan="2">
+                            <!-- progress-panel  -->
+                            <div class="progress-panel-modal-r">
+                                <!-- +----------------------+
+                                     | 1111             |666|
+                                     +-----+-----+-----+----+
+                                     | 222 | 333 | 444 | 555| 
+                                     +-----+-----+-----+----+ -->
+                                <table class="table-progress">
+                                    <tr>
+                                        <!-- <td colspan="5">1111</td> -->
+                                        <td colspan="3">
+                                            <button id="btn-modal-timer" class="stat-btn row-timer timer" disabled
+                                                title="Время работы над диктантом">
+                                                <i data-lucide="alarm-clock"></i>
+                                                <span id="modal_timer">00:00:00</span>
+                                            </button>
+                                        </td>
+
+                                        <!-- <td>666</td> -->
+                                        <td>
+                                            <button id="btn-modal-circle-number" class="stat-btn row-timer nymber"
+                                                title="Какой раз проходим диктант">
+                                                <i data-lucide="iteration-cw"></i>
+                                                <span id="modal-circle-number">0</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <!-- <td>222</td> -->
+                                        <td>
+                                            <button id="btn-modal-count-perfect" class="stat-btn perfect" disabled
+                                                title="Количество предложений набранных без ошибок с 1-й попытки">
+                                                <i data-lucide="star"></i>
+                                                <span id="modal-count-perfect">0</span>
+                                            </button>
+                                        </td>
+
+                                        <!-- <td>333</td> -->
+                                        <td>
+                                            <button id="btn-modal-count-corrected" class="stat-btn corrected" disabled
+                                                title="Количество набранных предложений">
+                                                <i data-lucide="star-half"></i>
+                                                <span id="modal-count-corrected">0</span>
+                                            </button>
+                                        </td>
+
+                                        <!-- <td>444</td> -->
+                                        <td>
+                                            <button id="btn-modal-count-audio" class="stat-btn corrected-audio" disabled
+                                                title="Сколько предложений прошло аудио контроль">
+                                                <i data-lucide="mic-off"></i>
+                                                <span id="modal-count-audio">0</span>
+                                            </button>
+                                        </td>
+
+                                        <!-- <td>555</td> -->
+                                        <td>
+                                            <button id="btn-modal-count-total" class="stat-btn total" disabled
+                                                title="Общее количество предложений на круге">
+                                            <i data-lucide="layers"></i>
+                                                <span id="modal-count-total">0</span>
+                                            </button>
+                                        </td>
+
+                                    </tr>
+                                </table>
                             </div>
-                            <div class="play-sequence-item">
-                                <label>при успехе:</label>
-                                <input type="text" id="playSequenceSuccess" class="play-sequence-input" maxlength="5"
-                                    placeholder="ot" pattern="[to]*"
-                                    title="Используйте только буквы 't' (translation) и 'o' (original)">
+                        </td>
+                    </tr>
+                    <tr>
+                        <!-- <td>5555</td> -->
+                        <td>
+                            <!-- Контрол перемешивания -->
+                            <div class="all-checkbox-container">
+                                <button id="mixControl" class="all-checkbox-btn">
+                                    <i data-lucide="move-right"></i>
+                                    <span>прямой порядок</span>
+                                </button>
                             </div>
-                        </div>
-
-                        <!-- Контрол перемешивания -->
-                        <div class="all-checkbox-container">
-                            <button id="mixControl" class="all-checkbox-btn">
-                                <i data-lucide="move-right"></i>
-                                <span>Прямой порядок предложений</span>
-                            </button>
-                        </div>
-
-                        <!-- Виділити все в таблиці all-control-->
-                        <div class="all-checkbox-container">
-                            <button id="allCheckbox" class="all-checkbox-btn">
-                                <i data-lucide="circle-check-big"></i>
-                                <span>Отметить все</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <button id="confirmStartBtn" tabindex="0" onclick=startGame()>
-                        <i data-lucide="play"></i>
-                        S T A R T
-                    </button>
-
-                    <!-- progress-panel  -->
-                    <div class="progress-panel-modal-r">
-                        <button id="btnBackToList" onclick=clickBtnBackToList() class="button-color-yellow">
-                            <i data-lucide="text-quote"></i>
-                        </button>
-                        <div class="progress-top">
-                            <button id="btn-modal-timer" class="stat-btn timer" disabled
-                                title="Время работы над диктантом" style="display: none;">
-                                <i data-lucide="alarm-clock"></i>
-                                <span id="modal_timer">00:00:00</span>
-                            </button>
-                        </div>
-
-                        <div class="progress-bottom">
-                            <button id="btn-modal-count-perfect" class="stat-btn perfect" disabled
-                                title="Количество предложений набранных без ошибок с 1-й попытки"
-                                style="display: none;">
-                                <i data-lucide="star"></i>
-                                <span id="modal-count-perfect">0</span>
-                            </button>
-
-                            <button id="btn-modal-count-corrected" class="stat-btn corrected" disabled
-                                title="Количество набранных предложений" style="display: none;">
-                                <i data-lucide="star-half"></i>
-                                <span id="modal-count-corrected">0</span>
-                            </button>
-
-                            <button id="btn-modal-count-audio" class="stat-btn corrected-audio" disabled
-                                title="Сколько предложений прошло аудио контроль" style="display: none;">
-                                <i data-lucide="mic-off"></i>
-                                <span id="modal-count-audio">0</span>
-                            </button>
-
-                            <button id="btn-modal-count-total" class="stat-btn total" disabled
-                                title="Общее количество предложений на круге" style="display: none;">
-                                <i data-lucide="layers"></i>
-                                <span id="modal-count-total">0</span>
-                            </button>
-
-                            <button id="btn-modal-circle-number" class="stat-btn" title="Какой раз проходим диктант"
-                                style="display: none;">
-                                <i data-lucide="iteration-cw"></i>
-                                <span id="modal-circle-number">0</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
+                        </td>
+                        <!-- <td>6666</td> -->
+                        <td rowspan="2" colspan="2">
+                            <h2 id="title-diktation">{{ title_orig }}</h2> <!-- Диктант: -->
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <!-- Виділити все в таблиці all-control-->
+                            <div class="all-checkbox-container">
+                                <button id="allCheckbox" class="all-checkbox-btn">
+                                    <i data-lucide="circle-check-big"></i>
+                                    <span>отметить все</span>
+                                </button>
+                            </div>
+                            <!-- <td>7777</td> -->
+                        </td>
+                        <!-- <td>8888</td> -->
+                    </tr>
+                </tbody>
+            </table>
 
 
             <!-- Нижняя часть - только таблица с прокруткой -->
@@ -180,7 +238,8 @@
         <!-- Счетчик предложений -->
         <div class="panel-tablo">
             <!-- Добавляем flex-контейнер -->
-            <div class="panel-tablo-1">
+            <!-- <div class="panel-tablo-1"> -->
+            <div class="panel-column">
                 <h2>{{ title_orig }}</h2> <!-- Диктант: -->
                 <div class="button-group">
                     <button id="checkPrevios" class="button-color-yellow" onclick="previousSentence()">
@@ -197,7 +256,76 @@
                     </button>
                 </div>
             </div>
+
+            <!-- progress-panel  -->
             <div class="progress-panel">
+                <!-- <div class="progress-panel-modal-r"> -->
+                <!-- +----------------------+
+                     | 1111             |666|
+                     +-----+-----+-----+----+
+                     | 222 | 333 | 444 | 555| 
+                     +-----+-----+-----+----+ -->
+                <table class="table-progress">
+                    <tr>
+                        <!-- <td colspan="5">1111</td> -->
+                        <td colspan="3">
+                            <button id="btn-timer" class="stat-btn row-timer timer" disabled
+                                title="Время работы над диктантом">
+                                <i data-lucide="alarm-clock"></i>
+                                <span id="timer">00:00:00</span>
+                            </button>
+                        </td>
+
+                        <!-- <td>666</td> -->
+                        <td>
+                            <button id="btn-circle-number" class="stat-btn row-timer nymber"
+                                title="Какой раз проходим диктант">
+                                <i data-lucide="iteration-cw"></i>
+                                <span id="circle-number">0</span>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <!-- <td>222</td> -->
+                        <td>
+                            <button id="btn-count-perfect" class="stat-btn perfect" disabled
+                                title="Количество предложений набранных без ошибок с 1-й попытки">
+                                <i data-lucide="star"></i>
+                                <span id="count-perfect">0</span>
+                            </button>
+                        </td>
+
+                        <!-- <td>333</td> -->
+                        <td>
+                            <button id="btn-count-corrected" class="stat-btn corrected" disabled
+                                title="Количество набранных предложений">
+                                <i data-lucide="star-half"></i>
+                                <span id="count-corrected">0</span>
+                            </button>
+                        </td>
+
+                        <!-- <td>444</td> -->
+                        <td>
+                            <button id="btn-count-audio" class="stat-btn corrected-audio" disabled
+                                title="Сколько предложений прошло аудио контроль">
+                                <i data-lucide="mic-off"></i>
+                                <span id="count-audio">0</span>
+                            </button>
+                        </td>
+
+                        <!-- <td>555</td> -->
+                        <td>
+                            <button id="btn-count-total" class="stat-btn total" disabled
+                                title="Общее количество предложений на круге">
+                                <i data-lucide="layers"></i>
+                                <span id="count-total">0</span>
+                            </button>
+                        </td>
+
+                    </tr>
+                </table>
+            </div>
+            <!-- <div class="progress-panel">
                 <div class="progress-top">
                     <button class="stat-btn timer" disabled title="Время работы над диктантом">
                         <i data-lucide="alarm-clock"></i>
@@ -234,7 +362,7 @@
                 </div>
 
                 <h4 id="diktation_id">{{ dictation_id }}</h4>
-            </div>
+            </div> -->
         </div>
 
         <div class="audio-players-wrapper">
@@ -385,9 +513,9 @@
     </script>
     <script>
         const LANGUAGE_ORIGINAL = "{{ language_original }}";
-        const LANGUAGE_CODES_URL = "{{ url_for('static', filename='data/language-codes.json') }}";
+        const LANGUAGE_CODES_URL = "{{ url_for('static', filename='data/language_codes.json') }}";
     </script>
-    <script src="{{ url_for('static', filename='script_dictation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script_dictation.js') }}"></script>
 
 </body>
 

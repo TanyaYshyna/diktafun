@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" preserveAspectRatio="xMinYMin">
+  <rect width="8" height="16" style="fill: #009246; stroke-opacity: 0;"/>
+  <rect x="8" width="8" height="16" style="fill: #ffffff; stroke-opacity: 0;"/>
+  <rect x="16" width="8" height="16" style="fill: #ce2b37; stroke-opacity: 0;"/>
+</svg>

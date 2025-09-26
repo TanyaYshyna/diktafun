@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}DiktaFun{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style_color.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style_user.css">
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- ШАПКА -->
+    <div class="topbar">
+        <h1>DiktaFun</h1>
+        <div class="user-section">
+            {% if current_user %} {# ← current_user теперь доступен автоматически! #}
+            <div id="language-selector-container"></div>
+            <a href="{{ url_for('user.profile') }}" class="username">
+                {{ current_user.username }} {# ← работает! #}
+            </a>
+            <button class="streak">🔥 {{ current_user.streak_days }} дней подряд</button>
+            <a href="{{ url_for('user.logout') }}">Выйти</a>
+            {% else %}
+            <a href="{{ url_for('user.login') }}">Войти</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ОСНОВНОЕ СОДЕРЖИМОЕ -->
+    <div class="main-content">
+        {% block content %}
+        <!-- СЮДА ПОДСТАВЯТСЯ ДРУГИЕ СТРАНИЦЫ -->
+        {% endblock %}
+    </div>
+
+    <!-- ПОДВАЛ (если нужен) -->
+    <footer>
+        <p>© 2025 DiktaFun</p>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

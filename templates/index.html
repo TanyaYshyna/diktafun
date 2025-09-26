@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <title>Главная — Диктанты</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style_color.css">
-    <link rel="stylesheet" href="/static/style.css">
-    <link rel="stylesheet" href="/static/style_index.css">
+    <link rel="stylesheet" href="/static/css/style_color.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style_index.css">
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -24,32 +24,60 @@
             <img src="/static/icons/logo.svg" class="logo">
         </div>
         <div class="user-section">
-            <button class="username">Пользователь</button>
-            <button class="streak">🔥 4 дня подряд</button>
+            {% if current_user %} {# ← current_user теперь доступен автоматически! #}
+            <a href="{{ url_for('user.profile') }}" class="username">
+                {{ current_user.username }} {# ← работает! #}
+            </a>
+            <button class="streak">🔥 {{ current_user.streak_days }} дней подряд</button>
+            <a href="{{ url_for('user.logout') }}">Выйти</a>
+            {% else %}
+            <a href="{{ url_for('user.login') }}">Войти</a>
+            {% endif %}
         </div>
     </div>
 
     <div class="panel">
         <h2>Список диктантов</h2>
-        <div class="button-row">
-            <div class="tooltip-wrapper">
-                <button id="btnAddNode"> + </button>
-                <div class="tooltip-text">Новый элемент</div>
+        <div class="buttons-row">
+            <div class="buttons-row-left">
+                <div id="header-language-selector"></div>
+
+                <!-- Выпадающий список -->
+                <div class="tooltip-wrapper">
+                    <select id="languageFilter">
+                        <option value="learning_to_native">Изучаемый ⇒ Родной</option>
+                        <option value="learning_only">Только изучаемый</option>
+                        <option value="all">Все языки</option>
+                    </select>
+                </div>
+
+                <div class="tooltip-wrapper">
+                    <button id="btnAddNode">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                    <!-- <div class="tooltip-text">Новый элемент</div> -->
+                </div>
+                <div class="tooltip-wrapper">
+                    <button id="btnDeleteNode">
+                        <i data-lucide="folder-plus"></i>
+                    </button>
+                    <!-- <div class="tooltip-text">Удалить элемент</div> -->
+                </div>
             </div>
-            <div class="tooltip-wrapper">
-                <button id="btnDeleteNode"> 🗑️ </button>
-                <div class="tooltip-text">Удалить элемент</div>
+            <div class="buttons-row-left-right">
+                <a
+                    href="{{ url_for('dictation_generator.dictation_generator', language_original='en', language_translation='ru') }}">
+                    <button id="newDictationBtn" title="Создать документ">
+                        <i data-lucide="file-plus-2"></i>
+                    </button>
+                </a>
             </div>
-            <a
-                href="{{ url_for('dictation_generator.dictation_generator', language_original='en', language_translation='ru') }}">
-                <button id="newDictationBtn">+ Новый диктант</button>
-            </a>
         </div>
 
-        <div id="container">
+
+        <div id="container-tree-cards">
             <div id="leftPanel">
-                <div class="tree-header">
-                </div>
+
                 <div id="treeContainer"></div>
             </div>
 
@@ -65,7 +93,105 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='script_index.js') }}"></script>
+    <div id="language-config" data-language-data='{{ language_data | tojson }}'
+        data-native-language="{{ user.native_language }}"
+        data-learning-languages='{{ user.learning_languages | tojson }}'
+        data-current-learning="{{ user.current_learning }}" style="display: none;">
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <!-- Передаем данные категорий из сервера в JavaScript -->
+    <script type="application/json" id="categories-data">
+    {{ categories_data | tojson | safe }}
+    </script>
+
+    <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
+    <script>
+        // Инициализация UserManager
+        const UM = new UserManager({
+            apiBase: '/user/api',
+            fallbackToLocal: false
+        });
+
+        // Инициализируем при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                await UM.init();
+                console.log('UserManager initialized', UM.currentUser);
+
+                // Обновляем интерфейс в зависимости от статуса авторизации
+                updateUIForAuthState();
+
+                UM.onChange((user) => {
+                    updateUIForAuthState();
+                    // При изменении пользователя обновляем языковые настройки
+                    if (user) {
+                        window.USER_LANGUAGE_DATA = {
+                            nativeLanguage: user.native_language || 'ru',
+                            learningLanguages: user.learning_languages || ['en'],
+                            currentLearning: user.learning_language || 'en'
+                        };
+                        // Перезагружаем дерево с новыми настройками
+                        if (window.reloadTreeWithFilter) {
+                            reloadTreeWithFilter();
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('UserManager init error:', error);
+            }
+        });
+
+        function updateUIForAuthState() {
+            const userSection = document.querySelector('.user-section');
+            if (!userSection) return;
+
+            if (UM.isAuthenticated() && UM.currentUser) {
+                // Показываем информацию авторизованного пользователя
+                userSection.innerHTML = `
+                <div id="header-language-selector"></div>
+                <a href="/user/profile" class="username">${UM.currentUser.username}</a>
+                <button class="streak">🔥 ${UM.currentUser.streak_days || 0} дней подряд</button>
+                <a href="#" onclick="UM.logout(); return false;">Выйти</a>
+            `;
+            } else {
+                // Показываем кнопки для гостя
+                userSection.innerHTML = `
+                <a href="/user/login">Войти</a>
+                <a href="/user/register">Регистрация</a>
+            `;
+            }
+        }
+    </script>
+
+    <script>
+        // Получаем данные из data-атрибутов
+        const configElement = document.getElementById('language-config');
+        if (configElement) {
+            const LANGUAGE_DATA = JSON.parse(configElement.dataset.languageData || '{}');
+            const USER_LANGUAGE_DATA = {
+                nativeLanguage: configElement.dataset.nativeLanguage || 'ru',
+                learningLanguages: JSON.parse(configElement.dataset.learningLanguages || '["en"]'),
+                currentLearning: configElement.dataset.currentLearning || 'en'
+            };
+
+            // Делаем данные глобально доступными
+            window.LANGUAGE_DATA = LANGUAGE_DATA;
+            window.USER_LANGUAGE_DATA = USER_LANGUAGE_DATA;
+
+            console.log('Language data loaded:', LANGUAGE_DATA);
+            console.log('User language settings:', USER_LANGUAGE_DATA);
+        } else {
+            console.error('Language config element not found');
+        }
+    </script>
+
+    <script src="{{ url_for('static', filename='js/languageSelector.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script_index.js') }}"></script>
 </body>
 
 </html>
