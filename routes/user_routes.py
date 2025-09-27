@@ -2,109 +2,163 @@
 import os
 import json
 from datetime import datetime
-from flask import Blueprint, request, jsonify, session, render_template, redirect, url_for
-from werkzeug.security import generate_password_hash, check_password_hash
+import uuid
+from flask import Blueprint, request, jsonify, render_template
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 # Импортируем из helpers
-from helpers.user_helpers import load_user_info, save_user_info, email_to_folder, get_user_folder
+from helpers.user_helpers import load_user_info, save_user_info
+# from helpers.user_helpers import load_user_info, save_user_info, email_to_folder, get_user_folder
+# import jwt
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
-# Базовые маршруты (упрощенные версии)
 
-@user_bp.route('/profile')
-def profile():
-    """Страница профиля"""
-    email = session.get('user_email')
-    if not email:
-        return redirect(url_for('user.login'))
-        
-    user_data = load_user_info(email)
-    if not user_data:
-        session.clear()
-        return redirect(url_for('user.login'))
+# ==================== ФУНКЦИИ ДЛЯ ГЕНЕРАЦИИ ID ====================
+
+def generate_user_id():
+    """Генерирует уникальный ID для пользователя"""
+    return f"user_{uuid.uuid4().hex}"
+
+def generate_simple_user_id():
+    """Альтернативная простая генерация ID на основе времени"""
+    return f"user_{datetime.now().strftime('%Y%m%d%H%M%S')}_{os.urandom(4).hex()}"
+
+# ==================== НОВЫЕ API ЭНДПОЙНТЫ (JWT) ====================
+
+@user_bp.route('/api/register', methods=['POST'])
+def api_register():
+    """Регистрация через API"""
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    username = data.get('username')
     
-    # Импортируем здесь чтобы избежать циклических импортов
-    from helpers.language_helpers import get_language_data
-    language_data = get_language_data()
+    # Проверяем, существует ли пользователь
+    if load_user_info(email):
+        return jsonify({'error': 'User already exists'}), 400
+        
+    # Создаем пользователя
+    user_data = {
+        'id': generate_user_id(),
+        'username': username,
+        'email': email,
+        'password': password,  # 🚨 В будущем нужно хэшировать!
+        'native_language': data.get('native_language', 'ru'),
+        'learning_language': data.get('learning_language', 'en'),
+        'learning_languages': data.get('learning_languages', ['en']),
+        'streak_days': 0,
+        'created_at': datetime.now().isoformat()
+    }
     
-    return render_template('user_profile.html', 
-                         user=user_data,
-                         language_data=language_data,
-                         current_user=user_data)
-
-@user_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    """Страница входа"""
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        user_data = load_user_info(email)
-        # Временная проверка пароля (без хэширования для простоты)
-        if user_data and user_data.get('password') == password:
-            session['user_email'] = email
-            session['logged_in'] = True
-            return redirect(url_for('index.index'))
-        else:
-            return render_template('user_login.html', error='Invalid credentials')
+    save_user_info(email, user_data)
     
-    return render_template('user_login.html')
-
-@user_bp.route('/register', methods=['GET', 'POST'])
-def register():
-    """Страница регистрации"""
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        username = request.form.get('username')
-        
-        if load_user_info(email):
-            return render_template('user_register.html', error='User already exists')
-            
-        user_data = {
-            'id': len([d for d in os.listdir('static/data/users') 
-                      if os.path.isdir(os.path.join('static/data/users', d))]) + 1,
-            'username': username,
-            'email': email,
-            'password': password,  # Пока без хэширования
-            'native_language': request.form.get('native_language', 'ru'),
-            'learning_language': 'en',
-            'learning_languages': ['en'],
-            'streak_days': 0,
-            'created_at': datetime.now().strftime('%Y-%m-%d'),
-            'avatar': None
-        }
-        
-        save_user_info(email, user_data)
-        
-        session['user_email'] = email
-        session['logged_in'] = True
-        
-        return redirect(url_for('index.index'))
+    # Создаем токен
+    access_token = create_access_token(identity=email)
     
-    return render_template('user_register.html')
-
-@user_bp.route('/logout')
-def logout():
-    """Выход"""
-    session.clear()
-    return redirect(url_for('index.index'))
-
-# API endpoints (упрощенные)
-@user_bp.route('/api/me', methods=['GET'])
-def api_me():
-    """Получить текущего пользователя"""
-    email = session.get('user_email')
-    if not email:
-        return jsonify({'error': 'Not authenticated'}), 401
-        
-    user_data = load_user_info(email)
-    if not user_data:
-        return jsonify({'error': 'User not found'}), 404
-        
     # Убираем пароль из ответа
     user_response = user_data.copy()
     user_response.pop('password', None)
     
+    return jsonify({
+        'message': 'User created successfully',
+        'access_token': access_token,
+        'user': user_response
+    })
+
+@user_bp.route('/api/login', methods=['POST'])
+def api_login():
+    """Логин через API"""
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    user_data = load_user_info(email)
+    if not user_data or user_data.get('password') != password:
+        return jsonify({'error': 'Invalid credentials'}), 401
+    
+    # Создаем токен
+    access_token = create_access_token(identity=email)
+    
+    # Убираем пароль из ответа
+    user_response = user_data.copy()
+    user_response.pop('password', None)
+    
+    return jsonify({
+        'message': 'Login successful',
+        'access_token': access_token,
+        'user': user_response
+    })
+
+@user_bp.route('/api/me', methods=['GET'])
+@jwt_required()
+def api_get_current_user():
+    """Получить текущего пользователя по токену"""
+    current_email = get_jwt_identity()
+    user_data = load_user_info(current_email)
+    
+    if not user_data:
+        return jsonify({'error': 'User not found'}), 404
+        
+    # Убираем пароль
+    user_response = user_data.copy()
+    user_response.pop('password', None)
     return jsonify(user_response)
+
+@user_bp.route('/api/logout', methods=['POST'])
+@jwt_required()
+def api_logout():
+    """Выход из системы (на клиенте просто удаляем токен)"""
+    return jsonify({'message': 'Logout successful'})
+
+# ==================== СТРАНИЦЫ ====================
+
+@user_bp.route('/login')
+def login():
+    """Страница логина через JWT"""
+    return render_template('user_login_jwt.html')
+
+# @user_bp.route('/register')
+# def register_page():
+#     """Страница регистрации через JWT"""
+#     return render_template('user_register_jwt.html')
+
+# @user_bp.route('/profile')
+# def profile_page():
+#     """Страница профиля"""
+#     return render_template('user_profile_jwt.html')
+# ... остальной код ...
+
+@user_bp.route('/register')
+def register():
+    """Страница регистрации через JWT (заглушка)"""
+    return """
+    <!DOCTYPE html>
+    <html>
+    <body>
+        <h2>Регистрация</h2>
+        <p>Регистрация будет доступна в следующем обновлении</p>
+        <a href="/user/login">Назад к входу</a>
+    </body>
+    </html>
+    """
+
+@user_bp.route('/profile')
+def profile():
+    """Страница профиля через JWT (заглушка)"""
+    return """
+    <!DOCTYPE html>
+    <html>
+    <body>
+        <h2>Профиль</h2>
+        <p>Страница профиля будет доступна в следующем обновлении</p>
+        <a href="/">На главную</a>
+    </body>
+    </html>
+    """
+@user_bp.route('/logout')
+def logout():  # ← добавь этот endpoint
+    """Выход из системы"""
+    # Пока просто редирект на главную, потом добавим логику выхода
+    from flask import redirect, url_for
+    return redirect(url_for('index.index'))

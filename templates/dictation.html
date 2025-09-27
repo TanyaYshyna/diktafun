@@ -12,21 +12,8 @@
 
 <body>
     <div class="topbar">
-        <div class="topbar">
-            <img src="/static/icons/logo.svg" class="logo">
-        </div>
-        <div class="user-section">
-            {% if current_user %} {# ← current_user теперь доступен автоматически! #}
-            <a href="{{ url_for('user.profile') }}" class="username">
-                {{ current_user.username }} {# ← работает! #}
-            </a>
-            <button class="streak">🔥 {{ current_user.streak_days }} дней подряд</button>
-            <a href="{{ url_for('user.logout') }}">Выйти</a>
-            {% else %}
-            <a href="{{ url_for('user.login') }}">Войти</a>
-            {% endif %}
-        </div>
-    </div>
+        <img src="/static/icons/logo.svg" class="logo">
+     </div>
 
     <!-- Модальное окно выбора предложений -->
     <div id="start-modal" class="modal">
@@ -152,7 +139,7 @@
                                         <td>
                                             <button id="btn-modal-count-total" class="stat-btn total" disabled
                                                 title="Общее количество предложений на круге">
-                                            <i data-lucide="layers"></i>
+                                                <i data-lucide="layers"></i>
                                                 <span id="modal-count-total">0</span>
                                             </button>
                                         </td>

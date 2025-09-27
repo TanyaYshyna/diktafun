@@ -20,19 +20,11 @@
 
 <body>
     <div class="topbar">
-        <div class="topbar">
-            <img src="/static/icons/logo.svg" class="logo">
-        </div>
-        <div class="user-section">
-            {% if current_user %} {# ← current_user теперь доступен автоматически! #}
-            <a href="{{ url_for('user.profile') }}" class="username">
-                {{ current_user.username }} {# ← работает! #}
-            </a>
-            <button class="streak">🔥 {{ current_user.streak_days }} дней подряд</button>
-            <a href="{{ url_for('user.logout') }}">Выйти</a>
-            {% else %}
-            <a href="{{ url_for('user.login') }}">Войти</a>
-            {% endif %}
+        <img src="/static/icons/logo.svg" class="logo">
+        <div class="user-section" id="user-section">
+            <!-- Заполнится JavaScript -->
+            <a href="/user/login">Войти</a>
+            <a href="/user/register">Регистрация</a>
         </div>
     </div>
 
@@ -41,7 +33,6 @@
         <div class="buttons-row">
             <div class="buttons-row-left">
                 <div id="header-language-selector"></div>
-
                 <!-- Выпадающий список -->
                 <div class="tooltip-wrapper">
                     <select id="languageFilter">
@@ -50,18 +41,15 @@
                         <option value="all">Все языки</option>
                     </select>
                 </div>
-
                 <div class="tooltip-wrapper">
                     <button id="btnAddNode">
                         <i data-lucide="trash-2"></i>
                     </button>
-                    <!-- <div class="tooltip-text">Новый элемент</div> -->
                 </div>
                 <div class="tooltip-wrapper">
                     <button id="btnDeleteNode">
                         <i data-lucide="folder-plus"></i>
                     </button>
-                    <!-- <div class="tooltip-text">Удалить элемент</div> -->
                 </div>
             </div>
             <div class="buttons-row-left-right">
@@ -77,12 +65,9 @@
 
         <div id="container-tree-cards">
             <div id="leftPanel">
-
                 <div id="treeContainer"></div>
             </div>
-
             <div id="resizer"></div>
-
             <div id="rightPanel">
                 <div id="text_tree_branch">ветка дерева</div>
                 <div id="content">
@@ -93,105 +78,57 @@
         </div>
     </div>
 
-    <div id="language-config" data-language-data='{{ language_data | tojson }}'
-        data-native-language="{{ user.native_language }}"
-        data-learning-languages='{{ user.learning_languages | tojson }}'
-        data-current-learning="{{ user.current_learning }}" style="display: none;">
+    <!-- Только общие данные -->
+    <div id="global-config" 
+        data-language-data='{{ language_data | tojson }}'
+        data-categories-data='{{ categories_data | tojson }}' style="display: none;">
     </div>
 
+    <!-- Для иконок -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        lucide.createIcons();
-    </script>
+    <script> lucide.createIcons(); </script>
+
     <!-- Передаем данные категорий из сервера в JavaScript -->
     <script type="application/json" id="categories-data">
     {{ categories_data | tojson | safe }}
     </script>
 
+
     <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
-    <script>
-        // Инициализация UserManager
-        const UM = new UserManager({
-            apiBase: '/user/api',
-            fallbackToLocal: false
-        });
-
-        // Инициализируем при загрузке страницы
-        document.addEventListener('DOMContentLoaded', async function () {
-            try {
-                await UM.init();
-                console.log('UserManager initialized', UM.currentUser);
-
-                // Обновляем интерфейс в зависимости от статуса авторизации
-                updateUIForAuthState();
-
-                UM.onChange((user) => {
-                    updateUIForAuthState();
-                    // При изменении пользователя обновляем языковые настройки
-                    if (user) {
-                        window.USER_LANGUAGE_DATA = {
-                            nativeLanguage: user.native_language || 'ru',
-                            learningLanguages: user.learning_languages || ['en'],
-                            currentLearning: user.learning_language || 'en'
-                        };
-                        // Перезагружаем дерево с новыми настройками
-                        if (window.reloadTreeWithFilter) {
-                            reloadTreeWithFilter();
-                        }
-                    }
-                });
-
-            } catch (error) {
-                console.error('UserManager init error:', error);
-            }
-        });
-
-        function updateUIForAuthState() {
-            const userSection = document.querySelector('.user-section');
-            if (!userSection) return;
-
-            if (UM.isAuthenticated() && UM.currentUser) {
-                // Показываем информацию авторизованного пользователя
-                userSection.innerHTML = `
-                <div id="header-language-selector"></div>
-                <a href="/user/profile" class="username">${UM.currentUser.username}</a>
-                <button class="streak">🔥 ${UM.currentUser.streak_days || 0} дней подряд</button>
-                <a href="#" onclick="UM.logout(); return false;">Выйти</a>
-            `;
-            } else {
-                // Показываем кнопки для гостя
-                userSection.innerHTML = `
-                <a href="/user/login">Войти</a>
-                <a href="/user/register">Регистрация</a>
-            `;
-            }
-        }
-    </script>
-
-    <script>
-        // Получаем данные из data-атрибутов
-        const configElement = document.getElementById('language-config');
-        if (configElement) {
-            const LANGUAGE_DATA = JSON.parse(configElement.dataset.languageData || '{}');
-            const USER_LANGUAGE_DATA = {
-                nativeLanguage: configElement.dataset.nativeLanguage || 'ru',
-                learningLanguages: JSON.parse(configElement.dataset.learningLanguages || '["en"]'),
-                currentLearning: configElement.dataset.currentLearning || 'en'
-            };
-
-            // Делаем данные глобально доступными
-            window.LANGUAGE_DATA = LANGUAGE_DATA;
-            window.USER_LANGUAGE_DATA = USER_LANGUAGE_DATA;
-
-            console.log('Language data loaded:', LANGUAGE_DATA);
-            console.log('User language settings:', USER_LANGUAGE_DATA);
-        } else {
-            console.error('Language config element not found');
-        }
-    </script>
-
     <script src="{{ url_for('static', filename='js/languageSelector.js') }}"></script>
     <script src="{{ url_for('static', filename='js/script_index.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            console.log('DOM loaded, starting JWT initialization...');
+
+            // Загружаем глобальные данные
+            const globalConfig = document.getElementById('global-config');
+            if (globalConfig) {
+                window.LANGUAGE_DATA = JSON.parse(globalConfig.dataset.languageData || '{}');
+                window.CATEGORIES_DATA = JSON.parse(globalConfig.dataset.categoriesData || '{}');
+                console.log('Global data loaded');
+            }
+
+            // Устанавливаем значения по умолчанию для пользовательских настроек
+            window.USER_LANGUAGE_DATA = {
+                nativeLanguage: 'ru',
+                learningLanguages: ['en'],
+                currentLearning: 'en'
+            };
+
+            // Инициализируем UserManager
+            window.UM = new UserManager({ apiBase: '/user/api' });
+
+            try {
+                await UM.init();
+                console.log('UserManager initialized with JWT');
+
+            } catch (error) {
+                console.error('JWT initialization error:', error);
+            }
+        });
+    </script>
 </body>
 
 </html>

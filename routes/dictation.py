@@ -1,6 +1,7 @@
 import json
 import os
 from flask import Blueprint, abort, current_app, render_template, url_for
+from helpers.user_helpers import get_current_user
 
 dictation_bp = Blueprint('dictation', __name__)
 
@@ -61,6 +62,10 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
         }
 
         sentences.append(sentence)
+    
+    # Получаем текущего пользователя
+    current_user = get_current_user()
+    
 
     # Рендерим страницу
     return render_template(
@@ -70,5 +75,6 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
         level=level,
         language_original=lang_orig,
         language_translation=lang_tr,
-        sentences=sentences
+        sentences=sentences,
+        current_user=current_user
     )

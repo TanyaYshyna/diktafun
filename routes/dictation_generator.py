@@ -78,7 +78,11 @@ def edit_dictation(dictation_id, language_original, language_translation):
     audio_path = os.path.join(base_path, 'audio.mp3')
     if os.path.exists(audio_path):
         audio_file = url_for('static', filename=f'data/dictations/{dictation_id}/audio.mp3')
-
+   
+    # Получаем текущего пользователя
+    from helpers.user_helpers import get_current_user
+    current_user = get_current_user()
+ 
     return render_template(
         'dictation_generator.html',
         dictation_id=dictation_id,
@@ -90,12 +94,18 @@ def edit_dictation(dictation_id, language_original, language_translation):
         translation_data=translation_data,
         audio_file=audio_file,
         audio_words=audio_words,
+        current_user=current_user,
         edit_mode=True  # редактирования режим
     )
 
 
 @generator_bp.route('/dictation_generator/<language_original>/<language_translation>')
 def dictation_generator(language_original, language_translation):
+   
+    # Получаем текущего пользователя
+    from helpers.user_helpers import get_current_user
+    current_user = get_current_user()
+ 
     return render_template(
         'dictation_generator.html',
         dictation_id='',
@@ -107,6 +117,7 @@ def dictation_generator(language_original, language_translation):
         translation_data=[],
         audio_file='',
         audio_words=[],
+        current_user=current_user,
         edit_mode=False  # новый документ
     )
 

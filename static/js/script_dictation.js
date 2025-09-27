@@ -1056,10 +1056,10 @@ function syncCircleButton() {
     } else {
         circleBtn.innerHTML = `<i data-lucide="iteration-cw"></i><span class="audio-counter">${circle_number}</span>`;
         circleBtn.title = 'Показываю итоги текущего круга. Нажми, чтобы показать все круги.';
-    
+
         circleBtnModal.innerHTML = `<i data-lucide="iteration-cw"></i><span class="audio-counter">${circle_number}</span>`;
         circleBtnModal.title = 'Показываю итоги текущего круга. Нажми, чтобы показать все круги.';
-   
+
         updateStats(circle_number);
     }
     lucide.createIcons();
@@ -1747,7 +1747,11 @@ function initSpeechRecognition() {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
-    recognition.lang = languageCodes[LANGUAGE_ORIGINAL] || 'en-US';
+    recognition.lang = languageCodes[LANGUAGE_ORIGINAL.language_cod] || 'en-US';
+    console.log('LANGUAGE_ORIGINAL:', LANGUAGE_ORIGINAL);
+    console.log('languageCodes[LANGUAGE_ORIGINAL]:', languageCodes[LANGUAGE_ORIGINAL]);
+    console.log('Recognition language set to:', recognition.lang);
+
     recognition.interimResults = true;
     recognition.continuous = true; // Добавляем непрерывное распознавание
 
