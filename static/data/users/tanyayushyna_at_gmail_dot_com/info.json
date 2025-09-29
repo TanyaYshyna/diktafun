@@ -1,0 +1,25 @@
+{
+  "id": 2,
+  "username": "TanyaYushyna",
+  "email": "tanyayushyna@gmail.com",
+  "password": "123456",
+  "native_language": "ru",
+  "learning_language": "en",
+  "learning_languages": [
+    "en",
+    "tr",
+    "ar",
+    "ja",
+    "sv"
+  ],
+  "streak_days": 10,
+  "created_at": "2024-01-01",
+  "avatar_uploaded": "2025-09-28T17:13:16.120217",
+  "updated_at": "2025-09-29T08:14:35.378234",
+  "current_learning": "tr",
+  "avatar": {
+    "large": "/user/api/avatar?email=tanyayushyna@gmail.com&size=large",
+    "small": "/user/api/avatar?email=tanyayushyna@gmail.com&size=small",
+    "uploaded": "2025-09-28T18:53:37.375346"
+  }
+}

@@ -112,7 +112,7 @@ class UserManager {
     return !!this.currentUser && !!this.authToken;
   }
 
-  // Обновление информации пользователя
+  // ---------------- Обновление информации пользователя -----------------------------------
   async updateProfile(updates) {
     if (!this.isAuthenticated()) {
       throw new Error('Not authenticated');
@@ -142,9 +142,16 @@ class UserManager {
       formData: formData
     });
 
-    this.currentUser = { ...this.currentUser, avatar: response.urls };
+    // Обновляем информацию о аватаре в текущем пользователе
+    if (response.avatar_urls) {
+      this.currentUser.avatar = response.avatar_urls;
+    }
+
+    // Перезагружаем данные пользователя для получения актуальной информации
+    await this.fetchCurrentUser();
+
     this._emitChange();
-    return response.urls;
+    return response;
   }
 
   // Получение URL аватара
@@ -278,8 +285,8 @@ class UserManager {
       if (!userSection) return;
 
       if (this.isAuthenticated()) {
-        userSection.innerHTML = `
-        <div id="header-language-selector"></div>
+        //<div id="header-language-selector"></div>
+        userSection.innerHTML = `        
         <a href="/user/profile" class="username">${this.currentUser.username}</a>
         <button class="streak">🔥 ${this.currentUser.streak_days || 0} дней подряд</button>
         <a href="#" onclick="UM.logout(); return false;">Выйти</a>
@@ -299,6 +306,57 @@ class UserManager {
       console.error('Error updating UI:', error);
     }
   }
+
+
+  // Добавьте в класс UserManager:
+
+  // async updateProfile(updates) {
+  //   if (!this.isAuthenticated()) {
+  //     throw new Error('Not authenticated');
+  //   }
+
+  //   const response = await this._apiFetch('/profile', {
+  //     method: 'PUT',
+  //     body: updates
+  //   });
+
+  //   // Обновляем текущего пользователя
+  //   this.currentUser = { ...this.currentUser, ...response.user };
+  //   this._emitChange();
+  //   return this.currentUser;
+  // }
+
+  // async uploadAvatar(file) {
+  //   if (!file) throw new Error('No file provided');
+  //   if (!this.isAuthenticated()) throw new Error('Not authenticated');
+
+  //   const formData = new FormData();
+  //   formData.append('avatar', file);
+
+  //   const response = await this._apiFetch('/avatar', {
+  //     method: 'POST',
+  //     formData: formData
+  //   });
+
+  //   // Обновляем информацию о аватаре
+  //   this.currentUser.avatar_uploaded = response.avatar_uploaded;
+  //   this._emitChange();
+  //   return response;
+  // }
+
+  // async getAvatarUrl(size = 'large') {
+  //   if (!this.isAuthenticated()) return null;
+
+  //   try {
+  //     const response = await this._apiFetch(`/avatar?size=${size}`);
+  //     return response.avatar;
+  //   } catch (error) {
+  //     console.warn('Error loading avatar:', error);
+  //     return null;
+  //   }
+  // }
+
+
 }
 
 // Автоматическое обновление интерфейса при изменении статуса авторизации

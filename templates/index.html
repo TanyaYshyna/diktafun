@@ -32,7 +32,7 @@
         <h2>Список диктантов</h2>
         <div class="buttons-row">
             <div class="buttons-row-left">
-                <div id="header-language-selector"></div>
+                <div id="header-language-selector"></div> <!-- ← ЭТОТ ЭЛЕМЕНТ -->
                 <!-- Выпадающий список -->
                 <div class="tooltip-wrapper">
                     <select id="languageFilter">
@@ -79,9 +79,7 @@
     </div>
 
     <!-- Только общие данные -->
-    <div id="global-config" 
-        data-language-data='{{ language_data | tojson }}'
-        data-categories-data='{{ categories_data | tojson }}' style="display: none;">
+    <div id="global-config" data-categories-data='{{ categories_data | tojson }}' style="display: none;">
     </div>
 
     <!-- Для иконок -->
@@ -93,19 +91,17 @@
     {{ categories_data | tojson | safe }}
     </script>
 
-
+    <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/languageSelector.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/language_selector.js') }}"></script>
     <script src="{{ url_for('static', filename='js/script_index.js') }}"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
-            console.log('DOM loaded, starting JWT initialization...');
 
             // Загружаем глобальные данные
             const globalConfig = document.getElementById('global-config');
             if (globalConfig) {
-                window.LANGUAGE_DATA = JSON.parse(globalConfig.dataset.languageData || '{}');
                 window.CATEGORIES_DATA = JSON.parse(globalConfig.dataset.categoriesData || '{}');
                 console.log('Global data loaded');
             }
@@ -122,10 +118,12 @@
 
             try {
                 await UM.init();
-                console.log('UserManager initialized with JWT');
+                console.log('✅ UserManager initialized with JWT');
+                window.UM.isInitialized = true; // Добавляем флаг инициализации
 
             } catch (error) {
-                console.error('JWT initialization error:', error);
+                console.error('❌ JWT initialization error:', error);
+                window.UM.isInitialized = false;
             }
         });
     </script>

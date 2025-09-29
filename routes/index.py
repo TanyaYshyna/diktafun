@@ -4,10 +4,6 @@ import os
 from flask import Blueprint, jsonify, render_template
 from flask import current_app
 
-
-# Импортируем из helpers
-from helpers.language_helpers import get_language_data
-
 index_bp = Blueprint('index', __name__)
 
 DATA_DIR = os.path.join("static", "data") 
@@ -34,28 +30,17 @@ def load_categories():
 @index_bp.route('/')
 def index():
     try:
-        language_data = get_language_data()
         categories_data = load_categories()
 
         return render_template('index.html', 
-                    language_data=language_data,
                     categories_data=categories_data)
                     
     except Exception as e:
         print(f"❌ Ошибка на главной странице: {e}")
-        language_data = get_language_data()
         categories_data = load_categories()
         return render_template('index.html', 
-                             language_data=language_data,
                              categories_data=categories_data)
 
-
-
-
-
-# def generate_dictation_id():
-#     date_part = datetime.datetime.now().strftime("%y%m%d")
-#     return f"DICTA_{date_part}"
 
 
 # Функция для загрузки категорий
@@ -69,37 +54,6 @@ def load_categories():
         print(f"❌ Ошибка загрузки categories.json: {e}")
         # Возвращаем пустую структуру в случае ошибки
         return {"children": []}
-
-
-
-# @index_bp.route('/')
-# def index():
-#     try:
-#         # Получаем текущего пользователя через сессию
-#         current_user = get_current_user()
-#         user_settings = get_user_settings(current_user)
-        
-#         # Остальной код без изменений...
-#         language_data = get_language_data()
-   
-#         # ЗАГРУЖАЕМ ДАННЫЕ КАТЕГОРИЙ
-#         categories_data = load_categories()
-
-#         return render_template('index.html', 
-#                     language_data=language_data,
-#                     categories_data=categories_data,
-#                     user=user_settings,
-#                     current_user=current_user)
-                    
-#     except Exception as e:
-#         print(f"❌ Ошибка на главной странице: {e}")
-#         language_data = get_language_data()
-#         categories_data = load_categories()
-#         return render_template('index.html', 
-#                              language_data=language_data,
-#                              categories_data=categories_data,
-#                              user=get_user_settings(None),
-#                              current_user=None)
 
 
 @index_bp.route("/dictations-list")

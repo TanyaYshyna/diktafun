@@ -484,11 +484,14 @@ select {
     margin-right: 10px;
     cursor: pointer;
 }
+    /* width: 20px;
+    height: 15px; */
 
 .language-flag {
-    width: 20px;
-    height: 15px;
-    margin-right: 10px;
+    width: 30px;
+    height: 20px;
+    margin-right: 5px;
+    margin-left: 5px;
     border-radius: 2px;
     object-fit: cover;
 }
@@ -666,9 +669,9 @@ select {
   /* box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); */
 .header-selector-dropdown {
   position: absolute;
-  top: 100px;
+  top: 40px;
   /* Подстройте под вашу верстку */
-  left: 20px;
+  left: 10px;
   background: var(--color-panel-bg);
   border: 0px;
   border-radius: 8px;
@@ -695,6 +698,25 @@ select {
   border: 1px solid var(--color-border);
   max-height: 200px;
   overflow-y: auto;
+}
+
+/* Стили для header-language-selector */
+#header-language-selector {
+  display: inline-flex;            /* надежнее в flex-контексте */
+  align-items: center;
+  position: relative;
+  z-index: 1000;
+  min-width: 80px;                 /* чтобы не схлопнулся */
+}
+
+#header-language-selector .header-flag-combo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0px;
+  padding: 6px 10px;
+  background: var(--color-background-light, #f8f9fa);
+  border-radius: 6px;
+  border: 1px solid var(--color-border, #dee2e6);
 }
 /* ------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------ */

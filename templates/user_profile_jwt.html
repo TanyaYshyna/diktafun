@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Профиль пользователя - DiktaFun</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style_color.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style_user_profile.css">
+</head>
+<body>
+    <div class="topbar">
+        <h1 onclick="window.location.href='/'">DiktaFun</h1>
+        <div class="user-actions">
+            <a href="/" class="btn-secondary">На главную</a>
+            <a href="#" onclick="UM.logout(); return false;" class="btn-primary">Выйти</a>
+        </div>
+    </div>
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <h2>Профиль пользователя</h2>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+
+        <!-- Секция аватара -->
+        <div class="form-section">
+            <h3>Аватар</h3>
+            <div class="avatar-section">
+                <div class="avatar-preview">
+                    <img id="avatarLarge" src="" alt="Аватар" class="avatar-large">
+                    <img id="avatarSmall" src="" alt="Аватар" class="avatar-small">
+                </div>
+                <div class="avatar-upload">
+                    <input type="file" id="avatarUpload" accept="image/*">
+                    <button type="button" onclick="uploadAvatar()" class="btn-primary">Загрузить аватар</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основная информация -->
+        <div class="form-section">
+            <h3>Основная информация</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Имя пользователя</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" name="email" readonly style="background: #f5f5f5;">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Новый пароль (оставьте пустым, если не хотите менять)</label>
+                <input type="password" id="password" name="password" placeholder="Введите новый пароль">
+            </div>
+        </div>
+
+        <!-- Языковые настройки -->
+        <div class="form-section">
+            <h3>Языковые настройки</h3>
+            <div id="languageSelectorContainer"></div>
+        </div>
+
+        <!-- Настройки аудио (заглушка для будущего) -->
+        <div class="form-section">
+            <h3>Настройки аудио для диктантов</h3>
+            <p>Настройки по умолчанию для генерации аудио будут доступны в следующем обновлении.</p>
+        </div>
+
+        <!-- Отчеты по обучению (заглушка для будущего) -->
+        <div class="form-section">
+            <h3>Отчеты по обучению</h3>
+            <p>Статистика и прогресс обучения будут доступны в следующем обновлении.</p>
+        </div>
+
+        <!-- Список отслеживаемых пользователей (заглушка для будущего) -->
+        <div class="form-section">
+            <h3>Отслеживаемые пользователи</h3>
+            <p>Функционал для родителей и учителей будет доступен в следующем обновлении.</p>
+        </div>
+
+        <!-- Кнопка сохранения -->
+        <div class="save-section">
+            <button id="saveButton" class="btn-primary" disabled onclick="saveProfile()">Сохранить изменения</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/language_selector.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script_profile.js') }}"></script>
+</body>
+</html>

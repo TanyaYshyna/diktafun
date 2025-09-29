@@ -2,37 +2,68 @@
 import json
 import os
 from flask import session
+from datetime import datetime
 
 # Пути к данным пользователей
 USERS_BASE_DIR = os.path.join('static', 'data', 'users')
 
 def email_to_folder(email):
-    """Конвертирует email в имя папки"""
-    return email.replace('@', '__').replace('.', '_')
+    """Конвертирует email в имя папки (альтернатива get_user_folder)"""
+    return email.replace('@', '_at_').replace('.', '_dot_')
 
 def get_user_folder(email):
-    """Возвращает путь к папке пользователя"""
-    return os.path.join(USERS_BASE_DIR, email_to_folder(email))
+    """Получает путь к папке пользователя"""
+    # Преобразуем email в безопасное имя папки
+    safe_email = email.replace('@', '_at_').replace('.', '_dot_')
+    user_path = os.path.join( 'static', 'data', 'users', safe_email)
+    print(f"✅ Папка пользователя лежит по адресу : {user_path}")  # Отладочная информация
+    return user_path
 
 def load_user_info(email):
-    """Загружает info.json пользователя"""
-    user_folder = get_user_folder(email)
-    info_path = os.path.join(user_folder, 'info.json')
-    
-    if os.path.exists(info_path):
+    """Загружает информацию о пользователе"""
+    try:
+        user_folder = get_user_folder(email)
+        info_path = os.path.join(user_folder, 'info.json')
+        
+        if not os.path.exists(info_path):
+            return None
+            
         with open(info_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return None
+            data = json.load(f)
+            
+            # Добавляем поле avatar если его нет
+            if 'avatar' not in data:
+                data['avatar'] = {}
+                
+            print(f"✅ Данные пользователя загружены: {data.keys()}")  # Отладочная информация
+            return data
+                
+    except Exception as e:
+        print(f"Error loading user info: {e}")
+        return None
+    
 
 def save_user_info(email, user_data):
-    """Сохраняет info.json пользователя"""
-    user_folder = get_user_folder(email)
-    os.makedirs(user_folder, exist_ok=True)
-    
-    info_path = os.path.join(user_folder, 'info.json')
-    with open(info_path, 'w', encoding='utf-8') as f:
-        json.dump(user_data, f, ensure_ascii=False, indent=2)
+    """Сохраняет информацию о пользователе"""
+    try:
+        user_folder = get_user_folder(email)
+        os.makedirs(user_folder, exist_ok=True)
+        
+        info_path = os.path.join(user_folder, 'info.json')
+       
+        # Обновляем timestamp
+        user_data['updated_at'] = datetime.now().isoformat()
+        
+        with open(info_path, 'w', encoding='utf-8') as f:
+            json.dump(user_data, f, ensure_ascii=False, indent=2)
 
+        print(f"✅ Данные сохранены в: {info_path}")  # Отладочная информация
+
+        return True
+    except Exception as e:
+        print(f"Error saving user info: {e}")
+        return False
+    
 def get_current_user():
     """Возвращает текущего пользователя из сессии"""
     email = session.get('user_email')

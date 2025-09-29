@@ -6,25 +6,47 @@ let selectedCategory = null;
 
 
 
+console.log('✅ script_index.js загружен');
+console.log('UserManager:', window.UM);
+console.log('LanguageManager:', window.LanguageManager);
 
 
 
-
-function saveLanguageSettings(values) {
+async function saveLanguageSettings(values) {
     // Проверяем авторизацию
-    const userElement = document.getElementById('user-data');
+    //const userElement = document.getElementById('user-data');
     const isAuthenticated = userElement ? userElement.dataset.isAuthenticated === 'True' : false;
 
     if (!isAuthenticated) {
         console.log('Пользователь не авторизован, настройки не сохраняются');
-        // Можно сохранить в localStorage для временного использования
         localStorage.setItem('tempLanguageSettings', JSON.stringify(values));
         return;
     }
 
-    // Ваша реализация сохранения настроек для авторизованных пользователей
-    console.log('Saving language settings:', values);
-    // Здесь должен быть fetch запрос к серверу
+    try {
+        console.log('Сохранение языковых настроек:', values);
+
+        // РЕАЛЬНОЕ СОХРАНЕНИЕ через UserManager
+        const updateData = {
+            native_language: values.nativeLanguage,
+            learning_languages: values.learningLanguages,
+            current_learning: values.currentLearning
+        };
+
+        const updatedUser = await window.UM.updateProfile(updateData);
+        console.log('Настройки сохранены:', updatedUser);
+
+        // Обновляем локальные данные
+        window.USER_LANGUAGE_DATA = {
+            nativeLanguage: updatedUser.native_language,
+            learningLanguages: updatedUser.learning_languages,
+            currentLearning: updatedUser.current_learning,
+            isAuthenticated: true
+        };
+
+    } catch (error) {
+        console.error('Ошибка сохранения языковых настроек:', error);
+    }
 }
 
 function reloadDictationsWithNewLanguages() {
@@ -142,116 +164,56 @@ function renderDictationsGrid(dictations) {
 }
 
 // Функция для загрузки данных пользователя
+
 async function initializeUserData() {
-    return new Promise((resolve, reject) => {
-        // Проверяем, авторизован ли пользователь
-        const userElement = document.getElementById('user-data');
-        const isAuthenticated = userElement ? userElement.dataset.isAuthenticated === 'True' : false;
+    try {
+        // Проверяем авторизацию через UserManager (JWT)
+        const isAuthenticated = window.UM.isAuthenticated();
+        console.log('Проверка авторизации через JWT:', isAuthenticated);
 
         if (!isAuthenticated) {
             console.log('Пользователь не авторизован, используем настройки по умолчанию');
-            window.LANGUAGE_DATA = window.LANGUAGE_DATA || {
-                'en': { country_cod: 'us', language_ru: 'Английский', language_en: 'English' },
-                'ru': { country_cod: 'ru', language_ru: 'Русский', language_en: 'Russian' },
-                'de': { country_cod: 'de', language_ru: 'Немецкий', language_en: 'German' },
-                'fr': { country_cod: 'fr', language_ru: 'Французский', language_en: 'French' },
-                'es': { country_cod: 'es', language_ru: 'Испанский', language_en: 'Spanish' },
-                'it': { country_cod: 'it', language_ru: 'Итальянский', language_en: 'Italian' }
-            };
-
-            window.USER_LANGUAGE_DATA = {
-                nativeLanguage: 'ru',
-                learningLanguages: ['en', 'de', 'fr', 'es', 'it'],
-                currentLearning: 'en',
-                isAuthenticated: false
-            };
-            resolve();
-            return;
-        }
-
-        // Если пользователь авторизован, загружаем его данные
-        const configElement = document.getElementById('language-config');
-        if (configElement) {
-            try {
-                window.LANGUAGE_DATA = JSON.parse(configElement.dataset.languageData || '{}');
-                window.USER_LANGUAGE_DATA = {
-                    nativeLanguage: configElement.dataset.nativeLanguage || 'ru',
-                    learningLanguages: JSON.parse(configElement.dataset.learningLanguages || '["en"]'),
-                    currentLearning: configElement.dataset.currentLearning || 'en',
-                    isAuthenticated: true
-                };
-                console.log('Данные пользователя загружены из конфигурации');
-                resolve();
-            } catch (error) {
-                console.error('Ошибка парсинга данных пользователя:', error);
-                // В случае ошибки используем настройки по умолчанию
-                window.USER_LANGUAGE_DATA = {
-                    nativeLanguage: 'ru',
-                    learningLanguages: ['en'],
-                    currentLearning: 'en',
-                    isAuthenticated: true
-                };
-                resolve();
-            }
-        } else {
-            // Если элемента нет, используем значения по умолчанию
-            window.LANGUAGE_DATA = window.LANGUAGE_DATA || {
-                'en': { country_cod: 'us', language_ru: 'Английский', language_en: 'English' },
-                'ru': { country_cod: 'ru', language_ru: 'Русский', language_en: 'Russian' }
-            };
             window.USER_LANGUAGE_DATA = {
                 nativeLanguage: 'ru',
                 learningLanguages: ['en'],
                 currentLearning: 'en',
-                isAuthenticated: true
+                isAuthenticated: false
             };
-            console.log('Используются настройки по умолчанию для авторизованного пользователя');
-            resolve();
+            return;
         }
-    });
+
+        // ДЛЯ АВТОРИЗОВАННЫХ ПОЛЬЗОВАТЕЛЕЙ - загружаем реальные данные из JWT
+        const user = window.UM.currentUser;
+        console.log('Текущий пользователь из JWT:', user);
+
+        if (!user) {
+            throw new Error('Данные пользователя не найдены в JWT');
+        }
+
+        window.USER_LANGUAGE_DATA = {
+            nativeLanguage: user.native_language || 'ru',
+            learningLanguages: user.learning_languages || ['en'],
+            currentLearning: user.current_learning || user.learning_languages?.[0] || 'en',
+            isAuthenticated: true
+        };
+
+        console.log('USER_LANGUAGE_DATA установлен:', window.USER_LANGUAGE_DATA);
+
+    } catch (error) {
+        console.error('Ошибка загрузки данных пользователя:', error);
+        // Fallback на настройки по умолчанию
+        window.USER_LANGUAGE_DATA = {
+            nativeLanguage: 'ru',
+            learningLanguages: ['en'],
+            currentLearning: 'en',
+            isAuthenticated: false
+        };
+    }
 }
 
-
-// Модифицируем initializeLanguageSelector чтобы он сам вызывал обновление
-function defaultLanguageConst() {
-    window.LANGUAGE_DATA = window.LANGUAGE_DATA || {
-        'en': { country_cod: 'us', language_ru: 'Английский', language_en: 'English' },
-        'ru': { country_cod: 'ru', language_ru: 'Русский', language_en: 'Russian' }
-    };
-    window.USER_LANGUAGE_DATA = window.USER_LANGUAGE_DATA || {
-        nativeLanguage: 'ru',
-        learningLanguages: ['en'],
-        currentLearning: 'en'
-    };
-}
-
-
-// Простой fallback селектор на случай ошибок
-function createFallbackLanguageSelector() {
-    const selectorContainer = document.getElementById('header-language-selector');
-    if (!selectorContainer) return;
-
-    console.log('Создание простого языкового селектора');
-
-    selectorContainer.innerHTML = `
-        <div style="padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
-            <small>Языковой селектор временно недоступен</small>
-            <div>Изучаемый: ${language_original.toUpperCase()}</div>
-            <div>Родной: ${language_translation.toUpperCase()}</div>
-        </div>
-    `;
-}
-// Модифицируем initializeLanguageSelector чтобы он сам вызывал обновление
+// оставляем
 function initializeLanguageSelector() {
     try {
-        // if (!window.LANGUAGE_DATA) {
-        //     console.error('LANGUAGE_DATA не доступен');
-        //     return;
-        // }
-        if (!window.LANGUAGE_DATA) {
-            defaultLanguageConst();
-        }
-
         const userSettings = window.USER_LANGUAGE_DATA || {
             nativeLanguage: 'ru',
             learningLanguages: ['en'],
@@ -259,111 +221,70 @@ function initializeLanguageSelector() {
             isAuthenticated: false
         };
 
-        console.log('Инициализация языкового селектора для пользователя:',
-            userSettings.isAuthenticated ? 'авторизован' : 'не авторизован');
+        console.log('🔄 Инициализация языкового селектора с настройками:', userSettings);
+        console.log('📌📌📌📌📌📌 Контейнер header-language-selector:', document.getElementById('header-language-selector'));
 
-        // Если функция initLanguageSelector существует - используем ее
         if (typeof initLanguageSelector === 'function') {
             const options = {
                 mode: 'header-selector',
                 nativeLanguage: userSettings.nativeLanguage,
                 learningLanguages: userSettings.learningLanguages,
                 currentLearning: userSettings.currentLearning,
-                languageData: window.LANGUAGE_DATA,
+                languageData: window.LanguageManager.getLanguageData(),
                 onLanguageChange: function (values) {
-                    console.log('Языковой селектор: изменение языков', values);
-
+                    console.log('🔄 Языковой селектор: изменение языков', values);
                     try {
-                        // ВЫЗЫВАЕМ ОБНОВЛЕНИЕ ДЕРЕВА ПРЯМО ЗДЕСЬ
                         updateLanguages(values);
-
-                        // Вызываем стандартную функцию сохранения
-                        if (typeof saveLanguageSettings === 'function') {
+                        // Сохраняем настройки для авторизованных пользователей
+                        if (userSettings.isAuthenticated) {
                             saveLanguageSettings(values);
                         }
                     } catch (error) {
-                        console.error('Ошибка в обработчике изменения языков:', error);
+                        console.error('❌ Ошибка в обработчике изменения языков:', error);
                     }
                 }
             };
 
-            // Для неавторизованных пользователей ограничиваем функциональность
-            if (!userSettings.isAuthenticated) {
-                options.readOnly = false; // Но все равно разрешаем выбор
-                console.log('Неавторизованный пользователь: языки можно менять, но настройки не сохранятся');
+            console.log('🎯 Создаем LanguageSelector с options:', options);
+            const selector = initLanguageSelector('header-language-selector', options);
+
+            if (selector) {
+                console.log('✅ LanguageSelector создан успешно');
+            } else {
+                console.warn('❌ LanguageSelector не был создан');
+                createSimpleLanguageDisplay();
             }
 
-            const headerSelector = initLanguageSelector('header-language-selector', options);
-
-            if (!headerSelector) {
-                console.warn('Языковой селектор не был создан');
-            }
         } else {
-            console.warn('Функция initLanguageSelector не найдена');
-            // Создаем простой fallback
-            createFallbackLanguageSelector();
+            console.warn('❌ Функция initLanguageSelector не найдена');
+            createSimpleLanguageDisplay();
         }
 
     } catch (error) {
-        console.error('Ошибка инициализации языкового селектора:', error);
-        // Создаем простой fallback в случае ошибки
-        createFallbackLanguageSelector();
+        console.error('❌ Ошибка инициализации языкового селектора:', error);
+        createSimpleLanguageDisplay();
     }
 }
 
-// Извлечь href из строки с готовым <a ...>...</a>
-// (на случай, если у тебя link/link_red приходят как HTML)
-// function hrefFromHTML(html) {
-//     const m = /href="([^"]+)"/.exec(html || '');
-//     return m ? m[1] : '#';
-// }
+// Простой fallback
+function createSimpleLanguageDisplay() {
+    const selectorContainer = document.getElementById('header-language-selector');
+    if (!selectorContainer) return;
 
+    console.warn('❌❌❌❌ что-то не так');
 
+    const userSettings = window.USER_LANGUAGE_DATA || {
+        nativeLanguage: 'ru',
+        learningLanguages: ['en'],
+        currentLearning: 'en'
+    };
 
-
-// Загрузка сохраненного языка
-// document.addEventListener('DOMContentLoaded', () => {
-//     const savedLang = localStorage.getItem('appLanguage') || 'ru';
-//     const langLink = document.querySelector(`.language-dropdown a[data-lang="${savedLang}"]`);
-//     if (langLink) {
-//         document.getElementById('language-toggle').innerHTML = `
-//                     <img src="${langLink.querySelector('img').src}" 
-//                          alt="${langLink.querySelector('img').alt}" 
-//                          width="20">
-//                     <span>${savedLang.toUpperCase()}</span>
-//                 `;
-//     }
-// });
-
-// document.addEventListener('DOMContentLoaded', () => {
-//     console.log('DOM loaded, starting language selector initialization...');
-
-//     // Инициализируем языковой селектор
-//     initializeLanguageSelector();
-
-//     // Остальной код инициализации...
-//     const savedLang = localStorage.getItem('appLanguage') || 'ru';
-//     const langLink = document.querySelector(`.language-dropdown a[data-lang="${savedLang}"]`);
-//     if (langLink) {
-//         const languageToggle = document.getElementById('language-toggle');
-//         if (languageToggle) {
-//             languageToggle.innerHTML = `
-//                 <img src="${langLink.querySelector('img').src}" 
-//                      alt="${langLink.querySelector('img').alt}" 
-//                      width="20">
-//                 <span>${savedLang.toUpperCase()}</span>
-//             `;
-//         }
-//     }
-
-//     // Загружаем диктанты и инициализируем дерево
-//     loadDictations().then(() => {
-//         initFancyTree();
-//     });
-
-//     setupPanelResizer();
-//     setupTreeButtons();
-// });
+    selectorContainer.innerHTML = `
+        <div class="simple-language-display">
+            <span>${userSettings.currentLearning.toUpperCase()} → ${userSettings.nativeLanguage.toUpperCase()}</span>
+        </div>
+    `;
+}
 
 
 
@@ -734,6 +655,7 @@ function fitFancyTreeHeight() {
         tree.style.overflowX = 'hidden';
     }
 }
+
 function setupNewDictationButton() {
     const newDictationBtn = document.getElementById('newDictationBtn');
     if (!newDictationBtn) {
@@ -742,13 +664,11 @@ function setupNewDictationButton() {
     }
 
     newDictationBtn.addEventListener('click', function () {
-        // Проверяем авторизацию
-        const userElement = document.getElementById('user-data');
-        const isAuthenticated = userElement ? userElement.dataset.isAuthenticated === 'True' : false;
+        // Проверяем авторизацию через UserManager
+        const isAuthenticated = window.UM.isAuthenticated();
 
         if (!isAuthenticated) {
             alert("Для создания диктанта необходимо авторизоваться");
-            // Перенаправляем на страницу логина или показываем модальное окно
             const loginUrl = '/login?next=' + encodeURIComponent(window.location.pathname);
             window.location.href = loginUrl;
             return;
@@ -766,46 +686,57 @@ function setupNewDictationButton() {
 }
 
 
+
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('DOM loaded, starting initialization...');
 
     try {
-        // Инициализируем данные пользователя первым делом
-        initializeUserData().then(() => {
-            console.log('Данные пользователя инициализированы');
+        // Ждем пока UserManager инициализируется в основном скрипте
+        const waitForUserManager = setInterval(() => {
+            if (window.UM && window.UM.isInitialized !== undefined) {
+                clearInterval(waitForUserManager);
 
-            // Показываем баннер для неавторизованных пользователей
-            if (!window.USER_LANGUAGE_DATA.isAuthenticated) {
-                console.log('Неавторизованный пользователь, ограниченный функционал');
-                showAuthBanner();
+                // Загружаем данные пользователя
+                initializeUserData().then(() => {
+                    console.log('Данные пользователя инициализированы:', window.USER_LANGUAGE_DATA);
+
+                    if (!window.USER_LANGUAGE_DATA.isAuthenticated) {
+                        showAuthBanner();
+                    }
+
+                    // Инициализируем компоненты
+                    initializeLanguageSelector();
+                    initializeLanguageFilter();
+                    fitFancyTreeHeight();
+                    setupNewDictationButton();
+
+                    // Загружаем диктанты и инициализируем дерево
+                    return loadDictations().then(() => {
+                        initFancyTree();
+                        setupPanelResizer();
+                        setupTreeButtons();
+                    });
+                }).catch(error => {
+                    console.error('Ошибка инициализации:', error);
+                });
+
             }
+        }, 100);
 
-            // Инициализируем компоненты
-            initializeLanguageSelector();
-            initializeLanguageFilter();
-            fitFancyTreeHeight();
-            setupNewDictationButton();
+        // Таймаут на случай если UserManager не инициализируется
+        // setTimeout(() => {
+        //     clearInterval(waitForUserManager);
+        //     if (!window.UM) {
+        //         console.error('UserManager не инициализирован за 5 секунд, используем гостевой режим');
+        //         initializeUserData().then(() => {
+        //             initializeLanguageSelector();
+        //             initializeLanguageFilter();
+        //             fitFancyTreeHeight();
+        //             setupNewDictationButton();
+        //             loadDictations().then(() => initFancyTree());
+        //         });
+        //     }
+        // }, 5000);
 
-            // Загружаем диктанты и инициализируем дерево
-            loadDictations().then(() => {
-                initFancyTree();
-                setupPanelResizer();
-                setupTreeButtons();
-            }).catch(error => {
-                console.error('Ошибка загрузки диктантов:', error);
-            });
-        }).catch(error => {
-            console.error('Ошибка инициализации данных пользователя:', error);
-            // Продолжаем с настройками по умолчанию даже при ошибке
-            window.USER_LANGUAGE_DATA = window.USER_LANGUAGE_DATA || {
-                nativeLanguage: 'ru',
-                learningLanguages: ['en'],
-                currentLearning: 'en',
-                isAuthenticated: false
-            };
-            initializeLanguageSelector();
-            loadDictations().then(() => initFancyTree());
-        });
     } catch (error) {
         console.error('Критическая ошибка при инициализации:', error);
     }
