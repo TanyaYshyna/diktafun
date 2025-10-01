@@ -61,7 +61,7 @@ function initializeLanguageSelector() {
 
         languageSelector = new LanguageSelector({
             container: container,
-            mode: 'profile',
+            mode: 'profile-panels',
             nativeLanguage: originalData.native_language,
             learningLanguages: originalData.learning_languages,
             currentLearning: originalData.current_learning,
@@ -91,7 +91,14 @@ function setupFormListeners() {
     inputs.forEach(id => {
         document.getElementById(id).addEventListener('input', checkForChanges);
     });
+    
+    // Также отслеживаем изменения файла аватара
+    document.getElementById('avatarUpload').addEventListener('change', function() {
+        avatarChanged = true;
+        checkForChanges();
+    });
 }
+
 
 // Проверка изменений данных
 function checkForChanges() {

@@ -12,8 +12,30 @@
 
 <body>
     <div class="topbar">
-        <img src="/static/icons/logo.svg" class="logo">
-     </div>
+        <img src="/static/icons/logo.svg" class="logo" onclick="window.location.href='/'">
+        <div class="user-section" id="user-section">
+            <!-- Заполнится JavaScript -->
+            <a href="/user/profile" class="username">
+                <span class="user-avatar-small"></span>
+                <span class="username-text"></span>
+            </a>
+            <button class="streak">🔥 <span class="streak-days">0</span> дней подряд</button>
+            <!-- <a href="/user/login">Войти</a>
+            <a href="/user/register">Регистрация</a> -->
+        </div>
+    </div>
+
+    <!-- Модальное окно выхода -->
+    <div id="exitModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Выйти на главную?</h2>
+            <p>Вы уверены, что хотите выйти? Все несохраненные данные будут потеряны.</p>
+            <div class="modal-buttons">
+                <button id="confirmExitBtn" class="button-color-red">Да, выйти</button>
+                <button id="cancelExitBtn" class="button-color-green">Отмена</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Модальное окно выбора предложений -->
     <div id="start-modal" class="modal">
@@ -24,9 +46,9 @@
                  |      +----------+
                  |      |    4444  |
                  +------+----------+
-                 | 5555 |    6666  |
-                 +------+          +
-                 | 7777 |          |
+                 |      6666       |
+                 +------+--------- +
+                 | 7777 | 5555     |
                  +------+----------+-->
             <table>
                 <colgroup>
@@ -64,10 +86,7 @@
                         </td>
                         <!-- <td>2222</td> -->
                         <td>
-                            <button id="confirmStartBtn" tabindex="0" onclick=startGame()>
-                                <!-- <i data-lucide="play"></i> -->
-                                S T A R T
-                            </button>
+                            <h2 id="title-diktation">{{ title_orig }}</h2>
                         </td>
                         <!-- <td>3333</td> -->
                         <td>
@@ -77,8 +96,8 @@
 
                         </td>
                     </tr>
+                    <!-- <td>4444</td> -->
                     <tr>
-                        <!-- <td>4444</td> -->
                         <td colspan="2">
                             <!-- progress-panel  -->
                             <div class="progress-panel-modal-r">
@@ -151,18 +170,10 @@
                     </tr>
                     <tr>
                         <!-- <td>5555</td> -->
-                        <td>
-                            <!-- Контрол перемешивания -->
-                            <div class="all-checkbox-container">
-                                <button id="mixControl" class="all-checkbox-btn">
-                                    <i data-lucide="move-right"></i>
-                                    <span>прямой порядок</span>
-                                </button>
-                            </div>
-                        </td>
-                        <!-- <td>6666</td> -->
-                        <td rowspan="2" colspan="2">
-                            <h2 id="title-diktation">{{ title_orig }}</h2> <!-- Диктант: -->
+                        <td colspan="3">
+                            <button id="confirmStartBtn" tabindex="0" onclick=startGame()>
+                                S T A R T
+                            </button>
                         </td>
                     </tr>
                     <tr>
@@ -174,7 +185,16 @@
                                     <span>отметить все</span>
                                 </button>
                             </div>
-                            <!-- <td>7777</td> -->
+                        </td>
+                        <!-- <td>6666</td> -->
+                        <td colspan="2">
+                            <!-- Контрол перемешивания -->
+                            <div class="all-checkbox-container">
+                                <button id="mixControl" class="all-checkbox-btn">
+                                    <i data-lucide="move-right"></i>
+                                    <span>прямой порядок</span>
+                                </button>
+                            </div>
                         </td>
                         <!-- <td>8888</td> -->
                     </tr>
@@ -312,44 +332,7 @@
                     </tr>
                 </table>
             </div>
-            <!-- <div class="progress-panel">
-                <div class="progress-top">
-                    <button class="stat-btn timer" disabled title="Время работы над диктантом">
-                        <i data-lucide="alarm-clock"></i>
-                        <span id="timer">00:00:00</span>
-                    </button>
-                </div>
 
-                <div class="progress-bottom">
-                    <button class="stat-btn perfect" disabled
-                        title="Количество предложений набранных без ошибок с 1-й попытки">
-                        <i data-lucide="star"></i>
-                        <span id="count_perfect">0</span>
-                    </button>
-
-                    <button class="stat-btn corrected" disabled title="Количество набранных предложений">
-                        <i data-lucide="star-half"></i>
-                        <span id="count_corrected">0</span>
-                    </button>
-
-                    <button class="stat-btn corrected-audio" disabled title="Сколько предложений прошло аудио контроль">
-                        <i data-lucide="mic-off"></i>
-                        <span id="count_audio">0</span>
-                    </button>
-
-                    <button class="stat-btn total" disabled title="Общее количество предложений на круге">
-                        <i data-lucide="layers"></i>
-                        <span id="count_total">0</span>
-                    </button>
-
-                    <button id="btn-circle-number" class="stat-btn" title="Какой раз проходим диктант">
-                        <i data-lucide="iteration-cw"></i>
-                        <span id="circle-number">1</span>
-                    </button>
-                </div>
-
-                <h4 id="diktation_id">{{ dictation_id }}</h4>
-            </div> -->
         </div>
 
         <div class="audio-players-wrapper">
@@ -495,14 +478,53 @@
     <script>
         lucide.createIcons();
     </script>
-    <script id="sentences-data" type="application/json">
-        {{ sentences | tojson | safe }}
-    </script>
-    <script>
-        const LANGUAGE_ORIGINAL = "{{ language_original }}";
-        const LANGUAGE_CODES_URL = "{{ url_for('static', filename='data/language_codes.json') }}";
-    </script>
+
+    <!-- Сначала загружаем менеджеры -->
+    <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
+
+    <!-- Передаем данные диктанта через глобальные переменные -->
+    <div id="dictation-data" data-sentences='{{ sentences | tojson | safe }}'
+        data-language-original="{{ language_original }}" data-language-translation="{{ language_translation }}"
+        data-title-orig="{{ title_orig }}" data-dictation-id="{{ dictation_id }}" style="display: none;">
+    </div>
+
+    <!-- Загружаем основной скрипт СИНХРОННО -->
     <script src="{{ url_for('static', filename='js/script_dictation.js') }}"></script>
+
+    <script>
+        // Инициализация UserManager и основного скрипта
+        document.addEventListener('DOMContentLoaded', async function () {
+            console.log('🚀 Начало инициализации диктанта...');
+
+            // Проверяем что LanguageManager загружен
+            if (window.LanguageManager) {
+                console.log('✅ LanguageManager доступен');
+                console.log('Методы LanguageManager:', Object.keys(window.LanguageManager));
+            } else {
+                console.warn('⚠️ LanguageManager не доступен');
+            }
+
+
+            // Инициализируем UserManager
+            window.UM = new UserManager({ apiBase: '/user/api' });
+            try {
+                await window.UM.init();
+                console.log('✅ UserManager initialized in dictation');
+            } catch (error) {
+                console.error('❌ JWT initialization error:', error);
+            }
+
+            // Проверяем что основной скрипт загружен
+            // Запускаем инициализацию диктанта
+            console.log('🎯 Запуск инициализации диктанта...');
+            if (typeof onloadInitializeDictation === 'function') {
+                onloadInitializeDictation();
+            } else {
+                console.error('❌ Функция onloadInitializeDictation не найдена');
+            }
+        });
+    </script>
 
 </body>
 

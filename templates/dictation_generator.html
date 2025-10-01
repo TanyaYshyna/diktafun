@@ -22,15 +22,17 @@
 </head>
 
 <body>
-   <div class="topbar">
-        <img src="/static/icons/logo.svg" class="logo">
+    <div class="topbar">
+        <!-- <img src="/static/icons/logo.svg" class="logo"> -->
+        <img src="/static/icons/logo.svg" class="logo" onclick="window.location.href='/'">
         <div class="user-section" id="user-section">
+            <!-- Заполнится JavaScript -->
             <a href="/user/profile" class="username">
-                {{ current_user.username }}
+                <span class="user-avatar-small"></span>
+                <span class="username-text"></span>
             </a>
-            <button class="streak">🔥 {{ current_user.streak_days }} дней подряд</button>
-            <a href="/user/login">Войти</a>
-            <a href="/user/register">Регистрация</a>
+            <button class="streak">🔥 <span class="streak-days">0</span> дней подряд</button>
+
         </div>
     </div>
 
@@ -237,6 +239,10 @@
         lucide.createIcons();
     </script>
 
+    <!-- Добавляем скрипты UserManager -->
+    <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
+
     <script id="init-data" type="application/json">
     {{ {
         "dictation_id": dictation_id,
@@ -251,7 +257,66 @@
         "audio_words": audio_words
      } | tojson }}
     </script>
+
+
+    <!-- Загружаем основной скрипт СИНХРОННО -->
     <script src="{{ url_for('static', filename='js/script_dictation_generator.js') }}"></script>
+
+    <script>
+        // Инициализация UserManager перед загрузкой основного скрипта
+        document.addEventListener('DOMContentLoaded', async function () {
+            console.log('🚀 Начало инициализации редактора диктанта...');
+
+            // Проверяем что LanguageManager загружен
+            if (window.LanguageManager) {
+                console.log('✅ LanguageManager доступен');
+                console.log('Методы LanguageManager:', Object.keys(window.LanguageManager));
+            } else {
+                console.warn('⚠️ LanguageManager не доступен');
+            }
+
+            window.UM = new UserManager({ apiBase: '/user/api' });
+            try {
+                await window.UM.init();
+                console.log('✅ UserManager initialized in dictation');
+            } catch (error) {
+                console.error('❌ JWT initialization error:', error);
+            }
+
+            // Проверяем что основной скрипт загружен
+            if (typeof initDictationGenerator === 'function') {
+                initDictationGenerator();
+                console.log('✅ script_dictation.js загружен');
+            } else {
+                console.error('❌ script_dictation.js не загружен правильно');
+            }
+
+            // Загружаем основной скрипт после инициализации UserManager
+            // const script = document.createElement('script');
+            // script.src = "{{ url_for('static', filename='js/script_dictation_generator.js') }}";
+            // document.body.appendChild(script);
+
+            // script.onload = function () {
+            //     console.log('✅ Основной скрипт редактора загружен');
+
+            //     // Запускаем инициализацию генератора диктантов
+            //     console.log('🎯 Запуск инициализации генератора диктантов...');
+            //     if (typeof initDictationGenerator === 'function') {
+            //         initDictationGenerator();
+            //     } else {
+            //         console.error('❌ Функция initDictationGenerator не найдена');
+            //     }
+            // };
+
+            // script.onerror = function () {
+            //     console.error('❌ Ошибка загрузки основного скрипта редактора');
+            // };
+
+
+
+
+        });
+    </script>
 </body>
 
 </html>

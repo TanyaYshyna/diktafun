@@ -1,5 +1,8 @@
 // console.log("👀 renderSentenceCounter вызвана");
+console.log('======================= dscript_dictation.js:');
+    
 let thisNewGame = true;
+let userManager = null;
 const circleBtn = document.getElementById('btn-circle-number');
 
 const inputField = document.getElementById('userInput');
@@ -49,8 +52,9 @@ let playSequenceSuccess = "ot"; // Для правильного ответа (�
  */
 /** @type {Sentence[]} */
 
-const rawJson = document.getElementById("sentences-data").textContent;
-let allSentences = JSON.parse(rawJson); // все предложения всего диктанта (самый широкий)
+// const rawJson = document.getElementById("sentences-data").textContent;
+// let allSentences = JSON.parse(rawJson); // все предложения всего диктанта (самый широкий)
+let allSentences = [];
 
 // суммы по итогам предыдущих кругов
 let number_of_perfect = 0;          // 1 — с первого раза (сумарно по всем кругам)
@@ -86,7 +90,8 @@ let tableCheckboxes = [];
 let currentDictation = {
     id: '', // ID поточного диктанту
     language_original: '',
-    language_translation: ''
+    language_translation: '',
+    title_orig: ''
 }
 
 // Глобальные переменные модального окна начала диктанта
@@ -141,7 +146,8 @@ let vizRAF = null;       // requestAnimationFrame id
 let vizActive = false;   // флаг "рисуем сейчас"
 
 let mediaRecorder, audioChunks = [];
-let languageCodes = {};
+// let languageCodes = {};
+let langCodeUrl = 'en-US';
 let recognition = null;
 let textAttemptCount = 0;
 
@@ -181,6 +187,174 @@ let inactivityTimer = null;
 // const INACTIVITY_TIMEOUT = 60000; // 1 минута бездействия
 const INACTIVITY_TIMEOUT = 3000; // 1 минута бездействия
 let gameHasAlreadyBegun = false;
+
+
+
+
+// ===== Инициализация пользователя =====
+async function initializeUser() {
+    try {
+        // Проверяем, доступен ли UserManager
+        if (window.UM && typeof window.UM.init === 'function') {
+            userManager = window.UM;
+            
+            // Инициализируем, если еще не инициализирован
+            if (!userManager.isInitialized) {
+                await userManager.init();
+            }
+            
+            updateUserUI();
+        } else {
+            console.warn('UserManager не доступен, используем гостевой режим');
+            setupGuestMode();
+        }
+    } catch (error) {
+        console.error('Ошибка инициализации пользователя:', error);
+        setupGuestMode();
+    }
+}
+
+function updateUserUI() {
+    const userSection = document.getElementById('user-section');
+    if (!userSection) {
+        console.warn('user-section не найден в DOM');
+        return;
+    }
+
+    if (userManager && userManager.isAuthenticated()) {
+        const user = userManager.currentUser;
+        
+        // Обновляем аватар
+        const avatarElement = userSection.querySelector('.user-avatar-small');
+        if (avatarElement) {
+            if (userManager.getAvatarUrl) {
+                const avatarUrl = userManager.getAvatarUrl('small');
+                if (avatarUrl) {
+                    avatarElement.style.backgroundImage = `url(${avatarUrl})`;
+                }
+            }
+        }
+        
+        // Обновляем имя пользователя
+        const usernameElement = userSection.querySelector('.username-text');
+        if (usernameElement) {
+            usernameElement.textContent = user.username || 'Пользователь';
+        }
+        
+        // Обновляем streak
+        const streakElement = userSection.querySelector('.streak-days');
+        if (streakElement) {
+            streakElement.textContent = user.streak_days || 0;
+        }
+        
+        // Безопасно показываем/скрываем элементы
+        const usernameLink = userSection.querySelector('.username');
+        const streakBtn = userSection.querySelector('.streak');
+        const loginLink = userSection.querySelector('a[href="/user/login"]');
+        const registerLink = userSection.querySelector('a[href="/user/register"]');
+        
+        if (usernameLink) usernameLink.style.display = 'flex';
+        if (streakBtn) streakBtn.style.display = 'inline-block';
+        if (loginLink) loginLink.style.display = 'none';
+        if (registerLink) registerLink.style.display = 'none';
+        
+    } else {
+        setupGuestMode();
+    }
+}
+
+function setupGuestMode() {
+    const userSection = document.getElementById('user-section');
+    if (!userSection) {
+        console.warn('user-section не найден в DOM');
+        return;
+    }
+
+    const usernameLink = userSection.querySelector('.username');
+    const streakBtn = userSection.querySelector('.streak');
+    const loginLink = userSection.querySelector('a[href="/user/login"]');
+    const registerLink = userSection.querySelector('a[href="/user/register"]');
+    
+    // Безопасно изменяем стили
+    if (usernameLink) usernameLink.style.display = 'none';
+    if (streakBtn) streakBtn.style.display = 'none';
+    if (loginLink) loginLink.style.display = 'inline-block';
+    if (registerLink) registerLink.style.display = 'inline-block';
+}
+
+// ===== Управление выходом =====
+function setupExitHandlers() {
+    const exitModal = document.getElementById('exitModal');
+    const confirmExitBtn = document.getElementById('confirmExitBtn');
+    const cancelExitBtn = document.getElementById('cancelExitBtn');
+    const backButtons = document.querySelectorAll('#btnBackToList, #btnBackToMain');
+
+    // Обработчики для кнопок "На главную"
+    backButtons.forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', showExitModal);
+        }
+    });
+
+    // Обработчики для модального окна выхода
+    if (confirmExitBtn) {
+        confirmExitBtn.addEventListener('click', () => {
+            window.location.href = "/";
+        });
+    }
+
+    if (cancelExitBtn) {
+        cancelExitBtn.addEventListener('click', hideExitModal);
+    }
+
+    // Закрытие модального окна по клику вне его
+    if (exitModal) {
+        exitModal.addEventListener('click', (e) => {
+            if (e.target === exitModal) {
+                hideExitModal();
+            }
+        });
+    }
+
+    // Обработка клавиши Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && exitModal && exitModal.style.display === 'flex') {
+            hideExitModal();
+        }
+    });
+}
+
+function showExitModal() {
+    const exitModal = document.getElementById('exitModal');
+    if (exitModal) {
+        exitModal.style.display = 'flex';
+        // Даем фокус кнопке отмены для удобства
+        const cancelBtn = document.getElementById('cancelExitBtn');
+        if (cancelBtn) cancelBtn.focus();
+    }
+}
+
+function hideExitModal() {
+    const exitModal = document.getElementById('exitModal');
+    if (exitModal) {
+        exitModal.style.display = 'none';
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // --- обработка паузы -----------------------------------------------
 // Функция паузы игры
@@ -1121,12 +1295,29 @@ function timeDisplay(ms) {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-// -------------------------------------------------------
+// -------------------------------------------------------LANGUAGE_CODES_URL  getCountryCodeUrl(langCode)
 async function loadLanguageCodes() {
-    const response = await fetch(LANGUAGE_CODES_URL);
-    languageCodes = await response.json();
-    initSpeechRecognition();
+    try {
+        // Используем LanguageManager для получения country_cod_url
+        
+        if (window.LanguageManager && typeof window.LanguageManager.getCountryCodeUrl === 'function') {
+            langCodeUrl = window.LanguageManager.getCountryCodeUrl(currentDictation.language_original);
+        } else {
+            // Fallback если LanguageManager не доступен
+            langCodeUrl = 'en-US';
+        }
+        
+        // const response = await fetch(`/path/to/language/codes/${langCodeUrl}.json`);
+        // languageCodes = await response.json();
+        
+        // // Используем language_original из загруженных данных
+        // const langCode = currentDictation.language_original || 'en-US';
+        initSpeechRecognition();
+    } catch (error) {
+        console.error('Ошибка загрузки языковых кодов:', error);
+    }
 }
+
 
 // ===== Табло кнопок навігації по реченнях ========
 function initTabloSentenceCounter() {
@@ -1228,9 +1419,9 @@ function applyStatusClass(btn, s, isCurrent = false) {
         audioIcon.classList.add('status-icon-corner');
         audioIcon.classList.add('audio-status-done');
         if (perfect === 1) {
-            audioIcon.classList.add('text-status-perfect');
+            audioIcon.classList.add('audio-status-perfect');
         } else if (corrected === 1) {
-            audioIcon.classList.add('text-status-corrected');
+            audioIcon.classList.add('audio-status-corrected');
         }
         audioIcon.innerHTML = '<i data-lucide="mic-off" style="width: 12px; height: 12px;"></i>';
         btn.appendChild(audioIcon);
@@ -1747,9 +1938,7 @@ function initSpeechRecognition() {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
-    recognition.lang = languageCodes[LANGUAGE_ORIGINAL.language_cod] || 'en-US';
-    console.log('LANGUAGE_ORIGINAL:', LANGUAGE_ORIGINAL);
-    console.log('languageCodes[LANGUAGE_ORIGINAL]:', languageCodes[LANGUAGE_ORIGINAL]);
+    recognition.lang = langCodeUrl; // Используем переданный язык
     console.log('Recognition language set to:', recognition.lang);
 
     recognition.interimResults = true;
@@ -1957,7 +2146,53 @@ function stopVisualization() {
 
 
 // ===== Инициализация диктанта =================================================================== 
+// ===== Инициализация диктанта =================================================================== 
+// ===== Инициализация диктанта =================================================================== 
+function loadDictationData() {
+    console.log('=======================loadDictationData:');
+    const dictationDataElement = document.getElementById('dictation-data');
+    if (!dictationDataElement) {
+        console.error('Элемент dictation-data не найден');
+        return false;
+    }
+
+    try {
+        // Загружаем предложения
+        const sentencesJson = dictationDataElement.dataset.sentences;
+        allSentences = JSON.parse(sentencesJson);
+        
+        // Загружаем метаданные диктанта
+        currentDictation.id = dictationDataElement.dataset.dictationId || '';
+        currentDictation.language_original = dictationDataElement.dataset.languageOriginal || '';
+        currentDictation.language_translation = dictationDataElement.dataset.languageTranslation || '';
+        currentDictation.title_orig = dictationDataElement.dataset.titleOrig || '';
+         // Используем LanguageManager для получения country_cod_url
+        if (window.LanguageManager && typeof window.LanguageManager.getCountryCodeUrl === 'function') {
+            currentDictation.language_cod_url = window.LanguageManager.getCountryCodeUrl(currentDictation.language_original);
+        } else {
+            console.warn('LanguageManager не доступен, используем fallback');
+            currentDictation.language_cod_url = `${currentDictation.language_original}-${currentDictation.language_original.toUpperCase()}`;
+        }
+
+        console.log('Загружено предложений:', allSentences.length);
+        console.log('Данные диктанта:', currentDictation);
+        
+        return true;
+    } catch (error) {
+        console.error('Ошибка загрузки данных диктанта:', error);
+        return false;
+    }
+}
+
+
 function initializeDictation() {
+    // Сначала загружаем данные
+    console.log('=======================initializeDictation:');
+    if (!loadDictationData()) {
+        alert('Ошибка загрузки данных диктанта');
+        return;
+    }
+    
     // Рисуем таблицу так, чтобы ВСЁ было отмечено
     renderSelectionTable();
 
@@ -2141,9 +2376,14 @@ async function loadAudio() {
 
 // Инициализация при загрузке -------------------------------------------------------
 // startNewGame
-document.addEventListener("DOMContentLoaded", function () {
+// document.addEventListener("DOMContentLoaded", function () {
+function onloadInitializeDictation() {
+    console.log('=======================document.addEventListener("DOMContentLoaded", function () {:');
     initializeDictation();
     loadLanguageCodes();
+    initializeUser(); // Инициализируем пользователя
+    setupExitHandlers(); // Настраиваем обработчики выхода
+
 
     // Проверка поддерживаемых аудиоформатов
     //console.group("Поддержка аудиоформатов:");
@@ -2175,8 +2415,105 @@ document.addEventListener("DOMContentLoaded", function () {
     renderUserAudioTablo();
     setRecordStateIcon('square');  // ← инициализируем “квадрат” по умолчанию
     refreshAudioUIForCurrentSentence();
+
+    // НОВЫЙ КОД ДЛЯ ИНИЦИАЛИЗАЦИИ ДИКТАНТА
+    // ===== Инициализация диктанта =====
+    // function initializeDictation() {
+    //     // Рисуем таблицу так, чтобы ВСЁ было отмечено
+    //     renderSelectionTable();
+
+    //     // Показываем модальное окно сразу
+    //     startModal.style.display = 'flex';
+    //     confirmStartBtn.focus();
+    // }
+
+    // Инициализация полей ввода последовательности воспроизведения
+    function initPlaySequenceInputs() {
+        const inputs = document.querySelectorAll('.play-sequence-input');
+
+        inputs.forEach(input => {
+            // Валидация при вводе
+            input.addEventListener('input', (e) => {
+                validatePlaySequenceInput(e.target);
+            });
+
+            // Валидация при вставке
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pastedText = (e.clipboardData || window.clipboardData).getData('text').toLowerCase();
+                const filteredText = pastedText.replace(/[^to]/g, '').slice(0, 5);
+                input.value = filteredText;
+            });
+
+            // Валидация при потере фокуса
+            input.addEventListener('blur', (e) => {
+                validatePlaySequenceInput(e.target);
+            });
+        });
+    }
+
+    // Функция для валидации ввода последовательности воспроизведения
+    function validatePlaySequenceInput(input) {
+        const value = input.value.toLowerCase();
+        const validChars = /^[to]*$/;
+
+        if (value && !validChars.test(value)) {
+            // Удаляем недопустимые символы
+            input.value = value.replace(/[^to]/g, '');
+        }
+
+        // Ограничиваем длину
+        if (input.value.length > 5) {
+            input.value = input.value.slice(0, 5);
+        }
+    }
+
+    // Установка значений по умолчанию для последовательностей воспроизведения
+    document.getElementById('playSequenceStart').value = playSequenceStart;
+    document.getElementById('playSequenceTypo').value = playSequenceTypo;
+    document.getElementById('playSequenceSuccess').value = playSequenceSuccess;
+    
+    initPlaySequenceInputs();
+    
+    // Обработчик клика на часы для паузы
+    const timerButton = document.querySelector('.stat-btn.timer');
+    if (timerButton) {
+        timerButton.addEventListener('click', function () {
+            if (pauseModal.style.display === 'flex') {
+                resumeGame();
+            } else {
+                pauseGame();
+            }
+        });
+
+        // Убираем disabled атрибут чтобы кнопка была кликабельной
+        timerButton.removeAttribute('disabled');
+    }
+
+    // Обработчики для отслеживания активности пользователя
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+
+    activityEvents.forEach(eventName => {
+        document.addEventListener(eventName, function () {
+            resetInactivityTimer();
+        }, true);
+    });
+
+    // Клавиша Escape для паузы
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            if (pauseModal.style.display === 'flex') {
+                resumeGame();
+            } else {
+                pauseGame();
+            }
+            event.preventDefault();
+        }
+    });
+
     // startTimer();
-});
+
+}
 
 inputField.addEventListener('input', function () {
     const plainText = inputField.innerText;

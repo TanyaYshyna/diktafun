@@ -12,7 +12,8 @@
   --color-button-yellow: #fceba3ff;  
   --color-button-orange: #f9d6a1ff;  
   --color-button-orange66: #f9d6a1;  
-  --color-button-pink: #f5c0caff;  
+  --color-button-pink: #f5c0caff; 
+  --color-button-pink-min: rgb(248, 238, 240);  
   --color-button-purple: #c8c9fbff;  
 
   --color-button-text-transparent: rgb(165, 175, 179);  

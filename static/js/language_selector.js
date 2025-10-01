@@ -4,18 +4,17 @@
 // learning-list - список изучаемых языков с чекбоксами
 // flag-combo - комбинация флагов (изучаемый → родной)
 // header-selector - выпадающий селектор для шапки
-// profile - полный набор для профиля
-// registration - для регистрации (родной + изучаемый
+// profile-panels - ДВЕ ПАНЕЛИ для профиля (родной + изучаемые)
+// registration - для регистрации (родной + изучаемый)
 class LanguageSelector {
     constructor(options = {}) {
         this.options = {
             container: null,
-            mode: 'native-selector', // 'native-selector', 'learning-selector', 'learning-list', 'flag-combo', 'header-selector'
+            mode: 'native-selector', // 'native-selector', 'learning-selector', 'learning-list', 'flag-combo', 'header-selector', 'profile-panels'
             selectorType: 'native',
             nativeLanguage: 'en',
             learningLanguages: ['en'],
             currentLearning: 'en',
-            maxLearningLanguages: 5,
             languageData: null,
             onLanguageChange: null,
             ...options
@@ -31,7 +30,6 @@ class LanguageSelector {
 
         this.init();
     }
-
 
     async init() {
         try {
@@ -74,15 +72,18 @@ class LanguageSelector {
     createNativeSelector() {
         const currentValue = this.options.nativeLanguage;
         const availableLanguages = Object.keys(this.languageData);
+        // <label class="language-label">Родной язык</label>
+        // <span class="arrow">▼</span>
 
         return `
             <div class="language-selector-group" data-selector-type="native">
-                <label class="language-label">Родной язык</label>
+
                 <div class="custom-select-wrapper">
                     <div class="custom-select-trigger">
                         ${this.createFlagElement(currentValue)} 
                         ${this.getLanguageName(currentValue)}
-                        <span class="arrow">▼</span>
+                        <i data-lucide="chevron-down"></i>
+                        
                     </div>
                     <div class="custom-select-options">
                         ${availableLanguages.map(code => `
@@ -110,19 +111,25 @@ class LanguageSelector {
 
     createLearningSelector() {
         const currentValue = this.options.currentLearning;
-        // В режиме profile используем только изучаемые языки, в registration - все языки
-        const availableLanguages = this.options.mode === 'profile'
+        // В режиме profile-panels используем только изучаемые языки, в registration - все языки
+        const availableLanguages = this.options.mode === 'profile-panels'
             ? this.options.learningLanguages
             : Object.keys(this.languageData);
 
+        // Убедимся, что текущий язык есть в доступных
+        if (!availableLanguages.includes(currentValue) && availableLanguages.length > 0) {
+            this.options.currentLearning = availableLanguages[0];
+        }
+        // <label class="language-label">Текущий изучаемый язык</label>
         return `
         <div class="language-selector-group" data-selector-type="learning">
-            <label class="language-label">Текущий изучаемый язык</label>
+            
             <div class="custom-select-wrapper">
                 <div class="custom-select-trigger">
                     ${this.createFlagElement(currentValue)} 
                     ${this.getLanguageName(currentValue)}
                     <i data-lucide="chevron-down"></i>
+                        
                 </div>
                 <div class="custom-select-options">
                     ${availableLanguages.map(code => `
@@ -148,74 +155,79 @@ class LanguageSelector {
         `;
     }
 
-    // Новый метод для выпадающего списка только изучаемых языков
-    // Создаем новый метод для dropdown с изучаемыми языками
-    createLearningLanguagesDropdown() {
-        const currentValue = this.options.currentLearning;
-        // Берем только изучаемые языки, а не все доступные
-        const availableLanguages = this.options.learningLanguages;
+createLearningList() {
+    const currentLearning = this.options.currentLearning;
+    const learningLangs = this.options.learningLanguages;
+
+    return `
+    <div class="language-selector-group">
+        <label class="language-label">Изучаемые языки</label>
+        <div class="learning-languages-list">
+            ${Object.entries(this.languageData).map(([code, data]) => {
+        const isSelected = learningLangs.includes(code);
+        const isCurrent = code === currentLearning;
+        const languageName = this.getLanguageName(code);
+
+        // Определяем иконку для чекбокса
+        let checkboxIcon = 'circle'; // ⭕ по умолчанию для невыбранных
+        let iconStyle = 'opacity: 0.3;'; // Стиль для невыбранных
+        if (isSelected) {
+            checkboxIcon = isCurrent ? 'circle-check-big' : 'circle-chevron-down'; // ✅ для текущего, 🔽 для выбранных но не текущих
+            iconStyle = ''; // Убираем прозрачность для выбранных
+        }
 
         return `
-        <div class="language-selector-group" data-selector-type="learning">
-            <div class="custom-select-wrapper">
-                <div class="custom-select-options" style="display: block; position: relative; top: 0; box-shadow: none; border: none;">
-                    ${availableLanguages.map(code => `
-                        <div class="custom-option ${code === currentValue ? 'selected' : ''}" 
-                             data-value="${code}">
-                            ${this.createFlagElement(code)}
-                            <span class="option-text">
-                                <span class="language-name">${this.getLanguageName(code)}</span>
-                            </span>
-                        </div>
-                    `).join('')}
+                <div class="language-item ${isSelected ? 'selected' : ''}" data-lang="${code}">
+                    <label class="language-checkbox">
+                        <input type="checkbox" ${isSelected ? 'checked' : ''} style="display: none;">
+                        <i data-lucide="${checkboxIcon}" class="checkbox-icon ${isSelected ? 'selected' : ''} ${isCurrent ? 'current' : ''}" style="${iconStyle}"></i>
+                        ${this.createFlagElement(code)} 
+                        <span class="language-name">${languageName}</span>
+                    </label>
+                    ${isSelected ? `
+                        <button class="set-current-btn ${isCurrent ? 'active' : ''}" 
+                                data-lang="${code}"
+                                title="${isCurrent ? 'Текущий язык изучения' : 'Сделать текущим языком изучения'}">
+                            <i data-lucide="${isCurrent ? 'circle-check-big' : 'circle-chevron-down'}" class="current-icon"></i>
+                        </button>
+                    ` : ''}
                 </div>
-            </div>
+            `;
+    }).join('')}
         </div>
+    </div>
     `;
-    }
+}
 
-
-    createLearningList() {
-        const currentLearning = this.options.currentLearning;
-        const learningLangs = this.options.learningLanguages;
-        console.warn('********** this.languageData', this.languageData);
-        console.warn('********** currentLearning', currentLearning);
-        console.warn('********** learningLangs', learningLangs);
-
+    // НОВЫЙ МЕТОД: создание двухпанельной структуры для профиля
+    createProfilePanels() {
         return `
-        <div class="language-selector-group">
-            <label class="language-label">Изучаемые языки</label>
-            <div class="learning-languages-list">
-                ${Object.entries(this.languageData).map(([code, data]) => {
-            const isSelected = learningLangs.includes(code);
-            const isCurrent = code === currentLearning;
-            const languageName = this.getLanguageName(code);
-
-            return `
-                        <div class="language-item ${isSelected ? 'selected' : ''}" data-lang="${code}">
-                            <label class="language-checkbox">
-                                <input type="checkbox" ${isSelected ? 'checked' : ''} 
-                                       ${learningLangs.length >= this.options.maxLearningLanguages && !isSelected ? 'disabled' : ''}>
-                                ${this.createFlagElement(code)} 
-                                <span class="language-name">${languageName}</span>
-                            </label>
-                            ${isSelected ? `
-                                <button class="set-current-btn ${isCurrent ? 'active' : ''}" 
-                                        data-lang="${code}"
-                                        title="Сделать текущим языком изучения">
-                                    <i data-lucide="mic${isCurrent ? '' : '-off'}"></i>
-                                </button>
-                            ` : ''}
-                        </div>
-                    `;
-        }).join('')}
-            </div>
-            ${learningLangs.length >= this.options.maxLearningLanguages ? `
-                <div class="max-languages-warning">
-                    Максимум ${this.options.maxLearningLanguages} языков для изучения
+            <div class="language-panels-container">
+                <!-- Левая панель - Родной язык -->
+                <div class="language-panel native-panel">
+                    <h3>Родной язык</h3>
+                    <div class="panel-content">
+                        ${this.createNativeSelector()}
+                    </div>
                 </div>
-            ` : ''}
-        </div>
+
+                <!-- Правая панель - Изучаемые языки -->
+                <div class="language-panel learning-panel">
+                    <h3>Изучаемые языки</h3>
+                    <div class="panel-content">
+                        <!-- Текущий изучаемый язык -->
+                        <div class="current-learning-section">
+                            ${this.createLearningSelector()}
+                        </div>
+                        
+                        <!-- Список изучаемых языков -->
+                        <div class="learning-list-section">
+                            <h4>Мои изучаемые языки</h4>
+                            ${this.createLearningList()}
+                        </div>
+                    </div>
+                </div>
+            </div>
         `;
     }
 
@@ -238,7 +250,6 @@ class LanguageSelector {
         const availableLanguages = this.options.learningLanguages;
 
         return `
-        
             <div class="header-flag-combo">
                 ${this.createFlagElement(learningLang)}
                 <i data-lucide="arrow-big-right"></i>
@@ -255,10 +266,9 @@ class LanguageSelector {
                     `).join('')}
                 </div>
             </div>
-        \
-    `;
+        `;
     }
-    // Метод для обновления кнопки с флагами
+
     updateHeaderButton() {
         if (this.options.mode !== 'header-selector') return;
 
@@ -274,7 +284,6 @@ class LanguageSelector {
         ${this.createFlagElement(nativeLang)}
         `;
 
-        // Обновляем иконки Lucide
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
@@ -310,7 +319,10 @@ class LanguageSelector {
             case 'header-selector':
                 html = this.createHeaderSelector();
                 break;
-            case 'profile':
+            case 'profile-panels': // НОВЫЙ РЕЖИМ
+                html = this.createProfilePanels();
+                break;
+            case 'profile': // старый режим для обратной совместимости
                 html = this.createNativeSelector() + this.createLearningList() + this.createLearningSelector();
                 break;
             case 'registration':
@@ -322,12 +334,6 @@ class LanguageSelector {
 
         console.log('📝 HTML сгенерирован, длина:', html.length);
         this.options.container.innerHTML = html;
-        console.log('🔍🔍🔍 this.options.container',this.options.container);
- 
-        // Проверяем что отобразилось
-        setTimeout(() => {
-            console.log('🔍 Содержимое контейнера:', this.options.container.innerHTML);
-        }, 100);
 
         this.bindEvents();
 
@@ -335,7 +341,7 @@ class LanguageSelector {
             lucide.createIcons();
         }
     }
-    
+
     bindEvents() {
         // Обработчики для кастомных селекторов
         const customSelects = this.options.container.querySelectorAll('.custom-select-wrapper');
@@ -360,35 +366,20 @@ class LanguageSelector {
                 option.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const value = option.dataset.value;
+                    console.log('🎯 Выбран язык:', value);
 
-                    if (hiddenSelect) {
-                        hiddenSelect.value = value;
-                    }
-
+                    // Обновляем данные в зависимости от типа селектора
                     if (selectorType === 'native') {
                         this.options.nativeLanguage = value;
                     } else if (selectorType === 'learning') {
                         this.options.currentLearning = value;
-                        // Для регистрации обновляем и список изучаемых
-                        if (this.options.mode === 'registration') {
-                            this.options.learningLanguages = [value];
-                        }
                     }
 
-                    // Обновляем триггер только если это не header-selector
-                    if (this.options.mode !== 'header-selector') {
-                        trigger.innerHTML = `
-                        ${this.createFlagElement(value)} 
-                        ${this.getLanguageName(value)}
-                        <span class="arrow">▼</span>
-                    `;
-                    }
-
-                    options.style.display = 'none';
-
-                    // Для header-selector обновляем кнопку
-                    if (this.options.mode === 'header-selector') {
-                        this.updateHeaderButton();
+                    // В режиме profile-panels перерисовываем только нужные части
+                    if (this.options.mode === 'profile-panels') {
+                        this.render();
+                    } else {
+                        this.render();
                     }
 
                     this.triggerChange();
@@ -415,11 +406,13 @@ class LanguageSelector {
                     }
                 } else {
                     this.options.learningLanguages = this.options.learningLanguages.filter(l => l !== lang);
+                    // Если убрали текущий изучаемый язык, выбираем первый из оставшихся
                     if (this.options.currentLearning === lang) {
                         this.options.currentLearning = this.options.learningLanguages[0] || '';
                     }
                 }
 
+                // В режиме profile-panels перерисовываем полностью для синхронизации
                 this.render();
                 this.triggerChange();
             });
@@ -438,86 +431,55 @@ class LanguageSelector {
             });
         });
 
-        // Обработчик для header selector - ДОБАВЛЯЕМ СПЕЦИАЛЬНУЮ ЛОГИКУ
-        const headerCombo = this.options.container.querySelector('.header-flag-combo');
-        const headerDropdown = this.options.container.querySelector('.header-selector-dropdown');
+        // Обработчик ТОЛЬКО для header-selector режима
+        if (this.options.mode === 'header-selector') {
+            const headerCombo = this.options.container.querySelector('.header-flag-combo');
+            const headerDropdown = this.options.container.querySelector('.header-selector-dropdown');
 
-        if (headerCombo && headerDropdown) {
-            console.log('🔄 Настройка обработчиков для header-selector');
-
-            headerCombo.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isVisible = headerDropdown.style.display === 'block';
-                headerDropdown.style.display = isVisible ? 'none' : 'block';
-                console.log('📌 Header dropdown visibility:', !isVisible);
-            });
-
-            // Обработчик для dropdown options
-            const dropdownOptions = headerDropdown.querySelectorAll('.header-dropdown-option');
-            dropdownOptions.forEach(option => {
-                option.addEventListener('click', (e) => {
+            if (headerCombo && headerDropdown) {
+                headerCombo.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const value = option.dataset.value;
-                    console.log('🎯 Выбран язык:', value);
-
-                    // Обновляем текущий язык изучения
-                    this.options.currentLearning = value;
-
-                    // Обновляем кнопку
-                    this.updateHeaderButton();
-
-                    // Скрываем dropdown
-                    headerDropdown.style.display = 'none';
-
-                    // Вызываем колбэк
-                    this.triggerChange();
+                    const isVisible = headerDropdown.style.display === 'block';
+                    headerDropdown.style.display = isVisible ? 'none' : 'block';
                 });
-            });
 
-            // Закрытие при клике вне
-            document.addEventListener('click', (e) => {
-                if (!headerCombo.contains(e.target) && !headerDropdown.contains(e.target)) {
-                    headerDropdown.style.display = 'none';
-                }
-            });
-        } else {
-            console.warn('❌ Элементы header-selector не найдены:', {
-                headerCombo: !!headerCombo,
-                headerDropdown: !!headerDropdown
-            });
-        }
+                const dropdownOptions = headerDropdown.querySelectorAll('.header-dropdown-option');
+                dropdownOptions.forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const value = option.dataset.value;
+                        console.log('🎯 Выбран язык:', value);
 
+                        this.options.currentLearning = value;
+                        this.updateHeaderButton();
+                        headerDropdown.style.display = 'none';
 
-    }
+                        this.triggerChange({
+                            nativeLanguage: this.options.nativeLanguage,
+                            learningLanguages: this.options.learningLanguages,
+                            currentLearning: value
+                        });
+                    });
+                });
 
-    // Метод для обновления кнопки header-selector
-    updateHeaderButton() {
-        if (this.options.mode !== 'header-selector') return;
-
-        const headerCombo = this.options.container.querySelector('.header-flag-combo');
-        if (!headerCombo) return;
-
-        const learningLang = this.options.currentLearning;
-        const nativeLang = this.options.nativeLanguage;
-
-        headerCombo.innerHTML = `
-        ${this.createFlagElement(learningLang)}
-        <i data-lucide="arrow-big-right"></i>
-        ${this.createFlagElement(nativeLang)}
-    `;
-
-        // Обновляем иконки Lucide
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
+                document.addEventListener('click', (e) => {
+                    if (!headerCombo.contains(e.target) && !headerDropdown.contains(e.target)) {
+                        headerDropdown.style.display = 'none';
+                    }
+                });
+            }
         }
     }
-    triggerChange() {
+
+    triggerChange(additionalData = null) {
+        const changeData = additionalData || {
+            nativeLanguage: this.options.nativeLanguage,
+            learningLanguages: [...this.options.learningLanguages],
+            currentLearning: this.options.currentLearning
+        };
+
         if (typeof this.options.onLanguageChange === 'function') {
-            this.options.onLanguageChange({
-                nativeLanguage: this.options.nativeLanguage,
-                learningLanguages: [...this.options.learningLanguages],
-                currentLearning: this.options.currentLearning
-            });
+            this.options.onLanguageChange(changeData);
         }
     }
 

@@ -155,12 +155,36 @@ class UserManager {
   }
 
   // Получение URL аватара
+  // getAvatarUrl(size = 'medium') {
+  //   if (!this.currentUser || !this.currentUser.avatar) {
+  //     return null;
+  //   }
+  //   return this.currentUser.avatar[size] || this.currentUser.avatar.medium || this.currentUser.avatar.original;
+  // }
+  // Получение URL аватара с поддержкой размеров
   getAvatarUrl(size = 'medium') {
-    if (!this.currentUser || !this.currentUser.avatar) {
-      return null;
+    try {
+      if (!this.currentUser || !this.currentUser.avatar) {
+        return '/static/icons/default-avatar-small.svg'; // Заглушка
+      }
+
+      // Поддержка разных форматов хранения аватара
+      if (typeof this.currentUser.avatar === 'string') {
+        return this.currentUser.avatar; // Простая строка URL
+      } else if (typeof this.currentUser.avatar === 'object') {
+        // Объект с размерами
+        return this.currentUser.avatar[size] ||
+          this.currentUser.avatar.medium ||
+          this.currentUser.avatar.original ||
+          '/static/icons/default-avatar-small.svg';
+      }
+    } catch (error) {
+      console.error('Ошибка получения аватара:', error);
     }
-    return this.currentUser.avatar[size] || this.currentUser.avatar.medium || this.currentUser.avatar.original;
+
+    return '/static/images/default-avatar-small.svg';
   }
+
 
   // ----------------------- ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ -----------------------
 
@@ -282,20 +306,40 @@ class UserManager {
   updateUI() {
     try {
       const userSection = document.querySelector('.user-section');
-      if (!userSection) return;
+      if (!userSection) {
+        console.warn('user-section не найден в DOM');
+        return;
+      }
 
       if (this.isAuthenticated()) {
-        //<div id="header-language-selector"></div>
+        const user = this.currentUser;
+
+        // Создаем разметку для авторизованного пользователя
         userSection.innerHTML = `        
-        <a href="/user/profile" class="username">${this.currentUser.username}</a>
-        <button class="streak">🔥 ${this.currentUser.streak_days || 0} дней подряд</button>
-        <a href="#" onclick="UM.logout(); return false;">Выйти</a>
-      `;
+                <a href="/user/profile" class="username">
+                    <span class="user-avatar-small"></span>
+                    <span class="username-text">${user.username || 'Пользователь'}</span>
+                </a>
+                <button class="streak">🔥 ${user.streak_days || 0} дней подряд</button>
+                <a href="#" onclick="UM.logout(); return false;">
+                  <i data-lucide="log-out"></i>
+                </a>
+            `;
+
+        // Обновляем аватар если возможно
+        const avatarElement = userSection.querySelector('.user-avatar-small');
+        if (avatarElement && this.getAvatarUrl) {
+          const avatarUrl = this.getAvatarUrl('small');
+          if (avatarUrl && avatarUrl !== '/static/images/default-avatar.png') {
+            avatarElement.style.backgroundImage = `url(${avatarUrl})`;
+          }
+        }
+
       } else {
         userSection.innerHTML = `
-        <a href="/user/login">Войти</a>
-        <a href="/user/register">Регистрация</a>
-      `;
+                <a href="/user/login">Войти</a>
+                <a href="/user/register">Регистрация</a>
+            `;
       }
 
       // Обновляем языковой селектор если он есть
@@ -307,82 +351,9 @@ class UserManager {
     }
   }
 
-
-  // Добавьте в класс UserManager:
-
-  // async updateProfile(updates) {
-  //   if (!this.isAuthenticated()) {
-  //     throw new Error('Not authenticated');
-  //   }
-
-  //   const response = await this._apiFetch('/profile', {
-  //     method: 'PUT',
-  //     body: updates
-  //   });
-
-  //   // Обновляем текущего пользователя
-  //   this.currentUser = { ...this.currentUser, ...response.user };
-  //   this._emitChange();
-  //   return this.currentUser;
-  // }
-
-  // async uploadAvatar(file) {
-  //   if (!file) throw new Error('No file provided');
-  //   if (!this.isAuthenticated()) throw new Error('Not authenticated');
-
-  //   const formData = new FormData();
-  //   formData.append('avatar', file);
-
-  //   const response = await this._apiFetch('/avatar', {
-  //     method: 'POST',
-  //     formData: formData
-  //   });
-
-  //   // Обновляем информацию о аватаре
-  //   this.currentUser.avatar_uploaded = response.avatar_uploaded;
-  //   this._emitChange();
-  //   return response;
-  // }
-
-  // async getAvatarUrl(size = 'large') {
-  //   if (!this.isAuthenticated()) return null;
-
-  //   try {
-  //     const response = await this._apiFetch(`/avatar?size=${size}`);
-  //     return response.avatar;
-  //   } catch (error) {
-  //     console.warn('Error loading avatar:', error);
-  //     return null;
-  //   }
-  // }
-
-
 }
 
-// Автоматическое обновление интерфейса при изменении статуса авторизации
-// UserManager.prototype.updateUI = function() {
-//   const userSection = document.querySelector('.user-section');
-//   if (!userSection) return;
 
-//   if (this.isAuthenticated()) {
-//     userSection.innerHTML = `
-//       <div id="header-language-selector"></div>
-//       <a href="/user/profile" class="username">${this.currentUser.username}</a>
-//       <button class="streak">🔥 ${this.currentUser.streak_days || 0} дней подряд</button>
-//       <a href="#" onclick="UM.logout(); return false;">Выйти</a>
-//     `;
-//   } else {
-//     userSection.innerHTML = `
-//       <a href="/user/login">Войти</a>
-//       <a href="/user/register">Регистрация</a>
-//     `;
-//   }
-// };
-
-// // Регистрируем автоматическое обновление UI
-// UserManager.prototype.onChange(function(user) {
-//   this.updateUI();
-// }.bind(UserManager.prototype));
 
 // Глобальная доступность
 if (typeof window !== 'undefined') {

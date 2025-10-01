@@ -1,4 +1,5 @@
 // Хранилище для аудио-элементов
+let userManager = null;
 const audioPlayers = {};
 
 // для дерева и модального окна к нему
@@ -40,6 +41,172 @@ const leftPanel = document.querySelector('.left-panel');
 const rightPanel = document.querySelector('.right-panel');
 let isResizing = false;
 
+
+// ------------- ПОЛЬЗОВАТЕЛЬ --------------------------------------------------   
+// ===== Управление пользователем и выходом =====
+async function initializeUser() {
+    try {
+        if (window.UM && typeof window.UM.init === 'function') {
+            userManager = window.UM;
+
+            if (!userManager.isInitialized) {
+                await userManager.init();
+            }
+
+            updateUserUI();
+        } else {
+            console.warn('UserManager не доступен');
+            setupGuestMode();
+        }
+    } catch (error) {
+        console.error('Ошибка инициализации пользователя:', error);
+        setupGuestMode();
+    }
+}
+
+function updateUserUI() {
+    const userSection = document.getElementById('user-section');
+    if (!userSection) {
+        console.warn('user-section не найден в DOM');
+        return;
+    }
+
+    if (userManager && userManager.isAuthenticated()) {
+        const user = userManager.currentUser;
+
+        // Обновляем аватар
+        const avatarElement = userSection.querySelector('.user-avatar-small');
+        if (avatarElement) {
+            if (userManager.getAvatarUrl) {
+                const avatarUrl = userManager.getAvatarUrl('small');
+                if (avatarUrl) {
+                    avatarElement.style.backgroundImage = `url(${avatarUrl})`;
+                }
+            }
+        }
+
+        // Обновляем имя пользователя
+        const usernameElement = userSection.querySelector('.username-text');
+        if (usernameElement) {
+            usernameElement.textContent = user.username || 'Пользователь';
+        }
+
+        // Обновляем streak
+        const streakElement = userSection.querySelector('.streak-days');
+        if (streakElement) {
+            streakElement.textContent = user.streak_days || 0;
+        }
+
+        // Показываем/скрываем элементы
+        const usernameLink = userSection.querySelector('.username');
+        const streakBtn = userSection.querySelector('.streak');
+        const loginLink = userSection.querySelector('a[href="/user/login"]');
+        const registerLink = userSection.querySelector('a[href="/user/register"]');
+
+        if (usernameLink) usernameLink.style.display = 'flex';
+        if (streakBtn) streakBtn.style.display = 'inline-block';
+        if (loginLink) loginLink.style.display = 'none';
+        if (registerLink) registerLink.style.display = 'none';
+
+    } else {
+        setupGuestMode();
+    }
+}
+
+function setupGuestMode() {
+    const userSection = document.getElementById('user-section');
+    if (!userSection) {
+        console.warn('user-section не найден в DOM');
+        return;
+    }
+
+    const usernameLink = userSection.querySelector('.username');
+    const streakBtn = userSection.querySelector('.streak');
+    const loginLink = userSection.querySelector('a[href="/user/login"]');
+    const registerLink = userSection.querySelector('a[href="/user/register"]');
+
+    // Безопасно изменяем стили только если элементы существуют
+    if (usernameLink) usernameLink.style.display = 'none';
+    if (streakBtn) streakBtn.style.display = 'none';
+    if (loginLink) loginLink.style.display = 'inline-block';
+    if (registerLink) registerLink.style.display = 'inline-block';
+}
+
+
+function setupExitHandlers() {
+    const exitModal = document.getElementById('exitModal');
+    const confirmExitBtn = document.getElementById('confirmExitBtn');
+    const cancelExitBtn = document.getElementById('cancelExitBtn');
+    const backButton = document.getElementById('btnBackToMain');
+
+    if (backButton) {
+        backButton.addEventListener('click', showExitModal);
+    }
+
+    if (confirmExitBtn) {
+        confirmExitBtn.addEventListener('click', () => {
+            window.location.href = "/";
+        });
+    }
+
+    if (cancelExitBtn) {
+        cancelExitBtn.addEventListener('click', hideExitModal);
+    }
+
+    if (exitModal) {
+        exitModal.addEventListener('click', (e) => {
+            if (e.target === exitModal) {
+                hideExitModal();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && exitModal && exitModal.style.display === 'flex') {
+            hideExitModal();
+        }
+    });
+}
+
+
+function showExitModal() {
+    const exitModal = document.getElementById('exitModal');
+    if (exitModal) {
+        exitModal.style.display = 'flex';
+        const cancelBtn = document.getElementById('cancelExitBtn');
+        if (cancelBtn) cancelBtn.focus();
+    }
+}
+
+function hideExitModal() {
+    const exitModal = document.getElementById('exitModal');
+    if (exitModal) {
+        exitModal.style.display = 'none';
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ------------- ДВИГАЕМ ПАНЕЛИ С АУДИО --------------------------------------------------   
+// ------------- ДВИГАЕМ ПАНЕЛИ С АУДИО --------------------------------------------------   
+// ------------- ДВИГАЕМ ПАНЕЛИ С АУДИО --------------------------------------------------   
+
 resizer.addEventListener('mousedown', (e) => {
     isResizing = true;
     document.body.style.cursor = 'col-resize';
@@ -72,9 +239,9 @@ document.addEventListener('mouseup', () => {
 });
 
 window.addEventListener('resize', () => {
-  if (waveSurfer) {
-    try { waveSurfer.setOptions({}); } catch (e) {}
-  }
+    if (waveSurfer) {
+        try { waveSurfer.setOptions({}); } catch (e) { }
+    }
 });
 
 // -------------НАВИГАЦИЯ ПО СТРОКАМ ТАБЛМЦЫ --------------------------------------------------
@@ -221,7 +388,7 @@ function togglePanel(headerElement) {
 }
 
 
-// Функция для обновления времени в текущей строке
+// Функция для обновления времени в текущей строке--------------------------------------------
 function updateCurrentRowTimes(start, end) {
     if (!selectedKey) return;
 
@@ -1456,40 +1623,40 @@ async function loadExistingDictation(initData) {
 // Склеивает пары строк в формат:
 // English line, \n /*Русская строка,
 function formatPairedSentences(originalSentences, translationSentences) {
-  // сделаем быстрый доступ к переводу по key
-  const tMap = new Map((translationSentences || []).map(s => [s.key, s.text || ""]));
+    // сделаем быстрый доступ к переводу по key
+    const tMap = new Map((translationSentences || []).map(s => [s.key, s.text || ""]));
 
-  // придерживаемся порядка key (000, 001, ...)
-  const sorted = [...(originalSentences || [])]
-    .sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
+    // придерживаемся порядка key (000, 001, ...)
+    const sorted = [...(originalSentences || [])]
+        .sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
 
-  const lines = [];
-  for (const o of sorted) {
-    const oText = (o && o.text) ? o.text : "";
-    const tText = tMap.get(o?.key) ?? "";
+    const lines = [];
+    for (const o of sorted) {
+        const oText = (o && o.text) ? o.text : "";
+        const tText = tMap.get(o?.key) ?? "";
 
-    // Добавляем запятую в конце каждой строки, как в твоём примере
-    lines.push(`${oText},`);
-    lines.push(`/*${tText},`);
-  }
-  return lines.join("\n");
+        // Добавляем запятую в конце каждой строки, как в твоём примере
+        lines.push(`${oText},`);
+        lines.push(`/*${tText},`);
+    }
+    return lines.join("\n");
 }
 
 function applyPairedOutput(original_data, translation_data) {
-  const pairedText = formatPairedSentences(
-    original_data?.sentences || [],
-    translation_data?.sentences || []
-  );
+    const pairedText = formatPairedSentences(
+        original_data?.sentences || [],
+        translation_data?.sentences || []
+    );
 
-  // запишем результат в textarea с id="text" (тот, что в панели "Текст по фразам")
-  const textArea = document.getElementById('text');
-  if (textArea) textArea.value = pairedText;
+    // запишем результат в textarea с id="text" (тот, что в панели "Текст по фразам")
+    const textArea = document.getElementById('text');
+    if (textArea) textArea.value = pairedText;
 
-  // если у перевода есть title — положим его в input#title_translation
-  const titleInput = document.getElementById('title_translation');
-  if (titleInput && translation_data?.title) {
-    titleInput.value = translation_data.title;
-  }
+    // если у перевода есть title — положим его в input#title_translation
+    const titleInput = document.getElementById('title_translation');
+    if (titleInput && translation_data?.title) {
+        titleInput.value = translation_data.title;
+    }
 }
 
 
@@ -1569,8 +1736,10 @@ async function renderSentenceTable(original_sentences = [], translation_sentence
 
 
 // Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
+// document.addEventListener('DOMContentLoaded', () => {
+function  initDictationGenerator() {
     const path = window.location.pathname;
+
 
     // 1. Получаем JSON как строку
     const initRaw = document.getElementById("init-data")?.textContent;
@@ -1589,63 +1758,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     setupButtons();
-});
+    initializeUser(); // Инициализируем пользователя
+    setupExitHandlers(); // Настраиваем обработчики выхода
+
+}
 
 
 (function initSplitView() {
-  const container = document.querySelector('.panels-wagons');
-  if (!container) return;
+    const container = document.querySelector('.panels-wagons');
+    if (!container) return;
 
-  const left  = container.querySelector('.left-panel');
-  const right = container.querySelector('.right-panel');
-  const resizer = container.querySelector('.resizer');
-  if (!left || !right || !resizer) return;
+    const left = container.querySelector('.left-panel');
+    const right = container.querySelector('.right-panel');
+    const resizer = container.querySelector('.resizer');
+    if (!left || !right || !resizer) return;
 
-  const LEFT_MIN  = 240;  // те же, что в CSS min-width
-  const RIGHT_MIN = 240;
+    const LEFT_MIN = 240;  // те же, что в CSS min-width
+    const RIGHT_MIN = 240;
 
-  let dragging = false;
+    let dragging = false;
 
-  const startDrag = (clientX) => {
-    dragging = true;
-    container.classList.add('resizing');
-  };
+    const startDrag = (clientX) => {
+        dragging = true;
+        container.classList.add('resizing');
+    };
 
-  const applySplitAt = (clientX) => {
-    const rect = container.getBoundingClientRect();
-    // x — позиция внутри контейнера
-    let x = clientX - rect.left;
+    const applySplitAt = (clientX) => {
+        const rect = container.getBoundingClientRect();
+        // x — позиция внутри контейнера
+        let x = clientX - rect.left;
 
-    // уважаем минимальные ширины
-    x = Math.max(LEFT_MIN, Math.min(x, rect.width - RIGHT_MIN));
+        // уважаем минимальные ширины
+        x = Math.max(LEFT_MIN, Math.min(x, rect.width - RIGHT_MIN));
 
-    const leftPercent  = (x / rect.width) * 100;
-    const rightPercent = 100 - leftPercent;
+        const leftPercent = (x / rect.width) * 100;
+        const rightPercent = 100 - leftPercent;
 
-    // фиксируем basis для обеих панелей
-    left.style.flex  = `0 0 ${leftPercent}%`;
-    right.style.flex = `0 0 ${rightPercent}%`;
+        // фиксируем basis для обеих панелей
+        left.style.flex = `0 0 ${leftPercent}%`;
+        right.style.flex = `0 0 ${rightPercent}%`;
 
-    // если есть WaveSurfer — пихнём его перерисоваться
-    if (window.waveSurfer) {
-      requestAnimationFrame(() => {
-        try { waveSurfer.setOptions({}); } catch (e) {}
-      });
-    }
-  };
+        // если есть WaveSurfer — пихнём его перерисоваться
+        if (window.waveSurfer) {
+            requestAnimationFrame(() => {
+                try { waveSurfer.setOptions({}); } catch (e) { }
+            });
+        }
+    };
 
-  const onMouseDown = (e) => { e.preventDefault(); startDrag(e.clientX); };
-  const onMouseMove = (e) => { if (dragging) applySplitAt(e.clientX); };
-  const onMouseUp   = () => { dragging = false; container.classList.remove('resizing'); };
+    const onMouseDown = (e) => { e.preventDefault(); startDrag(e.clientX); };
+    const onMouseMove = (e) => { if (dragging) applySplitAt(e.clientX); };
+    const onMouseUp = () => { dragging = false; container.classList.remove('resizing'); };
 
-  resizer.addEventListener('mousedown', onMouseDown);
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup', onMouseUp);
+    resizer.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
 
-  // Тач-события для мобильных
-  resizer.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientX), { passive: true });
-  document.addEventListener('touchmove',  (e) => dragging && applySplitAt(e.touches[0].clientX), { passive: true });
-  document.addEventListener('touchend',   onMouseUp);
+    // Тач-события для мобильных
+    resizer.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientX), { passive: true });
+    document.addEventListener('touchmove', (e) => dragging && applySplitAt(e.touches[0].clientX), { passive: true });
+    document.addEventListener('touchend', onMouseUp);
 })();
 
 // ====================================================================================

@@ -310,21 +310,3 @@
 }
 
 /* ========================================================================= */
-/* Стили для header-language-selector */
-#header-language-selector {
-  display: inline-flex;            /* надежнее в flex-контексте */
-  align-items: center;
-  position: relative;
-  z-index: 1000;
-  min-width: 80px;                 /* чтобы не схлопнулся */
-}
-
-#header-language-selector .header-flag-combo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0px;
-  padding: 6px 10px;
-  background: var(--color-background-light, #f8f9fa);
-  border-radius: 6px;
-  border: 1px solid var(--color-border, #dee2e6);
-}

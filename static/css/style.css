@@ -236,7 +236,7 @@ button:active {
 
 /* pink */
 .button-color-pink {
-    background-color: var(--color-button-pink);
+    background-color: var(--color-button-pink-min);
     color: var(--color-button-text-pink);
     border: 1px solid transparent; /* зарезервировать место под рамку */
     box-shadow: 0 0 0 0 transparent; /* зарезервировать место под тень */
@@ -442,7 +442,7 @@ select {
 
 .language-select:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: var(--color-button-text-pink);
 }
 
 .learning-languages-list {
@@ -469,7 +469,7 @@ select {
 }
 
 .language-item.selected {
-    background-color: #e3f2fd;
+    background-color: var(--color-button-pink-min);
 }
 
 .language-checkbox {
@@ -512,7 +512,7 @@ select {
 
 .set-current-btn:hover {
     background-color: #e9ecef;
-    color: #007bff;
+    color: var(--color-button-text-pink);
 }
 
 .set-current-btn.active {
@@ -720,3 +720,455 @@ select {
 }
 /* ------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------ */
+/* -----------------------аватар и пользователь в шапке ------------------- */
+
+/* Стили для маленького аватара */
+.user-avatar-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--color-button-lightgreen);
+    display: inline-block;
+    margin-right: 8px;
+    background-size: cover;
+    background-position: center;
+}
+
+.username {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.username-text {
+    font-weight: 500;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* Стили для модального окна выхода */
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.button-color-red {
+    background-color: var(--color-button-red);
+    color: white;
+}
+
+.button-color-red:hover {
+    background-color: var(--color-button-red-dark);
+}
+
+/* Адаптивность для шапки */
+@media (max-width: 768px) {
+    .user-section {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .username-text {
+        display: none;
+    }
+}
+/* ------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------ */
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.logout-btn:hover {
+    background-color: var(--color-button-lightgreen);
+}
+
+/* ------------------------------------------------------------------------ */
+/* ---------------- CSS стили для двухпанельной структуры языков ---------- */
+/* ------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------ */
+/* Стили для двухпанельной структуры LanguageSelector */
+.language-panels-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin: 20px 0;
+}
+
+.language-panel {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.language-panel h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid var(--color-button-text-pink);
+    padding-bottom: 10px;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.language-panel h4 {
+    color: #555;
+    margin-bottom: 15px;
+    font-size: 1em;
+    font-weight: 500;
+}
+
+.panel-content {
+    margin-top: 15px;
+}
+
+.current-learning-section {
+    margin-bottom: 25px;
+}
+
+.learning-list-section {
+    border-top: 1px solid #dee2e6;
+    padding-top: 20px;
+}
+
+/* Стили для LanguageSelector внутри панелей */
+.language-panel .language-selector-group {
+    margin-bottom: 15px;
+}
+
+.language-panel .language-label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+    color: #495057;
+}
+
+.language-panel .learning-languages-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    padding: 10px;
+    background: white;
+}
+
+/* Стили для кастомных селекторов внутри панелей */
+.language-panel .custom-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.language-panel .custom-select-trigger {
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: border-color 0.3s;
+}
+
+.language-panel .custom-select-trigger:hover {
+    border-color: var(--color-button-text-pink);
+}
+
+.language-panel .custom-select-options {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.language-panel .custom-option {
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.language-panel .custom-option:hover {
+    background: #f8f9fa;
+}
+
+.language-panel .custom-option.selected {
+    background: var(--color-button-pink-min);
+    color: var(--color-button-text-pink);
+}
+
+.language-panel .language-flag {
+    width: 20px;
+    height: 15px;
+    object-fit: cover;
+    border-radius: 2px;
+}
+
+/* Стили для списка изучаемых языков */
+.language-panel .language-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.language-panel .language-item:last-child {
+    border-bottom: none;
+}
+
+.language-panel .language-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    flex-grow: 1;
+}
+
+.language-panel .language-checkbox input[type="checkbox"] {
+    margin: 0;
+}
+
+.language-panel .set-current-btn {
+    background: none;
+    border: 1px solid #6c757d;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.language-panel .set-current-btn:hover {
+    background: #f8f9fa;
+}
+
+.language-panel .set-current-btn.active {
+    background: white;
+    border-color: var(--color-button-text-pink);
+    color: white;
+}
+
+.language-panel .set-current-btn.active:hover {
+    background: var(--color-button-pink-min);
+}
+
+/* Текстовые стили */
+.language-panel .option-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.language-panel .language-name {
+    font-weight: 500;
+}
+
+.language-panel .native-name {
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .language-panels-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .language-panel {
+        padding: 15px;
+    }
+    
+    .language-panel .learning-languages-list {
+        max-height: 200px;
+    }
+}
+
+/* Анимации */
+.language-panel .custom-select-options {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Стили для скрытых select элементов */
+.language-select-hidden {
+    display: none !important;
+}
+
+/* Стили для иконок Lucide */
+.language-panel [data-lucide] {
+    width: 16px;
+    height: 16px;
+}
+
+/* Улучшенные стили для выбранных элементов */
+.language-panel .language-item.selected {
+    background: var(--color-button-pink-min);
+    margin: 2px 0;
+    padding: 8px 10px;
+    border-radius: 5px;
+}
+
+.language-panel .language-item.selected .language-name {
+    font-weight: 600;
+    color: var(--color-button-text-pink);
+}
+
+/* ------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------ */
+
+/* Стили для иконок Lucide в LanguageSelector */
+.language-panel [data-lucide] {
+    width: 20px;
+    height: 20px;
+    color: var(--color-button-text-pink); /* Серый цвет для хорошей видимости */
+    stroke: currentColor;
+}
+
+.language-panel .custom-select-trigger [data-lucide] {
+    margin-left: auto; /* Размещаем стрелку справа */
+}
+
+.language-panel .custom-option [data-lucide] {
+    color: inherit; /* Наследует цвет родителя */
+}
+
+.language-panel .set-current-btn [data-lucide] {
+    width: 18px;
+    height: 18px;
+}
+/* ------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------ */
+/* ---------------------------------------------------------------------- */
+.language-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    flex-grow: 1;
+    min-height: 24px;
+    /* Гарантируем одинаковое выравнивание для всех */
+    padding-left: 0;
+}
+
+.checkbox-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    min-width: 18px;
+    /* Гарантируем что иконка всегда занимает место */
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* ⭕ Circle - невыбранный язык */
+.checkbox-icon:not(.selected) {
+    color: #9ca3af; /* серый */
+}
+
+/* ✅ Circle-check-big - текущий изучаемый язык */
+.checkbox-icon.current {
+    color: var(--color-button-text-pink); /* синий */
+}
+
+/* 🔽 Circle-chevron-down - выбранный, но не текущий */
+.checkbox-icon.selected:not(.current) {
+    color: var(--color-button-text-orange); /* зеленый */
+}
+
+.language-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+    min-height: 40px;
+}
+
+/* ДОБАВЛЕНО: Отступ для невыбранных языков */
+.language-item:not(.selected) .language-checkbox {
+    margin-left: 10px; /* 18px (ширина иконки) + 8px (gap) */
+}
+
+/* Гарантируем что все элементы имеют одинаковую структуру */
+.language-item .language-checkbox {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.language-item:hover {
+    background-color: #f3f4f6;
+}
+
+.language-item.selected {
+    background-color: #eff6ff;
+}
+
+.set-current-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+}
+
+.set-current-btn:hover {
+    background-color: #e5e7eb;
+    opacity: 1;
+}
+
+.set-current-btn.active {
+    opacity: 1;
+}
+
+/* ✅ Circle-check-big в кнопке - текущий язык */
+.set-current-btn.active .current-icon {
+    color: var(--color-button-text-pink);
+}
+
+/* 🔽 Circle-chevron-down в кнопке - выбранный но не текущий */
+.set-current-btn:not(.active) .current-icon {
+    color: var(--color-button-text-orange);
+}
+
+.current-icon {
+    width: 18px;
+    height: 18px;
+}
