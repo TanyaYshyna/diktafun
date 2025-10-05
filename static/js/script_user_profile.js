@@ -30,14 +30,15 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 // Загрузка данных пользователя
 function loadUserData() {
-    const user = UM.currentUser;
+    const userData = UM.userData;
+    console.error('✅✅✅✅✅✅✅✅✅✅ userData:', userData);
     originalData = {
-        username: user.username,
-        email: user.email,
-        native_language: user.native_language || 'ru',
-        learning_languages: user.learning_languages || ['en'],
-        current_learning: user.current_learning || user.learning_languages?.[0] || 'en',
-        avatar: user.avatar || {}
+        username: userData.username,
+        email: userData.email,
+        native_language: userData.native_language || 'ru',
+        learning_languages: userData.learning_languages || ['en'],
+        current_learning: userData.current_learning || userData.learning_languages?.[0] || 'en',
+        avatar: userData.avatar || {}
     };
 
     document.getElementById('username').value = originalData.username;

@@ -1,3 +1,13 @@
+if (!window.UM) {
+    console.error('❌ UserManager не загружен! Проверьте порядок загрузки скриптов');
+    // Создаем заглушку
+    window.UM = {
+        isAuthenticated: () => false,
+        getCurrentUser: () => null,
+        updateProfile: async () => { throw new Error('UM not loaded') }
+    };
+}
+
 // Берём контейнер для сетки карточек
 const GRID = document.getElementById('dictationsGrid');
 let language_original = "en";
@@ -13,8 +23,10 @@ console.log('LanguageManager:', window.LanguageManager);
 
 
 async function saveLanguageSettings(values) {
-    // Проверяем авторизацию
-    const isAuthenticated = window.UM.isAuthenticated();
+    // ✅ Безопасная проверка метода isAuthenticated
+    const isAuthenticated = window.UM && typeof window.UM.isAuthenticated === 'function'
+        ? window.UM.isAuthenticated()
+        : false;
 
     if (!isAuthenticated) {
         console.log('Пользователь не авторизован, настройки не сохраняются');
@@ -206,9 +218,12 @@ function updateLanguageSelector(userData) {
 // Функция для загрузки данных пользователя
 async function initializeUserData() {
     try {
-        // Проверяем авторизацию через UserManager (JWT)
-        const isAuthenticated = window.UM.isAuthenticated();
-        console.log('Проверка авторизации через JWT:', isAuthenticated);
+        // Безопасная проверка на существование метода
+        const isAuthenticated = window.UM && typeof window.UM.isAuthenticated === 'function'
+            ? window.UM.isAuthenticated()
+            : false;
+
+        console.log('🔐 Проверка авторизации через JWT:', isAuthenticated);
 
         if (!isAuthenticated) {
             console.log('Пользователь не авторизован, используем настройки по умолчанию');
@@ -222,7 +237,7 @@ async function initializeUserData() {
         }
 
         // ДЛЯ АВТОРИЗОВАННЫХ ПОЛЬЗОВАТЕЛЕЙ - загружаем реальные данные из JWT
-        const user = window.UM.currentUser;
+        const user = window.UM.getCurrentUser();
         console.log('Текущий пользователь из JWT:', user);
 
         if (!user) {
@@ -332,31 +347,6 @@ function createSimpleLanguageDisplay() {
 
 
 
-// Создание нового документа
-document.getElementById('newDictationBtn').addEventListener('click', function () {
-    // Проверяем авторизацию
-    // const userElement = document.getElementById('user-data');
-    // const isAuthenticated = userElement ? userElement.dataset.isAuthenticated === 'True' : false;
-    const isAuthenticated = window.UM.isAuthenticated();
-
-    if (!isAuthenticated) {
-        alert("Для создания диктанта необходимо авторизоваться");
-        window.location.href = '/login'; // или показать модальное окно авторизации
-        return;
-    }
-
-    if (!selectedCategory || !selectedCategory.data.languages) {
-        alert("Сначала выберите категорию с языковой парой!");
-        return;
-    }
-
-    const langOrig = selectedCategory.data.languages.original;
-    const langTrans = selectedCategory.data.languages.translation;
-
-    window.location.href = `/dictation_generator/${langOrig}/${langTrans}`;
-});
-
-
 // ================ все диктанты в массив ========================
 let allDictations = [];
 
@@ -438,11 +428,12 @@ function initFancyTree() {
             activate: function (event, data) {
                 const node = data.node;
                 selectedCategory = node; // Сохраняем выбранную категорию
+                console.log("✅ FancyTree selectedCategory", selectedCategory);
                 const ids = node.data.dictations || [];
 
                 // Обновляем языки на текущие
-                language_original = window.USER_LANGUAGE_DATA.currentLearning;
-                language_translation = window.USER_LANGUAGE_DATA.nativeLanguage;
+                // language_original = window.USER_LANGUAGE_DATA.currentLearning;
+                // language_translation = window.USER_LANGUAGE_DATA.nativeLanguage;
 
                 const filteredDictations = allDictations.filter(d => ids.includes(d.id));
                 renderDictationsGrid(filteredDictations);
@@ -640,10 +631,10 @@ function updateLanguages(newLanguages) {
         language_translation = newLanguages.nativeLanguage;
 
         // Обновляем данные пользователя
-       if (window.USER_LANGUAGE_DATA) {
+        if (window.USER_LANGUAGE_DATA) {
             window.USER_LANGUAGE_DATA.currentLearning = newLanguages.currentLearning;
             window.USER_LANGUAGE_DATA.nativeLanguage = newLanguages.nativeLanguage;
-            
+
             // Сохраняем learningLanguages из селектора
             if (newLanguages.learningLanguages) {
                 window.USER_LANGUAGE_DATA.learningLanguages = newLanguages.learningLanguages;
@@ -723,43 +714,93 @@ function fitFancyTreeHeight() {
     }
 }
 
-function setupNewDictationButton() {
-    const newDictationBtn = document.getElementById('newDictationBtn');
-    if (!newDictationBtn) {
-        console.warn('Кнопка newDictationBtn не найдена');
+
+// function getActiveCategory() {
+//     // 1. Проверяем глобальную переменную
+//     console.log("1. ✅  getActiveCategory() selectedCategory:", selectedCategory);
+//     if (selectedCategory && selectedCategory.data.languages) {
+//         return selectedCategory;
+//     }
+
+//     // 2. Пытаемся получить из дерева
+//     console.log("2. ✅  getActiveCategory() categoriesTree:", categoriesTree);
+//     if (categoriesTree) {
+//         const activeNode = categoriesTree.getActiveNode();
+//         console.log("2. ✅✅  getActiveCategory() activeNode:", activeNode);
+//         if (activeNode && activeNode.data.languages) {
+//             console.log("2. ✅✅✅  getActiveCategory() activeNode:", activeNode);
+//             return activeNode;
+//         }
+//     }
+
+//     // 3. Ищем последний активированный узел в DOM
+//     const activeElement = document.querySelector('.fancytree-active');
+//     console.log("2. ✅  getActiveCategory() activeElement:", activeElement);
+//     if (activeElement) {
+//         const node = $.ui.fancytree.getNode(activeElement);
+//         console.log("2. ✅✅  getActiveCategory() node:", node);
+//         if (node && node.data.languages) {
+//             console.log("2. ✅✅✅  getActiveCategory() node:", node);
+//             return node;
+//         }
+//     }
+
+//     return null;
+// }
+
+function newDictation() {
+    const isAuthenticated = window.UM && window.UM.isAuthenticated && window.UM.isAuthenticated();
+
+    if (!isAuthenticated) {
+        alert("Для создания диктанта необходимо авторизоваться");
+        const loginUrl = '/login?next=' + encodeURIComponent(window.location.pathname);
+        window.location.href = loginUrl;
         return;
     }
 
-    newDictationBtn.addEventListener('click', function () {
-        // Проверяем авторизацию через UserManager
-        const isAuthenticated = window.UM.isAuthenticated();
+    // 🔥 ИСПОЛЬЗУЕМ ФУНКЦИЮ-ПОМОЩНИК  selectedCategory
+    // const activeCategory = getActiveCategory();
+    // console.log("✅✅✅✅✅✅✅activeCategory:", activeCategory);
 
-        if (!isAuthenticated) {
-            alert("Для создания диктанта необходимо авторизоваться");
-            const loginUrl = '/login?next=' + encodeURIComponent(window.location.pathname);
-            window.location.href = loginUrl;
-            return;
-        }
+    // if (!activeCategory) {
+    //     alert("Сначала выберите категорию с языковой парой!");
 
-        if (!selectedCategory || !selectedCategory.data.languages) {
-            alert("Сначала выберите категорию с языковой парой!");
-            return;
-        }
+    //     // Визуальная подсказка
+    //     highlightTreeContainer();
+    //     return;
+    // }
+    if (!selectedCategory) {
+        alert("Сначала выберите категорию с языковой парой!");
 
-        const langOrig = selectedCategory.data.languages.original;
-        const langTrans = selectedCategory.data.languages.translation;
-        window.location.href = `/dictation_generator/${langOrig}/${langTrans}`;
-    });
+        // Визуальная подсказка
+        highlightTreeContainer();
+        return;
+    }
+
+    // const langOrig = selectedCategory.data.languages.original;
+    // const langTrans = selectedCategory.data.languages.translation;
+    window.location.href = `/dictation_generator/${language_original}/${language_translation}`;
 }
 
+// Функция для подсветки контейнера дерева
+function highlightTreeContainer() {
+    const treeContainer = document.getElementById('treeContainer');
+    if (treeContainer) {
+        treeContainer.style.boxShadow = '0 0 0 2px red';
+        treeContainer.style.transition = 'box-shadow 0.3s ease';
 
+        setTimeout(() => {
+            treeContainer.style.boxShadow = '';
+        }, 2000);
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
 
     try {
         // Ждем пока UserManager инициализируется в основном скрипте
         const waitForUserManager = setInterval(() => {
-            if (window.UM && window.UM.isInitialized !== undefined) {
+            if (window.UM && typeof window.UM.isAuthenticated === 'function') {
                 clearInterval(waitForUserManager);
 
                 // Загружаем данные пользователя
@@ -772,7 +813,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     initializeLanguageSelector();
                     initializeLanguageFilter();
                     fitFancyTreeHeight();
-                    setupNewDictationButton();
+                    // setupNewDictationButton();
                     if (!window.USER_LANGUAGE_DATA.isAuthenticated) {
                         showAuthBanner();
                     }

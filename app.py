@@ -20,6 +20,8 @@ app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 app.config["JWT_ACCESS_COOKIE_NAME"] = "access_token_cookie"
 jwt = JWTManager(app) 
 
+app.config['AUDIO_BASE_DIR'] = 'static/data/temp'
+
 # Регистрируем blueprint'ы
 from routes.index import index_bp
 from routes.dictation_generator import generator_bp
@@ -31,6 +33,7 @@ app.register_blueprint(index_bp)
 app.register_blueprint(generator_bp)
 app.register_blueprint(dictation_bp)
 app.register_blueprint(user_bp)
+
 
 
 @app.route('/data/<path:filename>')

@@ -1,8 +1,9 @@
 // console.log("👀 renderSentenceCounter вызвана");
 console.log('======================= dscript_dictation.js:');
-    
+
+const userManager = window.UM;
 let thisNewGame = true;
-let userManager = null;
+// let userManager = null;
 const circleBtn = document.getElementById('btn-circle-number');
 
 const inputField = document.getElementById('userInput');
@@ -190,97 +191,90 @@ let gameHasAlreadyBegun = false;
 
 
 
+function logout() {
+    localStorage.removeItem('jwt_token');
+    console.log('✅✅✅✅ 4 ✅✅✅✅token',token);
+    setupGuestMode();
+    window.location.href = '/';
+}
 
-// ===== Инициализация пользователя =====
-async function initializeUser() {
+function setupAuthHandlers() {
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            window.location.href = '/user/login';
+        });
+    }
+
+    if (registerBtn) {
+        registerBtn.addEventListener('click', () => {
+            window.location.href = '/user/register';
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+}
+
+
+// Функции для сохранения/загрузки данных генератора
+async function saveGeneratorData(generatorData) {
     try {
-        // Проверяем, доступен ли UserManager
-        if (window.UM && typeof window.UM.init === 'function') {
-            userManager = window.UM;
-            
-            // Инициализируем, если еще не инициализирован
-            if (!userManager.isInitialized) {
-                await userManager.init();
-            }
-            
-            updateUserUI();
-        } else {
-            console.warn('UserManager не доступен, используем гостевой режим');
-            setupGuestMode();
+        const token = localStorage.getItem('jwt_token');
+        console.log('✅ 2 ✅✅✅✅✅✅token',this.token);
+        if (!token) {
+            console.log('Пользователь не авторизован, данные не сохранены');
+            return;
+        }
+
+        const response = await fetch('/api/generator/save', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(generatorData)
+        });
+
+        if (response.ok) {
+            console.log('Данные генератора успешно сохранены');
         }
     } catch (error) {
-        console.error('Ошибка инициализации пользователя:', error);
-        setupGuestMode();
+        console.error('Ошибка при сохранении данных генератора:', error);
     }
 }
 
-function updateUserUI() {
-    const userSection = document.getElementById('user-section');
-    if (!userSection) {
-        console.warn('user-section не найден в DOM');
-        return;
-    }
+async function loadGeneratorData() {
+    try {
+        const token = localStorage.getItem('jwt_token');
+        console.log('✅ 3 ✅✅✅✅✅✅token',this.token);
+        if (!token) return null;
 
-    if (userManager && userManager.isAuthenticated()) {
-        const user = userManager.currentUser;
-        
-        // Обновляем аватар
-        const avatarElement = userSection.querySelector('.user-avatar-small');
-        if (avatarElement) {
-            if (userManager.getAvatarUrl) {
-                const avatarUrl = userManager.getAvatarUrl('small');
-                if (avatarUrl) {
-                    avatarElement.style.backgroundImage = `url(${avatarUrl})`;
-                }
+        const response = await fetch('/api/generator/load', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
+        });
+
+        if (response.ok) {
+            return await response.json();
         }
-        
-        // Обновляем имя пользователя
-        const usernameElement = userSection.querySelector('.username-text');
-        if (usernameElement) {
-            usernameElement.textContent = user.username || 'Пользователь';
-        }
-        
-        // Обновляем streak
-        const streakElement = userSection.querySelector('.streak-days');
-        if (streakElement) {
-            streakElement.textContent = user.streak_days || 0;
-        }
-        
-        // Безопасно показываем/скрываем элементы
-        const usernameLink = userSection.querySelector('.username');
-        const streakBtn = userSection.querySelector('.streak');
-        const loginLink = userSection.querySelector('a[href="/user/login"]');
-        const registerLink = userSection.querySelector('a[href="/user/register"]');
-        
-        if (usernameLink) usernameLink.style.display = 'flex';
-        if (streakBtn) streakBtn.style.display = 'inline-block';
-        if (loginLink) loginLink.style.display = 'none';
-        if (registerLink) registerLink.style.display = 'none';
-        
-    } else {
-        setupGuestMode();
+        return null;
+    } catch (error) {
+        console.error('Ошибка при загрузке данных генератора:', error);
+        return null;
     }
 }
 
-function setupGuestMode() {
-    const userSection = document.getElementById('user-section');
-    if (!userSection) {
-        console.warn('user-section не найден в DOM');
-        return;
-    }
 
-    const usernameLink = userSection.querySelector('.username');
-    const streakBtn = userSection.querySelector('.streak');
-    const loginLink = userSection.querySelector('a[href="/user/login"]');
-    const registerLink = userSection.querySelector('a[href="/user/register"]');
-    
-    // Безопасно изменяем стили
-    if (usernameLink) usernameLink.style.display = 'none';
-    if (streakBtn) streakBtn.style.display = 'none';
-    if (loginLink) loginLink.style.display = 'inline-block';
-    if (registerLink) registerLink.style.display = 'inline-block';
-}
+
+
 
 // ===== Управление выходом =====
 function setupExitHandlers() {
@@ -341,9 +335,85 @@ function hideExitModal() {
     }
 }
 
+// ===== Обработчики аутентификации =====
+function setupAuthHandlers() {
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
 
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            window.location.href = '/auth/login';
+        });
+    }
 
+    if (registerBtn) {
+        registerBtn.addEventListener('click', () => {
+            window.location.href = '/auth/register';
+        });
+    }
 
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+}
+
+// ===== Сохранение прогресса (с JWT) =====
+async function saveProgress(progressData) {
+    try {
+        const token = localStorage.getItem('jwt_token');
+        console.log('✅ 4 ✅✅✅✅✅✅token',this.token);
+        if (!token) {
+            console.log('Пользователь не авторизован, прогресс не сохранен');
+            return;
+        }
+
+        const response = await fetch('/api/progress/save', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(progressData)
+        });
+
+        if (response.ok) {
+            console.log('Прогресс успешно сохранен');
+        } else {
+            console.error('Ошибка сохранения прогресса');
+        }
+    } catch (error) {
+        console.error('Ошибка при сохранении прогресса:', error);
+    }
+}
+
+// ===== Загрузка прогресса (с JWT) =====
+async function loadProgress() {
+    try {
+        const token = localStorage.getItem('jwt_token');
+        console.log('✅ 5 ✅✅✅✅✅✅token',this.token);
+        if (!token) {
+            console.log('Пользователь не авторизован, прогресс не загружен');
+            return null;
+        }
+
+        const response = await fetch('/api/progress/load', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            return await response.json();
+        }
+        return null;
+    } catch (error) {
+        console.error('Ошибка при загрузке прогресса:', error);
+        return null;
+    }
+}
 
 
 
@@ -1299,17 +1369,17 @@ function timeDisplay(ms) {
 async function loadLanguageCodes() {
     try {
         // Используем LanguageManager для получения country_cod_url
-        
+
         if (window.LanguageManager && typeof window.LanguageManager.getCountryCodeUrl === 'function') {
             langCodeUrl = window.LanguageManager.getCountryCodeUrl(currentDictation.language_original);
         } else {
             // Fallback если LanguageManager не доступен
             langCodeUrl = 'en-US';
         }
-        
+
         // const response = await fetch(`/path/to/language/codes/${langCodeUrl}.json`);
         // languageCodes = await response.json();
-        
+
         // // Используем language_original из загруженных данных
         // const langCode = currentDictation.language_original || 'en-US';
         initSpeechRecognition();
@@ -2160,13 +2230,13 @@ function loadDictationData() {
         // Загружаем предложения
         const sentencesJson = dictationDataElement.dataset.sentences;
         allSentences = JSON.parse(sentencesJson);
-        
+
         // Загружаем метаданные диктанта
         currentDictation.id = dictationDataElement.dataset.dictationId || '';
         currentDictation.language_original = dictationDataElement.dataset.languageOriginal || '';
         currentDictation.language_translation = dictationDataElement.dataset.languageTranslation || '';
         currentDictation.title_orig = dictationDataElement.dataset.titleOrig || '';
-         // Используем LanguageManager для получения country_cod_url
+        // Используем LanguageManager для получения country_cod_url
         if (window.LanguageManager && typeof window.LanguageManager.getCountryCodeUrl === 'function') {
             currentDictation.language_cod_url = window.LanguageManager.getCountryCodeUrl(currentDictation.language_original);
         } else {
@@ -2176,7 +2246,7 @@ function loadDictationData() {
 
         console.log('Загружено предложений:', allSentences.length);
         console.log('Данные диктанта:', currentDictation);
-        
+
         return true;
     } catch (error) {
         console.error('Ошибка загрузки данных диктанта:', error);
@@ -2192,7 +2262,7 @@ function initializeDictation() {
         alert('Ошибка загрузки данных диктанта');
         return;
     }
-    
+
     // Рисуем таблицу так, чтобы ВСЁ было отмечено
     renderSelectionTable();
 
@@ -2381,7 +2451,9 @@ function onloadInitializeDictation() {
     console.log('=======================document.addEventListener("DOMContentLoaded", function () {:');
     initializeDictation();
     loadLanguageCodes();
-    initializeUser(); // Инициализируем пользователя
+    userManager.init(); 
+    // initializeUser(); // Инициализируем пользователя
+    // setupAuthHandlers(); // ДОБАВИТЬ ЭТУ СТРОЧКУ
     setupExitHandlers(); // Настраиваем обработчики выхода
 
 
@@ -2472,9 +2544,9 @@ function onloadInitializeDictation() {
     document.getElementById('playSequenceStart').value = playSequenceStart;
     document.getElementById('playSequenceTypo').value = playSequenceTypo;
     document.getElementById('playSequenceSuccess').value = playSequenceSuccess;
-    
+
     initPlaySequenceInputs();
-    
+
     // Обработчик клика на часы для паузы
     const timerButton = document.querySelector('.stat-btn.timer');
     if (timerButton) {

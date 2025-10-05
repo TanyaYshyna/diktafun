@@ -1,380 +1,400 @@
-/*
-UserManager - класс для управления аутентификацией через JWT токены
-Файл: static/js/user_manager.js
-
-Особенности:
-- Работает через JWT токены (Bearer authentication)
-- Хранит токен в localStorage
-- Автоматически добавляет токен в заголовки запросов
-- Обновляет интерфейс при изменении статуса авторизации
-
-Пример использования:
-const UM = new UserManager({ apiBase: '/user/api' });
-await UM.init();
-await UM.login('test@example.com', 'password');
-*/
-
 class UserManager {
-  constructor(options = {}) {
-    this.apiBase = options.apiBase || '/user/api';
-    this.tokenKey = options.tokenKey || 'auth_token';
-    this.currentUser = null;
-    this.authToken = localStorage.getItem(this.tokenKey);
-    this.onChangeCallbacks = [];
+  constructor() {
+    if (window.UM) {
+      console.warn('⚠️ UserManager уже создан, возвращаем существующий экземпляр');
+      return window.UM;
+    }
 
-    // Автоматическое обновление UI при изменении пользователя
-    this.onChange((user) => {
-      this.updateUI();
+    this.token = localStorage.getItem('jwt_token');
+    console.log('✅ 1 ✅✅✅✅✅✅token  constructor()', this.token);
+    this.userData = null;
+    this.isInitialized = false;
+
+
+    // ✅ АВТОМАТИЧЕСКАЯ ИНИЦИАЛИЗАЦИЯ
+    this.init().then(() => {
+      console.log('✅ UserManager авто-инициализирован');
     });
   }
 
-  // Инициализация: проверяем токен и загружаем пользователя
-  async init() {
-    if (this.authToken) {
-      try {
-        await this.fetchCurrentUser();
-        this._updateGlobalUserData();
-      } catch (error) {
-        console.warn('Invalid token, clearing storage:', error);
-        this.logout();
-      }
+   getSafeEmail() {
+    if (this.userData && this.userData.email) {
+      return this.userData.email.replace('@', '_at_').replace('.', '_dot_');
     }
-    this._emitChange();
-    return this.currentUser;
+    return 'anonymous';
+  }
+  
+  isAuthenticated() {
+    return !!this.userData;
   }
 
-  // Загружает текущего пользователя по токену
-  async fetchCurrentUser() {
+  getCurrentUser() {
+    return this.userData;
+  }
+  // Инициализация пользователя
+  async init() {
     try {
-      const response = await this._apiFetch('/me');
-      this.currentUser = response;
-      return this.currentUser;
+      console.log('🔄 Инициализация UserManager, токен:', this.token);
+
+      if (this.token) {
+        console.log('🔍 Проверяем токен...');
+        this.userData = await this.validateToken(this.token);
+
+        if (this.userData) {
+          console.log('✅ Пользователь авторизован:', this.userData.username);
+          this.setupAuthenticatedUser(this.userData);
+        } else {
+          console.log('❌ Токен невалиден, очищаем');
+          localStorage.removeItem('jwt_token');
+          this.token = null;
+          this.setupGuestMode();
+        }
+      } else {
+        console.log('👤 Гостевой режим');
+        this.setupGuestMode();
+      }
+
+      this.setupAuthHandlers();
+      this.isInitialized = true;
+      console.log('✅ UserManager инициализирован');
+
     } catch (error) {
-      console.error('Failed to fetch current user:', error);
+      console.error('🚨 Ошибка инициализации пользователя:', error);
+      this.setupGuestMode();
+    }
+  }
+
+  // Получение URL аватара
+  getAvatarUrl(size = 'small') {
+    console.log('🖼️🖼️🖼️🖼️🖼️🖼️🖼️🖼️ Получение URL аватара, размер:', size);
+
+    if (!this.userData?.avatar) {
+      console.log('❌❌❌❌❌❌❌ Аватар не найден в userData');
+      return null;
+    }
+
+    // avatar - объект с полями large и small
+    const avatarUrl = this.userData.avatar[size];
+    console.log('🔗🔗🔗🔗🔗🔗🔗🔗🔗 URL аватара:', avatarUrl);
+
+    return avatarUrl || null;
+  }
+
+  // Валидация токена
+  async validateToken(token) {
+    try {
+      console.log('🔐 Валидация токена:', token);
+
+      const response = await fetch('/user/api/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('📡 Статус ответа:', response.status);
+
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('✅ Данные пользователя получены:', userData);
+        return userData;
+      } else {
+        console.log('❌ Ошибка валидации, статус:', response.status);
+        // Попробуем прочитать текст ошибки
+        try {
+          const errorText = await response.text();
+          console.log('📄 Текст ошибки:', errorText);
+        } catch (e) {
+          console.log('Не удалось прочитать текст ошибки');
+        }
+        return null;
+      }
+    } catch (error) {
+      console.error('🚨 Ошибка валидации токена:', error);
+      return null;
+    }
+  }
+
+  // Выход
+  logout() {
+    localStorage.removeItem('jwt_token');
+    console.log('✅✅✅✅✅✅ 2 ✅token  Выход', this.token);
+    this.token = null;
+    this.userData = null;
+    this.setupGuestMode();
+    window.location.href = '/';
+  }
+
+  // Настройка авторизованного пользователя
+  // Настройка авторизованного пользователя
+  setupAuthenticatedUser(userData) {
+    const userSection = document.getElementById('user-section');
+    if (!userSection) {
+      console.error('❌ user-section не найден в DOM');
+      return;
+    }
+
+    console.log('🔄 Настройка интерфейса для авторизованного пользователя');
+
+    // Находим блоки
+    const authButtons = userSection.querySelector('.auth-buttons');
+    const userInfo = userSection.querySelector('.user-info');
+    const usernameElement = userSection.querySelector('.username-text');
+    const avatarElement = userSection.querySelector('.user-avatar-small');
+    const streakElement = userSection.querySelector('.streak-days');
+
+    console.log('📋 Найденные элементы:', {
+      authButtons,
+      userInfo,
+      usernameElement,
+      avatarElement,
+      streakElement
+    });
+
+    // Заполняем данные пользователя
+    if (usernameElement) {
+      usernameElement.textContent = userData.username || 'Пользователь';
+    }
+
+    // Аватар
+    if (avatarElement && userData.avatar) {
+      const avatarUrl = this.getAvatarUrl('small');
+      console.log('🎯 Устанавливаем аватар:', avatarUrl);
+
+      if (avatarUrl) {
+        // Добавляем временную метку для избежания кэширования
+        const avatarUrlWithTimestamp = `${avatarUrl}&t=${Date.now()}`;
+        avatarElement.style.backgroundImage = `url(${avatarUrlWithTimestamp})`;
+        avatarElement.style.backgroundSize = 'cover';
+        avatarElement.style.backgroundPosition = 'center';
+        avatarElement.style.width = '32px';
+        avatarElement.style.height = '32px';
+        avatarElement.style.borderRadius = '50%';
+        avatarElement.style.display = 'block';
+      } else {
+        console.warn('⚠️ URL аватара не получен');
+        // Установите аватар по умолчанию
+        avatarElement.style.backgroundImage = 'url(/static/icons/default-avatar-small.svg)';
+      }
+    }
+
+    // Streak
+    if (streakElement) {
+      streakElement.textContent = userData.streak_days || 0;
+    }
+
+    // Переключаем видимость блоков
+    if (authButtons) authButtons.style.display = 'none';
+    if (userInfo) userInfo.style.display = 'flex';
+
+    console.log('✅ Интерфейс настроен для авторизованного пользователя');
+  }
+
+  // Гостевой режим
+  setupGuestMode() {
+    const userSection = document.getElementById('user-section');
+    if (!userSection) {
+      console.error('❌ user-section не найден в DOM');
+      return;
+    }
+
+    console.log('🔄 Настройка гостевого режима');
+
+    const authButtons = userSection.querySelector('.auth-buttons');
+    const userInfo = userSection.querySelector('.user-info');
+
+    if (authButtons) authButtons.style.display = 'flex';
+    if (userInfo) userInfo.style.display = 'none';
+
+    console.log('✅ Интерфейс настроен для гостя');
+  }
+
+
+
+  // Обработчики аутентификации
+  setupAuthHandlers() {
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    if (loginBtn) {
+      loginBtn.addEventListener('click', () => {
+        window.location.href = 'user/login';
+      });
+    }
+
+    if (registerBtn) {
+      registerBtn.addEventListener('click', () => {
+        window.location.href = 'user/register';
+      });
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => this.logout());
+    }
+  }
+
+  // Сохранение прогресса
+  async saveProgress(progressData) {
+    try {
+      if (!this.token) {
+        console.log('Пользователь не авторизован, прогресс не сохранен');
+        return false;
+      }
+
+      const response = await fetch('/api/progress/save', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(progressData)
+      });
+
+      if (response.ok) {
+        console.log('Прогресс успешно сохранен');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Ошибка при сохранении прогресса:', error);
+      return false;
+    }
+  }
+
+  // Загрузка прогресса
+  async loadProgress() {
+    try {
+      if (!this.token) {
+        console.log('Пользователь не авторизован, прогресс не загружен');
+        return null;
+      }
+
+      const response = await fetch('/api/progress/load', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch (error) {
+      console.error('Ошибка при загрузке прогресса:', error);
+      return null;
+    }
+  }
+
+  async login(email, password) {
+    try {
+      console.log('🎯 Попытка входа с ' + email);
+
+      const response = await fetch('/user/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      // Читаем ответ ТОЛЬКО ОДИН РАЗ
+      const data = await response.json();
+      console.log('🔐 Ответ от сервера:', data);
+
+      if (response.ok) {
+        // Используем access_token вместо token
+        const token = data.access_token;
+        console.log('💾 Сохраняем токен:', token);
+
+        localStorage.setItem('jwt_token', token);
+        this.token = token;
+        this.userData = data.user;
+
+        // Обновляем UI
+        this.setupAuthenticatedUser(this.userData);
+
+        return { success: true, user: this.userData };
+      } else {
+        return { success: false, error: data.error || 'Ошибка входа' };
+      }
+    } catch (error) {
+      console.error('Ошибка входа:', error);
+      return { success: false, error: 'Сетевая ошибка' };
+    }
+  }
+
+
+  async register(username, email, password) {
+    try {
+      const response = await fetch('/user/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, email, password })
+      });
+
+      // Читаем ответ ТОЛЬКО ОДИН РАЗ
+      const data = await response.json();
+
+      if (response.ok) {
+        // Используем access_token вместо token
+        const token = data.access_token;
+        localStorage.setItem('jwt_token', token);
+        this.token = token;
+        this.userData = data.user;
+
+        this.setupAuthenticatedUser(this.userData);
+        return { success: true, user: this.userData };
+      } else {
+        return { success: false, error: data.error || 'Ошибка регистрации' };
+      }
+    } catch (error) {
+      console.error('Ошибка регистрации:', error);
+      return { success: false, error: 'Сетевая ошибка' };
+    }
+  }
+
+  async updateProfile(updateData) {
+    try {
+      const response = await fetch('/user/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        this.userData = updatedUser.user;
+        return updatedUser.user;
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка обновления профиля');
+      }
+    } catch (error) {
+      console.error('Ошибка обновления профиля:', error);
       throw error;
     }
   }
 
-  // Регистрация нового пользователя
-  async register(userData) {
-    const { email, password, username, native_language = 'ru', learning_languages = ['en'] } = userData;
-
-    if (!email || !password || !username) {
-      throw new Error('Email, password и username обязательны');
-    }
-
-    const response = await this._apiFetch('/register', {
-      method: 'POST',
-      body: {
-        email,
-        password,
-        username,
-        native_language,
-        learning_languages
-      }
-    });
-
-    this._handleAuthResponse(response);
-    this._updateGlobalUserData();
-    return this.currentUser;
-  }
-
-  // Вход в систему
-  async login(email, password) {
-    if (!email || !password) {
-      throw new Error('Email и password обязательны');
-    }
-
-    const response = await this._apiFetch('/login', {
-      method: 'POST',
-      body: { email, password }
-    });
-
-    this._handleAuthResponse(response);
-    this._updateGlobalUserData();
-    return this.currentUser;
-  }
-
-  // Выход из системы
-  logout() {
-    this.currentUser = null;
-    this.authToken = null;
-    localStorage.removeItem(this.tokenKey);
-    this._updateGlobalUserData();
-    this._emitChange();
-
-    // Перенаправляем на страницу логина
-    window.location.href = '/user/login';
-  }
-
-  // Проверка авторизации
-  isAuthenticated() {
-    return !!this.currentUser && !!this.authToken;
-  }
-
-  // ---------------- Обновление информации пользователя -----------------------------------
-  async updateProfile(updates) {
-    if (!this.isAuthenticated()) {
-      throw new Error('Not authenticated');
-    }
-
-    const response = await this._apiFetch('/profile', {
-      method: 'PUT',
-      body: updates
-    });
-
-    this.currentUser = { ...this.currentUser, ...response };
-    this._updateGlobalUserData();
-    this._emitChange();
-    return this.currentUser;
-  }
-
-  // Загрузка аватара
-  async uploadAvatar(file) {
-    if (!file) throw new Error('No file provided');
-    if (!this.isAuthenticated()) throw new Error('Not authenticated');
-
-    const formData = new FormData();
-    formData.append('avatar', file);
-
-    const response = await this._apiFetch('/avatar', {
-      method: 'POST',
-      formData: formData
-    });
-
-    // Обновляем информацию о аватаре в текущем пользователе
-    if (response.avatar_urls) {
-      this.currentUser.avatar = response.avatar_urls;
-    }
-
-    // Перезагружаем данные пользователя для получения актуальной информации
-    await this.fetchCurrentUser();
-
-    this._emitChange();
-    return response;
-  }
-
-  // Получение URL аватара
-  // getAvatarUrl(size = 'medium') {
-  //   if (!this.currentUser || !this.currentUser.avatar) {
-  //     return null;
-  //   }
-  //   return this.currentUser.avatar[size] || this.currentUser.avatar.medium || this.currentUser.avatar.original;
-  // }
-  // Получение URL аватара с поддержкой размеров
-  getAvatarUrl(size = 'medium') {
-    try {
-      if (!this.currentUser || !this.currentUser.avatar) {
-        return '/static/icons/default-avatar-small.svg'; // Заглушка
-      }
-
-      // Поддержка разных форматов хранения аватара
-      if (typeof this.currentUser.avatar === 'string') {
-        return this.currentUser.avatar; // Простая строка URL
-      } else if (typeof this.currentUser.avatar === 'object') {
-        // Объект с размерами
-        return this.currentUser.avatar[size] ||
-          this.currentUser.avatar.medium ||
-          this.currentUser.avatar.original ||
-          '/static/icons/default-avatar-small.svg';
-      }
-    } catch (error) {
-      console.error('Ошибка получения аватара:', error);
-    }
-
-    return '/static/images/default-avatar-small.svg';
-  }
-
-
-  // ----------------------- ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ -----------------------
-
-  // Обновление глобальных пользовательских данных
-  _updateGlobalUserData() {
-    if (this.isAuthenticated()) {
-      window.USER_LANGUAGE_DATA = {
-        nativeLanguage: this.currentUser.native_language || 'ru',
-        learningLanguages: this.currentUser.learning_languages || ['en'],
-        currentLearning: this.currentUser.current_learning || this.currentUser.learning_languages?.[0] || 'en'
-      };
-    } else {
-      window.USER_LANGUAGE_DATA = {
-        nativeLanguage: 'ru',
-        learningLanguages: ['en'],
-        currentLearning: 'en'
-      };
-    }
-
-    // Уведомляем систему о изменении языковых настроек
-    this._emitLanguageChange();
-  }
-
-  // Уведомление о изменении языковых настроек
-  _emitLanguageChange() {
-    if (window.onUserLanguageChange) {
-      window.onUserLanguageChange(window.USER_LANGUAGE_DATA);
-    }
-  }
-
-  // Обработка ответа авторизации
-  _handleAuthResponse(response) {
-    if (response.access_token && response.user) {
-      this.authToken = response.access_token;
-      this.currentUser = response.user;
-
-      // Сохраняем токен
-      localStorage.setItem(this.tokenKey, this.authToken);
-      this._emitChange();
-    } else {
-      throw new Error('Invalid auth response: missing token or user data');
-    }
-  }
-
-  // Универсальный метод для API запросов
-  async _apiFetch(path, options = {}) {
-    const url = this.apiBase + path;
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers
-    };
-
-    // Добавляем токен авторизации если есть
-    if (this.authToken) {
-      headers['Authorization'] = `Bearer ${this.authToken}`;
-    }
-
-    const config = {
-      method: options.method || 'GET',
-      headers: headers
-    };
-
-    // Обрабатываем FormData (для загрузки файлов)
-    if (options.formData) {
-      config.body = options.formData;
-      // Убираем Content-Type для FormData - браузер сам установит с boundary
-      delete config.headers['Content-Type'];
-    } else if (options.body) {
-      config.body = JSON.stringify(options.body);
-    }
-
-    const response = await fetch(url, config);
-
-    if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorData.message || errorMessage;
-      } catch (e) {
-        const text = await response.text();
-        errorMessage = text || errorMessage;
-      }
-      throw new Error(errorMessage);
-    }
-
-    // Для DELETE запросов может не быть тела
-    if (response.status === 204 || response.headers.get('content-length') === '0') {
-      return null;
-    }
-
-    return await response.json();
-  }
-
-  // Колбэки для обновления UI
-  _emitChange() {
-    this.onChangeCallbacks.forEach(cb => {
-      try {
-        cb(this.currentUser);
-      } catch (e) {
-        console.error('Error in onChange callback:', e);
-      }
-    });
-  }
-
-  onChange(callback) {
-    if (typeof callback === 'function') {
-      this.onChangeCallbacks.push(callback);
-    }
-  }
-
-  // Удаление колбэка
-  offChange(callback) {
-    const index = this.onChangeCallbacks.indexOf(callback);
-    if (index > -1) {
-      this.onChangeCallbacks.splice(index, 1);
-    }
-  }
-
-  updateUI() {
-    try {
-      const userSection = document.querySelector('.user-section');
-      if (!userSection) {
-        console.warn('user-section не найден в DOM');
-        return;
-      }
-
-      if (this.isAuthenticated()) {
-        const user = this.currentUser;
-
-        // Создаем разметку для авторизованного пользователя
-        userSection.innerHTML = `        
-                <a href="/user/profile" class="username">
-                    <span class="user-avatar-small"></span>
-                    <span class="username-text">${user.username || 'Пользователь'}</span>
-                </a>
-                <button class="streak">🔥 ${user.streak_days || 0} дней подряд</button>
-                <a href="#" onclick="UM.logout(); return false;">
-                  <i data-lucide="log-out"></i>
-                </a>
-            `;
-
-        // Обновляем аватар если возможно
-        const avatarElement = userSection.querySelector('.user-avatar-small');
-        if (avatarElement && this.getAvatarUrl) {
-          const avatarUrl = this.getAvatarUrl('small');
-          if (avatarUrl && avatarUrl !== '/static/images/default-avatar.png') {
-            avatarElement.style.backgroundImage = `url(${avatarUrl})`;
-          }
-        }
-
-      } else {
-        userSection.innerHTML = `
-                <a href="/user/login">Войти</a>
-                <a href="/user/register">Регистрация</a>
-            `;
-      }
-
-      // Обновляем языковой селектор если он есть
-      if (window.initializeLanguageSelector) {
-        window.initializeLanguageSelector();
-      }
-    } catch (error) {
-      console.error('Error updating UI:', error);
-    }
-  }
-
 }
 
 
 
-// Глобальная доступность
-if (typeof window !== 'undefined') {
-  window.UserManager = UserManager;
+if (!window.UM) {
+  window.UM = new UserManager();
 }
 
-
-
-
-/*
----------------------- Использование в  проекте: ----------------------
-// Инициализация
-const UM = new UserManager({ apiBase: '/user/api' });
-
-// При загрузке страницы
-await UM.init();
-
-// После логина автоматически обновляются:
-// - window.USER_LANGUAGE_DATA
-// - Интерфейс пользователя
-// - Языковые настройки
-
------------------------------------------------------------------------------------------------
-*/
+// ВЫЗОВ ИНИЦИАЛИЗАЦИИ
+// window.UM.init().then(() => {
+//   console.log('✅ UserManager инициализирован, пользователь:', window.UM.getCurrentUser());
+// }).catch(error => {
+//   console.error('❌ Ошибка инициализации UserManager:', error);
+// });

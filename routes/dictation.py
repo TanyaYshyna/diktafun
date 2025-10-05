@@ -1,7 +1,7 @@
 import json
 import os
 from flask import Blueprint, abort, current_app, render_template, url_for
-from helpers.user_helpers import get_current_user
+from helpers.user_helpers import get_current_user, login_required, get_safe_email
 
 dictation_bp = Blueprint('dictation', __name__)
 

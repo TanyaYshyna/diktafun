@@ -36,54 +36,17 @@
         </div>
     </div>
 
-
     <div class="panel">
-        <h2 id="dictation-id">Новый диктант: </h2>
         <div class="container" style="display: flex">
             <div id="langPair" data-original="{{ original_language }}" data-translation="{{ translation_language }}">
                 {{ original_language }} ⇒ {{ translation_language }}
             </div>
-            <div class="container">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div class="tooltip-wrapper">
-                        <button id="openTreeDialogBtn" onclick="openCategoryModal('root')">⋯</button>
-                        <pre class="tooltip-text">Выбрать категорию</pre> <!-- подсказка -->
-                    </div>
-                    <pre id="modalTitle">Категория: </pre>
-                    <!-- Диалоговое окно для работы с деревом -->
-                    <div id="modalOverlay" class="modal-overlay"></div>
-                    <div id="categoryModal" class="modal" style="display:none;">
-                        <h4>Выберите ветку</h4>
-                        <div id="treeContainer"></div>
-
-                        <div class="tooltip-wrapper">
-                            <button id="btnAddNode"> ➕ </button>
-                            <div class="tooltip-text">Новый элемент</div> <!-- подсказка -->
-                        </div>
-
-                        <div class="tooltip-wrapper">
-                            <button id="btnDeleteNode"> 🗑️ </button>
-                            <div class="tooltip-text">Удалить элемент</div> <!-- подсказка -->
-                        </div>
-
-                        <div class="tooltip-wrapper">
-                            <button id="btnCancelCategory">❌ </button>
-                            <div class="tooltip-text">Отмена</div> <!-- подсказка -->
-                        </div>
-
-                        <div class="tooltip-wrapper">
-                            <button id="btnSelectCategory">✅ </button>
-                            <div class="tooltip-text">Выбрать</div> <!-- подсказка -->
-                        </div>
-                    </div>
-                    <!-- онокнчание ---- Диалогового окна для работы с деревом -->
-                </div>
-            </div>
+            <h2 id="dictation-id">Новый диктант: </h2>
         </div>
 
 
 
-        <label>Title:</label>
+        <!-- <label>Title:</label> -->
         <div class="form-group-line-wrapper">
             <div class="form-group-line">
                 <label style="color: var(--color-button-text-lightgreen);">{{ original_language }}:</label>
@@ -95,144 +58,116 @@
             </div>
         </div>
 
-        <div class="panels-single">
-            <div class="toggle-panel">
-                <div class="toggle-header" onclick="togglePanel(this)">
-                    <span class="arrow">
-                        <i data-lucide="chevron-right"></i>
-                    </span>
-                    <span class="title">Текст по фразам</span>
-                </div>
-                <div id="formGroupRaw" class="form-group form-raw toggle-content">
-                    <div class="form-group">
-                        <label style="color: var(--color-button-text-yellow);">Текст по фразам (/* превод):</label>
-                        <textarea id="text" type="text" rows="10"></textarea>
-                    </div>
-                    <button id="split-btn" class="button-color-yellow">Разбить на фразы и озвучить</button>
-                </div>
-            </div>
-        </div>
+        <label style="color: var(--color-button-text-yellow);">Текст по фразам (/* превод):</label>
+        <textarea id="text" type="text" rows="10"></textarea>
 
-        <div class="panels-wagons">
-            <!-- ВАГОН 1 -->
-            <div class="left-panel">
+        <!-- страницы с закладками как в браузере -->
+        <div class="book-audio">
 
-                <div class="toggle-panel">
-                    <div class="toggle-header" onclick="togglePanel(this)">
-                        <span class="arrow">
-                            <i data-lucide="chevron-right"></i>
-                        </span>
-                        <span class="title">Аудио: </span>
-                        <span id="text-original-row" class="text-original">(1) Текущее предложение</span>
-                    </div>
-                    <div class="toggle-content">
-                        <div class="audio-actions">
-                            <!-- РАДИО для выбора источника аудио -->
-                            <fieldset class="audio-source">
-                                <label>
-                                    <input type="radio" name="audioSource-{{key}}" value="auto" checked>
-                                    автоперевод
-                                </label>
-                                <label>
-                                    <input type="radio" name="audioSource-{{key}}" value="cut">
-                                    вырезка из аудио
-                                </label>
-                            </fieldset>
-
-                            <button class="button-color-yellow" data-key="{{key}}">Применить к строке</button>
-                        </div>
-
-                        <div class="form-group-line">
-                            <label style="color: var(--color-button-text-lightgreen);">Загрузить аудио:</label>
-                            <!-- <input type="file" id="audioFile" accept="audio/*"> -->
-                            <!-- Спрятанное настоящее поле выбора -->
-                            <input type="file" id="audioFile" accept="audio/*" style="display: none;">
-
-                            <!-- Красивая ложная кнопка -->
-                            <button id="fakeAudioFileBtn" class="button-color-lightgreen">...</button>
-
-                            <!-- Показываем статус -->
-                            <div id="audioFileStatus" style="color: var(--color-button-text-lightgreen);">Файл не выбран
-                            </div>
-                        </div>
-
-                        <div id="waveWrapper">
-                            <div id="waveform"></div>
-                        </div>
-
-                        <!-- <label id="text-original-row" class="text-original">(1) Текущее предложение</label> -->
-
-                        <div class="controls-row">
-                            <button id="playPauseBtn" onclick="funClick()" class="button-color-lightgreen">
-                                <i data-lucide="play"></i>
-                            </button>
-                            <div class="time-fields">
-                                <!-- Start: <span id="startTime">–</span> — End: <span id="endTime">–</span> -->
-                                <label for="startTime">Start:</label>
-                                <input type="number" id="startTime" step="0.01" min="0" size="6">
-
-                                <label for="endTime">End:</label>
-                                <input type="number" id="endTime" step="0.01" min="0" size="6">
-                            </div>
-
-                        </div>
-
-                        <!-- <button class="apply-audio" data-key="{{key}}">Применить к строке</button>
-                <button id="recognize_words_btn" class="button-color-yellow">Рспознать слва из аудио</button> -->
-                    </div>
-                </div>
+            <!-- Вкладки -->
+            <div class="tabs">
+                <button data-target="page-audio-avto">Avto</button>
+                <button data-target="page-audio-mp3-1">.mp3 (en)</button>
+                <button data-target="page-audio-mic"><i data-lucide="mic-off"></i></button>
             </div>
 
+            <!-- Страницы -->
+            <section class="page" id="page-audio-avto">
+                <button id="split-avto-btn" class="button-color-yellow">Разбить на фразы и озвучить</button>
+                <button id="save-avto-btn" class="btn-save" class="button-color-yellow">
+                    <i data-lucide="save"></i> Записать Audio-avto
+                </button>
+                Автозаполнение аудио с помощью сервисов гугл...
+                <table id="sentences-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Предложение (оригинал/перевод)</th>
+                            <th>Создать</th>
+                            <th>Проиграть</th>
+                            <!-- <th class="audio-dependent-column-display ">Start</th>
+                            <th class="audio-dependent-column-display ">End</th>
+                            <th class="audio-dependent-column-display ">Status</th>
+                            <th class="audio-dependent-column-display ">Источник</th> -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Строки будут добавляться через JavaScript -->
+                    </tbody>
+                </table>
+            </section>
 
-            <!-- Разделитель -->
-            <div class="resizer"></div>
+            <section class="page" id="page-audio-mp3-1">
+                Заполняем аудио из файла...
+                <div class="panels-wagons">
+                    <!-- ВАГОН 1 -->
+                    <!-- <div class="left-panel"> -->
+                    <div class="form-group-line">
+                        <label style="color: var(--color-button-text-lightgreen);">Загрузить аудио:</label>
+                        <!-- <input type="file" id="audioFile" accept="audio/*"> -->
+                        <!-- Спрятанное настоящее поле выбора -->
+                        <input type="file" id="audioFile" accept="audio/*" style="display: none;">
 
-            <!-- ВАГОН 2 -->
-            <div class="right-panel">
-                <div class="toggle-panel inner-toggle">
-                    <div class="toggle-header" onclick="togglePanel(this)">
-                        <span class="arrow">
-                            <i data-lucide="chevron-right"></i>
-                        </span>
-                        <span class="title">Распознавание из аудио</span>
+                        <!-- Красивая ложная кнопка -->
+                        <button id="fakeAudioFileBtn" class="button-color-lightgreen">...</button>
+
+                        <!-- Показываем статус -->
+                        <div id="audioFileStatus" style="color: var(--color-button-text-lightgreen);">Файл
+                            не выбран
+                        </div>
                     </div>
-                    <div id="formGroupRaw" class="form-group form-raw toggle-content inner-toggle">
-                        <button id="recognize_words_btn" class="button-color-yellow">Рспознать слва из аудио</button>
+                    <div id="waveWrapper">
+                        <div id="waveform"></div>
+                    </div>
+                    <span id="text-original-row" class="text-original">(1) Текущее предложение</span>
+                    <div class="controls-row">
+                        <button id="playPauseBtn" onclick="funClick()" class="button-color-lightgreen">
+                            <i data-lucide="play"></i>
+                        </button>
+                        <div class="time-fields">
+                            <!-- Start: <span id="startTime">–</span> — End: <span id="endTime">–</span> -->
+                            <label for="startTime">Start:</label>
+                            <input type="number" id="startTime" step="0.01" min="0" size="6">
+
+                            <label for="endTime">End:</label>
+                            <input type="number" id="endTime" step="0.01" min="0" size="6">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Разделитель -->
+                <!-- <div class="resizer"></div> -->
+
+                <!-- ВАГОН 2 -->
+                <!-- <div class="right-panel">
+                        <button id="recognize_words_btn" class="button-color-yellow">Рспознать слва из
+                            аудио</button>
                         <div class="form-group">
                             <label style="color: var(--color-button-text-yellow);">Время-слово:</label>
                             <textarea id="text_time_word" type="text" rows="5"></textarea>
                         </div>
-                    </div>
-                </div>
+                    </div> -->
+                <!-- </div> -->
+                <table id="sentences-table-mp3">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Предложение (оригинал/перевод)</th>
+                            <!-- <th class="audio-dependent-column-display ">Start</th>
+                            <th class="audio-dependent-column-display ">End</th>-->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Строки будут добавляться через JavaScript -->
+                    </tbody>
+                </table>
+            </section>
 
-            </div>
+            <section class="page" id="page-audio-mic">
+                Записываем аудио сами...
+            </section>
         </div>
-
-        <table id="sentences-table">
-            <thead>
-                <tr>
-                    <th>№</th>
-                    <th>Предложение (оригинал/перевод)</th>
-                    <th>Запись</th>
-                    <th>Аудио</th>
-                    <th class="audio-dependent-column-display ">Start</th>
-                    <th class="audio-dependent-column-display ">End</th>
-                    <th class="audio-dependent-column-display ">Status</th>
-                    <th class="audio-dependent-column-display ">Источник</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Строки будут добавляться через JavaScript -->
-            </tbody>
-        </table>
-
     </div>
-
-
-    <!-- <script type="application/json">
-        window.dictationId = "{{ dictation_id }}";
-        window.editMode = {{ edit_mode | tojson }};
-    </script> -->
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
@@ -249,12 +184,13 @@
         "editMode": edit_mode,
         "original_language": original_language,
         "translation_language": translation_language,
-       "original_data": original_data,
+        "original_data": original_data,
         "translation_data": translation_data,
         "audio_file": audio_file,
         "title": title,
         "level": level,
-        "audio_words": audio_words
+        "audio_words": audio_words,
+        "safe_email": safe_email
      } | tojson }}
     </script>
 
@@ -270,51 +206,23 @@
             // Проверяем что LanguageManager загружен
             if (window.LanguageManager) {
                 console.log('✅ LanguageManager доступен');
-                console.log('Методы LanguageManager:', Object.keys(window.LanguageManager));
-            } else {
-                console.warn('⚠️ LanguageManager не доступен');
             }
 
-            window.UM = new UserManager({ apiBase: '/user/api' });
-            try {
-                await window.UM.init();
-                console.log('✅ UserManager initialized in dictation');
+           try {
+                // Теперь безопасно инициализируем редактор
+                if (typeof initDictationGenerator === 'function') {
+                    initDictationGenerator();
+                    console.log('✅ script_dictation_generator.js загружен');
+                } else {
+                    console.error('❌ script_dictation.js не загружен правильно');
+                }
             } catch (error) {
                 console.error('❌ JWT initialization error:', error);
+                // Даже при ошибке пробуем инициализировать редактор
+                if (typeof initDictationGenerator === 'function') {
+                    initDictationGenerator();
+                }
             }
-
-            // Проверяем что основной скрипт загружен
-            if (typeof initDictationGenerator === 'function') {
-                initDictationGenerator();
-                console.log('✅ script_dictation.js загружен');
-            } else {
-                console.error('❌ script_dictation.js не загружен правильно');
-            }
-
-            // Загружаем основной скрипт после инициализации UserManager
-            // const script = document.createElement('script');
-            // script.src = "{{ url_for('static', filename='js/script_dictation_generator.js') }}";
-            // document.body.appendChild(script);
-
-            // script.onload = function () {
-            //     console.log('✅ Основной скрипт редактора загружен');
-
-            //     // Запускаем инициализацию генератора диктантов
-            //     console.log('🎯 Запуск инициализации генератора диктантов...');
-            //     if (typeof initDictationGenerator === 'function') {
-            //         initDictationGenerator();
-            //     } else {
-            //         console.error('❌ Функция initDictationGenerator не найдена');
-            //     }
-            // };
-
-            // script.onerror = function () {
-            //     console.error('❌ Ошибка загрузки основного скрипта редактора');
-            // };
-
-
-
-
         });
     </script>
 </body>

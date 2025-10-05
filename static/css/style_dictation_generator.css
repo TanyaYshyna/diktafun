@@ -470,3 +470,55 @@ tr.sentence-row.selected-bottom {
   /* padding: 0;     убираем лишние отступы */
   /* margin: 0;      если нужен компактный вариант */
 }
+
+
+/* для книги =========================================================*/
+/* для книги =========================================================*/
+/* для книги =========================================================*/
+/* для книги =========================================================*/
+.tabs {
+  display: flex;
+  /* border-bottom: 2px solid #ccc; */
+}
+
+.tabs button {
+  padding: 8px 16px;
+  border: none;
+  background: var(--color-hover);
+  cursor: pointer;
+  color: var(--color-grey-hover);
+  /* закругляем только верхние */
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.tabs button.active {
+  background: var(--color-panel-purple);
+  /* border-bottom: 2px solid dodgerblue; */
+  font-weight: bold;
+  color: var(--color-panel-text-purple)
+}
+
+.page {
+  display: none;
+  padding: 12px;
+}
+
+.page.active {
+  background: var(--color-panel-purple);
+  display: block;
+  /* закругляем только верхние */
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+
+
+
+
+/* для книги =========================================================*/
+/* для книги =========================================================*/

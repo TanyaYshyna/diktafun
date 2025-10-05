@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, render_template, send_file
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 # Импортируем из helpers
-from helpers.user_helpers import load_user_info, save_user_info
+from helpers.user_helpers import load_user_info, save_user_info, get_user_folder
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
@@ -66,44 +66,19 @@ def api_register():
         'user': user_response
     })
 
-# @user_bp.route('/api/login', methods=['POST'])
-# def api_login():
-#     """Логин через API"""
-#     data = request.get_json()
-#     email = data.get('email')
-#     password = data.get('password')
-    
-#     user_data = load_user_info(email)
-#     if not user_data or user_data.get('password') != password:
-#         return jsonify({'error': 'Invalid credentials'}), 401
-    
-#     # Создаем токен
-#     access_token = create_access_token(identity=email)
-    
-#     # Убираем пароль из ответа
-#     user_response = user_data.copy()
-#     user_response.pop('password', None)
-    
-#     # Создаем ответ и устанавливаем cookie
-#     response = jsonify({
-#         'message': 'Login successful',
-#         'access_token': access_token,
-#         'user': user_response
-#     })
-    
-#     # Устанавливаем токен в cookie для доступа к страницам
-#     response.set_cookie('access_token_cookie', access_token, httponly=True, max_age=24*60*60)
-    
-#     return response
+
+
 @user_bp.route('/api/login', methods=['POST'])
 def api_login():
     """Логин через API"""
     try:
         data = request.get_json()
+        print(f"❌❌❌❌❌❌❌❌❌❌❌ api_login()")
+        print(data)
         email = data.get('email')
         password = data.get('password')
         
-        print(f"🔐 Попытка входа: email={email}")  # Не логируем пароль
+        print(f"🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐 Попытка входа: email={email}")  # Не логируем пароль
         
         if not email or not password:
             return jsonify({'error': 'Email and password are required'}), 400
@@ -111,7 +86,7 @@ def api_login():
         user_data = load_user_info(email)
         
         if not user_data:
-            print(f"❌ Пользователь {email} не найден")
+            print(f"❌❌❌❌❌❌❌❌❌❌❌ Пользователь {email} не найден")
             # Проверим существующие пользователи для отладки
             users_path = 'data/users'
             if os.path.exists(users_path):
@@ -119,20 +94,21 @@ def api_login():
                 print(f"📁 Существующие пользователи: {existing_users}")
             return jsonify({'error': 'Invalid credentials'}), 401
         
-        print(f"✅ Пользователь найден: {user_data.get('username')}")
+        print(f"✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ Пользователь найден: {user_data.get('username')}")
         
         if user_data.get('password') != password:
-            print("❌ Неверный пароль")
+            print("❌ ❌ ❌ Неверный пароль")
             return jsonify({'error': 'Invalid credentials'}), 401
         
         # Создаем токен
         access_token = create_access_token(identity=email)
-        
+        print("❌ ❌ ❌ email"+email)
+        print("❌ ❌ ❌ access_token"+access_token)
         # Убираем пароль из ответа
         user_response = user_data.copy()
         user_response.pop('password', None)
         
-        print("✅ Логин успешен")
+        print("✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ Логин успешен")
         
         return jsonify({
             'message': 'Login successful',
@@ -204,11 +180,6 @@ def logout():
 
 # ==================== СОХРАНЕНИЕ И ЧТЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ (JWT) ====================
 
-from PIL import Image
-import io
-import base64
-import os
-from helpers.user_helpers import get_user_folder, email_to_folder
 
 @user_bp.route('/api/profile', methods=['PUT'])
 @jwt_required()

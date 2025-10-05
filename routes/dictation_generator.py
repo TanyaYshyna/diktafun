@@ -15,6 +15,9 @@ import logging
 import requests
 import time
 
+# from helpers.user_helpers import get_safe_email
+from helpers.user_helpers import get_safe_email_from_token, get_current_user 
+
 
 # Настройка логгера
 logging.basicConfig(
@@ -82,6 +85,9 @@ def edit_dictation(dictation_id, language_original, language_translation):
     # Получаем текущего пользователя
     from helpers.user_helpers import get_current_user
     current_user = get_current_user()
+
+    # Получаем safe_email из JWT токена
+    safe_email = get_safe_email_from_token()
  
     return render_template(
         'dictation_generator.html',
@@ -95,31 +101,54 @@ def edit_dictation(dictation_id, language_original, language_translation):
         audio_file=audio_file,
         audio_words=audio_words,
         current_user=current_user,
+        safe_email=safe_email,
         edit_mode=True  # редактирования режим
     )
 
 
 @generator_bp.route('/dictation_generator/<language_original>/<language_translation>')
 def dictation_generator(language_original, language_translation):
-   
-    # Получаем текущего пользователя
-    from helpers.user_helpers import get_current_user
-    current_user = get_current_user()
- 
-    return render_template(
-        'dictation_generator.html',
-        dictation_id='',
-        original_language=language_original,
-        translation_language=language_translation,
-        title='',
-        level="A1",
-        original_data=[],
-        translation_data=[],
-        audio_file='',
-        audio_words=[],
-        current_user=current_user,
-        edit_mode=False  # новый документ
-    )
+    try:
+        # ✅ Используем обновленные функции
+        current_user = get_current_user()
+        safe_email = get_safe_email_from_token()
+        
+        print(f"✅ Создание диктанта для: {safe_email}")
+        
+        return render_template(
+            'dictation_generator.html',
+            dictation_id='',
+            original_language=language_original,
+            translation_language=language_translation,
+            title='',
+            level="A1",
+            original_data=[],
+            translation_data=[],
+            audio_file='',
+            audio_words=[],
+            current_user=current_user,
+            safe_email=safe_email,
+            edit_mode=False
+        )
+        
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+        # Fallback для анонимных пользователей
+        return render_template(
+            'dictation_generator.html',
+            dictation_id='',
+            original_language=language_original,
+            translation_language=language_translation,
+            title='',
+            level="A1",
+            original_data=[],
+            translation_data=[],
+            audio_file='',
+            audio_words=[],
+            current_user=None,
+            safe_email='anonymous',
+            edit_mode=False
+        )
 
 @generator_bp.route('/download/<path:filename>')
 def download(filename):
@@ -133,16 +162,22 @@ def generate_audio():
 
     try:
         dictation_id = data.get('dictation_id')
+        safe_email = data.get('safe_email')  # получаем из запроса
+        if not safe_email:
+            logging.error("Отсутствует safe_email")
+            return jsonify({"success": False, "error": "Отсутствует safe_email"}), 400
         if not dictation_id:
             return jsonify({"success": False, "error": "Отсутствует ID диктанта"}), 400
 
         text = data.get('text')
-        sentence_id = data.get('sentence_id')
+        tipe_audio  = data.get('tipe_audio')
+        filename_audio  = data.get('filename_audio')
         lang = data.get('language')
 
         # Создаем базовую директорию для хранения аудио
-        base_dir = current_app.config.get('AUDIO_BASE_DIR', 'static/data/dictations')
-        audio_dir = os.path.join(base_dir, dictation_id, lang)
+        # base_dir = current_app.config.get('AUDIO_BASE_DIR', 'static/data/temp')
+        base_dir = 'static/data/temp'
+        audio_dir = os.path.join(base_dir, dictation_id, lang, )
         
         # Проверяем и создаем директории
         try:
@@ -153,8 +188,7 @@ def generate_audio():
             return jsonify({"success": False, "error": f"Ошибка создания директории: {e}"}), 500
 
         # Генерируем имя файла
-        filename = f"{sentence_id}.mp3"
-        filepath = os.path.join(audio_dir, filename)
+        filepath = os.path.join(audio_dir, filename_audio)
         
         # Генерируем аудио с обработкой ошибок
         try:
@@ -163,8 +197,9 @@ def generate_audio():
             logging.info(f"Аудиофайл успешно сохранен: {filepath}")
             
             # Формируем URL для доступа к файлу
-            audio_url = url_for('dictation_generator.download', filename=filepath)
-            
+            # audio_url = url_for('dictation_generator.download', filename=filepath)
+            audio_url = f"/static/data/temp/{safe_email}/{dictation_id}/{lang}/{tipe_audio}/{filename_audio}"
+
             return jsonify({
                 "success": True,
                 "audio_url": audio_url
@@ -197,7 +232,7 @@ def generate_path_audio():
         lang_tr = data.get('language_translation')
 
         # Создаем базовую директорию для хранения аудио
-        base_dir = current_app.config.get('AUDIO_BASE_DIR', 'static/data/dictations')
+        base_dir = current_app.config.get('AUDIO_BASE_DIR', 'static/data/temp')
         audio_dir_original = os.path.join(base_dir, dictation_id, lang)
         audio_dir_translation = os.path.join(base_dir, dictation_id, lang_tr)
         
@@ -522,3 +557,18 @@ def recognize_words():
     except Exception as e:
         logger.error(f"Неожиданная ошибка: {str(e)}", exc_info=True)
         return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
+    
+
+def cleanup_user_temp_files(safe_email, older_than_days=7):
+    """Очищает временные файлы пользователя старше N дней"""
+    user_temp_dir = os.path.join('static/temp', safe_email)
+    if not os.path.exists(user_temp_dir):
+        return
+    
+    cutoff_time = time.time() - (older_than_days * 24 * 60 * 60)
+    
+    for dictation_dir in os.listdir(user_temp_dir):
+        dictation_path = os.path.join(user_temp_dir, dictation_dir)
+        if os.path.getctime(dictation_path) < cutoff_time:
+            shutil.rmtree(dictation_path)
+            logging.info(f"Удалены старые файлы: {dictation_path}")    
