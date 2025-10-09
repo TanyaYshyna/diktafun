@@ -852,6 +852,31 @@ def save_dictation_with_category():
         logger.error(f"Ошибка в save_dictation_with_category: {e}", exc_info=True)
         return jsonify({"success": False, "error": str(e)}), 500
 
+@generator_bp.route('/clear_temp_folders', methods=['POST'])
+def clear_temp_folders():
+    """Очищает temp папки для диктанта"""
+    try:
+        data = request.get_json()
+        dictation_id = data.get('dictation_id')
+        language_original = data.get('language_original')
+        language_translation = data.get('language_translation')
+        
+        if not dictation_id or not language_original or not language_translation:
+            return jsonify({"success": False, "error": "Missing required parameters"}), 400
+        
+        # Пути к temp папкам
+        temp_dictation_path = os.path.join('static', 'data', 'temp', dictation_id)
+        
+        if os.path.exists(temp_dictation_path):
+            shutil.rmtree(temp_dictation_path)
+            logger.info(f"✅ Очищена temp папка: {temp_dictation_path}")
+        
+        return jsonify({"success": True, "message": "Temp folders cleared"})
+        
+    except Exception as e:
+        logger.error(f"Ошибка в clear_temp_folders: {e}", exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @generator_bp.route('/copy_dictation_to_temp', methods=['POST'])
 def copy_dictation_to_temp():
     """Копирует диктант в temp для редактирования"""

@@ -189,7 +189,8 @@ textarea {
 
 /* для кнопок таблицы =========================================================*/
 /* Новые стили для управления видимостью */
-.generate-audio {
+.generate-audio,
+.generate-audio-tr {
     display: none;
     /* По умолчанию скрыты */
 }
@@ -202,7 +203,8 @@ textarea {
 }
 
 /* Для кнопок генерации при изменённом тексте */
-.generate-audio.changed {
+.generate-audio.changed,
+.generate-audio-tr.changed {
     display: inline-block;
     opacity: 1;
 }
@@ -215,6 +217,7 @@ textarea {
 
 /* Общие стили для кнопок */
 .generate-audio,
+.generate-audio-tr,
 .play-audio,
 .play-audio-tr {
     /* border: none; */
@@ -233,6 +236,7 @@ textarea {
 
 
 .generate-audio:disabled,
+.generate-audio-tr:disabled,
 .play-audio:disabled,
 .play-audio-tr:disabled {
     opacity: 0.5;

@@ -1344,8 +1344,16 @@ async function createSentenceRow({
     // назначаем слушатель изменения оригинального текста
     textCell.addEventListener('input', () => {
         const row = textCell.closest('tr');
+        const key = row.dataset.key;
+        const newText = textCell.querySelector('.text-original').textContent.trim();
 
-        // видимая - кнопка создания аудио и невидимая кнопка проигрывания
+        // Обновляем глобальный массив
+        const sentenceIndex = sentences_original.findIndex(s => s.key === key);
+        if (sentenceIndex !== -1) {
+            sentences_original[sentenceIndex].text = newText;
+        }
+
+        // показываем кнопку генерации аудио и скрываем кнопку проигрывания
         const genBtn = row.querySelector('.generate-audio[data-lang="original"]');
         if (genBtn) {
             genBtn.classList.add('changed');
@@ -1386,10 +1394,10 @@ async function createSentenceRow({
                 language: currentDictation.language_original
             });
             if (success) {
-                genBtn.classList.remove("changed");
-                genBtn.disabled = true; // Делаем её неактивной
-                playBtn.classList.remove("changed");
-                playBtn.disabled = false; // Делаем её активной
+                genBtn.classList.remove("changed"); // Скрываем кнопку генерации
+                genBtn.disabled = true;
+                playBtn.classList.remove("changed"); // Показываем кнопку проигрывания
+                playBtn.disabled = false;
                 // Автопроигрывание сгенерированного аудио (оригинал)
                 const player = audioPlayers[filename_audio_original];
                 if (player) {
@@ -1421,8 +1429,20 @@ async function createSentenceRow({
     // у нас есть адрес аудио файла просто записываем в плеер
     const playBtnOriginal = audioCellOriginal.querySelector('.play-audio');
     playBtnOriginal.disabled = false;
-    // playBtnOriginal.querySelector('.status-text').textContent = currentDictation.language_original;
-    // playBtnOriginal.querySelector('.data-filename').textContent
+    
+    // Загружаем аудиофайл в плеер, если он существует
+    if (audio_url_original && filename_audio_original) {
+        try {
+            await putAudioInPlayer(filename_audio_original, audio_url_original);
+            console.log(`✅ Аудио оригинал загружен: ${filename_audio_original}`);
+        } catch (error) {
+            console.warn(`⚠️ Не удалось загрузить аудио оригинал: ${filename_audio_original}`, error);
+            playBtnOriginal.disabled = true;
+        }
+    } else {
+        playBtnOriginal.disabled = true;
+    }
+    
     tbody.appendChild(row1);
 
 
@@ -1442,6 +1462,14 @@ async function createSentenceRow({
     // Для перевода
     textCellTranslation.addEventListener('input', () => {
         const row = textCellTranslation.closest('tr');
+        const key = row.dataset.key;
+        const newText = textCellTranslation.querySelector('.text-translation').textContent.trim();
+
+        // Обновляем глобальный массив
+        const sentenceIndex = sentence_translation.findIndex(s => s.key === key);
+        if (sentenceIndex !== -1) {
+            sentence_translation[sentenceIndex].text = newText;
+        }
 
         const genBtn = row.querySelector('.generate-audio-tr[data-lang="translation"]');
         if (genBtn) {
@@ -1461,8 +1489,7 @@ async function createSentenceRow({
     audioGenerationTranslation.innerHTML = `<button class="generate-audio-tr" 
             data-index="${key}" 
             data-lang="translation" 
-            title="сгенерировать новое аудио" 
-            style="color: var(--color-button-text-yellow);">
+            title="сгенерировать новое аудио">
             <i data-lucide="file-music"></i>
             <span class="status-text">${currentDictation.language_translation}</span>
         </button>
@@ -1488,10 +1515,10 @@ async function createSentenceRow({
                 language: currentDictation.language_translation
             });
             if (success) {
-                genBtn.classList.remove("changed");
-                genBtn.disabled = true; // Делаем её неактивной
-                playBtn.classList.remove("changed");
-                playBtn.disabled = false; // Делаем её активной
+                genBtn.classList.remove("changed"); // Скрываем кнопку генерации
+                genBtn.disabled = true;
+                playBtn.classList.remove("changed"); // Показываем кнопку проигрывания
+                playBtn.disabled = false;
                 // Автопроигрывание сгенерированного аудио (перевод)
                 const player = audioPlayers[filename_audio_translation];
                 if (player) {
@@ -1527,6 +1554,18 @@ async function createSentenceRow({
     playBtnTranslation.disabled = false;
     playBtnTranslation.querySelector('.status-text').textContent = currentDictation.language_translation;
 
+    // Загружаем аудиофайл перевода в плеер, если он существует
+    if (audio_url_translation && filename_audio_translation) {
+        try {
+            await putAudioInPlayer(filename_audio_translation, audio_url_translation);
+            console.log(`✅ Аудио перевод загружен: ${filename_audio_translation}`);
+        } catch (error) {
+            console.warn(`⚠️ Не удалось загрузить аудио перевод: ${filename_audio_translation}`, error);
+            playBtnTranslation.disabled = true;
+        }
+    } else {
+        playBtnTranslation.disabled = true;
+    }
 
     tbody.appendChild(row2);
 
@@ -1618,6 +1657,18 @@ async function saveAvtoToDisk() {
         const dictationId = currentDictation.id;
         const folderName = 'avto';
         const audioExtensions = ['.mp3'];
+
+        // Очищаем temp папки перед сохранением
+        console.log('🧹 Очищаем temp папки перед сохранением');
+        await fetch('/clear_temp_folders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                dictation_id: dictationId,
+                language_original: currentDictation.language_original,
+                language_translation: currentDictation.language_translation
+            })
+        });
 
         // сохраняем ОДИН язык (оригинал)
         const respOrig = await fetch('/save_audio_folder_single', {
@@ -2908,8 +2959,21 @@ async function loadCoverForExistingDictation(dictationId, originalLanguage) {
     const coverImage = document.getElementById('coverImage');
     if (!coverImage) return;
 
-    // Пока просто используем cover по умолчанию, чтобы избежать ошибок 404
-    // В будущем можно добавить API endpoint для проверки существования cover
+    // Пытаемся загрузить cover диктанта
+    const dictationCoverUrl = `/static/data/dictations/${dictationId}/cover.webp`;
+    
+    try {
+        const response = await fetch(dictationCoverUrl, { method: 'HEAD' });
+        if (response.ok) {
+            coverImage.src = dictationCoverUrl;
+            console.log('✅ Загружен cover диктанта:', dictationCoverUrl);
+            return;
+        }
+    } catch (error) {
+        console.warn('⚠️ Не удалось проверить cover диктанта:', error);
+    }
+
+    // Если cover диктанта нет, используем cover по умолчанию
     const defaultCoverUrl = `/static/data/covers/cover_${originalLanguage}.webp`;
     coverImage.src = defaultCoverUrl;
     console.log('📝 Используется cover по умолчанию:', defaultCoverUrl);
@@ -3177,20 +3241,29 @@ function applyPairedOutput(original_data, translation_data) {
 
 
 async function renderSentenceTable(original_sentences = [], translation_sentences = []) {
-    // 1. Получаем пути к папкам с аудио
-    const response = await fetch('/generate_path_audio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            dictation_id: currentDictation.id,
-            language_original: currentDictation.language_original,
-            language_translation: currentDictation.language_translation
-        })
-    });
-
-    const result = await response.json();
-    const audio_dir_url_original = "/" + result.audio_dir_original;
-    const audio_dir_url_translation = "/" + result.audio_dir_translation;
+    // 1. Определяем пути к папкам с аудио
+    // Для существующих диктантов используем temp папки, для новых - создаем их
+    let audio_dir_url_original, audio_dir_url_translation;
+    
+    if (currentDictation.isNew) {
+        // Для новых диктантов создаем пути через API
+        const response = await fetch('/generate_path_audio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                dictation_id: currentDictation.id,
+                language_original: currentDictation.language_original,
+                language_translation: currentDictation.language_translation
+            })
+        });
+        const result = await response.json();
+        audio_dir_url_original = "/" + result.audio_dir_original;
+        audio_dir_url_translation = "/" + result.audio_dir_translation;
+    } else {
+        // Для существующих диктантов используем temp папки
+        audio_dir_url_original = `/static/data/temp/${currentDictation.id}/${currentDictation.language_original}/avto`;
+        audio_dir_url_translation = `/static/data/temp/${currentDictation.id}/${currentDictation.language_translation}/avto`;
+    }
 
     // 2. Подготавливаем таблицу
     const tbody = document.querySelector('#sentences-table tbody');
@@ -3199,6 +3272,10 @@ async function renderSentenceTable(original_sentences = [], translation_sentence
         return;
     }
     tbody.innerHTML = '';
+    
+    // Очищаем глобальные массивы перед заполнением
+    sentences_original = [];
+    sentence_translation = [];
 
     // 3. Проверяем, что original_sentences - массив
     if (!Array.isArray(original_sentences)) {
@@ -3242,6 +3319,10 @@ async function renderSentenceTable(original_sentences = [], translation_sentence
             filename_audio_original: originalAudio,
             filename_audio_translation: translationAudio
         });
+        
+        // 5. Обновляем глобальные массивы для сохранения
+        sentences_original.push(newSentances(key, originalText, originalAudio));
+        sentence_translation.push(newSentances(key, translationText, translationAudio));
     }
     // Инициализируем иконки Lucide
     if (window.lucide) {
