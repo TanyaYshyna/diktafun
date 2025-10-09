@@ -3182,18 +3182,6 @@ async function loadExistingDictation(initData) {
     // Создаём таблицу с предложениями
     applyPairedOutput(original_data, translation_data);
 
-    // НЕ загружаем старый audio_file - теперь используем mp3Data из loadMp3Data()
-    // Старый код: if (audio_file) { handleAudioAfterUpload(audio_file); }
-    console.log('⚠️ Пропускаем загрузку старого audio_file, будем использовать mp3Data');
-
-    // Загружаем слова с таймкодами в textarea
-    if (audio_words && Array.isArray(audio_words)) {
-        const textarea = document.getElementById("text_time_word");
-        if (textarea) {
-            textarea.value = formatAudioWordsToText(audio_words);
-        }
-    }
-
     // Заполнение таблицы фраз (теперь работает с temp файлами)
     await renderSentenceTable(original_data?.sentences || [], translation_data?.sentences || []);
 }
@@ -3296,18 +3284,13 @@ async function renderSentenceTable(original_sentences = [], translation_sentence
 
         // Данные для оригинального предложения
         const originalText = sentence.text || '';
-        const originalAudio = sentence.audio || `${key}.mp3`;
-        const audio_url_original = `${audio_dir_url_original}/${originalAudio}`;
+        const originalAudio = sentence.audio || '';
+        //const audio_url_original = `${audio_dir_url_original}/${originalAudio}`;
 
         // Данные для перевода
         const translationText = translationEntry?.text || '';
-        const translationAudio = translationEntry?.audio || `${key}.mp3`;
-        const audio_url_translation = `${audio_dir_url_translation}/${translationAudio}`;
-
-        // Пустые значения для start/end/status на первом этапе
-        const startTime = 0;
-        const endTime = 0;
-        const status = '';
+        const translationAudio = translationEntry?.audio || '';
+        //const audio_url_translation = `${audio_dir_url_translation}/${translationAudio}`;
 
         // 4. Вызываем отрисовку строки
         await createSentenceRow({
