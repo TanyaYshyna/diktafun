@@ -5,6 +5,7 @@
   /*--color-text: rgb(207, 0, 21);*/                     /* основной цвет текста */
   --color-text: #224156ff;                    /* основной цвет текста */
   --color-text-secondary: #000000ff;              /* текст-пояснение (например, перевод) */
+  --color-white: #ffffff;
   
   --color-button-gray: #dce2e5ff;  
   --color-button-mint: #aae7e4ff;  
@@ -37,7 +38,6 @@
   --color-button-shadow-pink: rgb(190, 66, 78);  
   --color-button-shadow-purple: rgb(74, 77, 176);  
 
-  --color-white: #ffffff;
   --color-shadow: rgba(0, 0, 0, 0.1);         /* мягкая тень */
   --color-shadow-strong: rgba(0, 0, 0, 0.3);  /* сильная тень (модалки) */
 

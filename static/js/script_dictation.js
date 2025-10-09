@@ -2451,7 +2451,7 @@ function onloadInitializeDictation() {
     console.log('=======================document.addEventListener("DOMContentLoaded", function () {:');
     initializeDictation();
     loadLanguageCodes();
-    userManager.init(); 
+    // userManager.init(); 
     // initializeUser(); // Инициализируем пользователя
     // setupAuthHandlers(); // ДОБАВИТЬ ЭТУ СТРОЧКУ
     setupExitHandlers(); // Настраиваем обработчики выхода

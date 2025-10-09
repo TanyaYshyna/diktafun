@@ -40,6 +40,21 @@
     /* если нужно */
 }
 
+/* Стили для шапки редактора с двумя панелями */
+.editor-header {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+}
+
+.editor-header-panel-1 {
+    flex: 0 0 auto; /* фиксированная ширина под ковер */
+}
+
+.editor-header-panel-2 {
+    flex: 1; /* занимает оставшееся пространство */
+}
 
 
 /* Контекстное меню jsTree — должно быть очень наверху */
@@ -57,12 +72,21 @@
     display: inline-block;
 }
 
-/* для заоловков ========================================================== */
+/* для заголовков ========================================================== */
+.form-group-column {
+    display: flex;
+    flex-direction: column; /* ← вот эта строка */
+    align-items: flex-start; /* чтобы выровнять по левому краю */
+    gap: 0;
+    margin-bottom: 0;
+}
+
+
 .form-group-line {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 0;
 }
 
 .form-group-line label {
@@ -82,7 +106,7 @@
 .form-group {
     display: flex;
     flex-direction: column;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 }
 
 .form-group label {
@@ -92,7 +116,8 @@
     color: #333;
 }
 
-.form-group textarea {
+/* .form-group textarea { */
+textarea {
     width: 100%;
     box-sizing: border-box;
     padding: 10px;
@@ -101,8 +126,9 @@
     border-radius: 10px;
     resize: vertical;
     font-family: inherit;
-    background: white;
+    background: white !important;
 }
+
 
 /* для поля ввод и кнопки создания таблицы =========================================================*/
 .form-raw {
@@ -400,13 +426,13 @@ wavesurfer-region {
     gap: 20px;
     align-items: center;
 }
-
+/* 
 .form-group-line {
     display: flex;
     align-items: center;
-    flex: 1 1 300px; /* Минимальная ширина одного "вагончика" */
-    gap: 10px; /* расстояние между лейблом и инпутом */
-}
+    flex: 1 1 300px; Минимальная ширина одного "вагончика"
+    gap: 10px; расстояние между лейблом и инпутом
+} */
 
 .form-group-line label {
     white-space: nowrap; /* чтобы не переносился текст лейбла */
@@ -416,6 +442,8 @@ wavesurfer-region {
 
 .text-input {
     flex: 1; /* растягиваем input */
+    padding: 6px 10px; /* было 10px, станет 6px - поле станет ниже */
+
 }
 
 /* --------------------Заголовки оригинал и перевод "вагончиком"  КОНЕЦ ----------------------------------- */

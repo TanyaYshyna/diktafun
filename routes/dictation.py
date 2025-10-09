@@ -26,20 +26,28 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
     title = info.get("title", "Без названия")
     level = info.get("level", "A1")
 
-    # Пути к JSON-файлам
-    path_sentences_orig = os.path.join(base_path, lang_orig, "sentences.json")
-    path_sentences_tr = os.path.join(base_path, lang_tr, "sentences.json")
+    # Пути к JSON-файлам (в папке avto)
+    path_sentences_orig = os.path.join(base_path, lang_orig, "avto", "sentences.json")
+    path_sentences_tr = os.path.join(base_path, lang_tr, "avto", "sentences.json")
 
     # Загружаем файл с предложениями ОРИГИНАЛ (внутри есть и заголовок, и предложения)
-    with open(path_sentences_orig, "r", encoding="utf-8") as f:
-        original_full = json.load(f)  # original_full — это словарь
+    if os.path.exists(path_sentences_orig):
+        with open(path_sentences_orig, "r", encoding="utf-8") as f:
+            original_full = json.load(f)  # original_full — это словарь
+    else:
+        original_full = {"title": "Без названия", "sentences": []}
+    
     # Получаем заголовок и список предложений
     title = original_full.get("title", "Без названия")
     original_data = original_full.get("sentences", [])
 
     # Загружаем файл с предложениями ПЕРЕВОД (внутри есть и заголовок, и предложения)
-    with open(path_sentences_tr, "r", encoding="utf-8") as f:
-        translation_full = json.load(f)  # original_full — это словарь
+    if os.path.exists(path_sentences_tr):
+        with open(path_sentences_tr, "r", encoding="utf-8") as f:
+            translation_full = json.load(f)  # translation_full — это словарь
+    else:
+        translation_full = {"title": "", "sentences": []}
+    
     # Получаем заголовок и список предложений
     translation_data = translation_full.get("sentences", [])
 
@@ -56,8 +64,8 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
             "key": key,
             "text": item.get("text", ""),
             "translation": translated.get("text", ""),
-            "audio": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_orig}/{item.get('audio', '')}"),
-            "audio_tr": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_tr}/{translated.get('audio', '')}"),
+            "audio": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_orig}/avto/{item.get('audio', '')}"),
+            "audio_tr": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_tr}/avto/{translated.get('audio', '')}"),
             "completed_correctly": False
         }
 

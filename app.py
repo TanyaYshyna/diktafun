@@ -36,6 +36,12 @@ app.register_blueprint(user_bp)
 
 
 
+@app.route('/favicon.ico')
+def favicon():
+    icons_dir = os.path.join(app.root_path, 'static', 'icons')
+    # Отдаём существующий логотип как фавикон, чтобы избежать 404
+    return send_from_directory(icons_dir, 'logo.svg', mimetype='image/svg+xml')
+
 @app.route('/data/<path:filename>')
 def serve_data(filename):
     return send_from_directory('data', filename)

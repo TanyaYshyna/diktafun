@@ -15,7 +15,6 @@ class LanguageManager {
             'pl': { country_cod: 'pl', country_cod_url: 'pl-PL', language_ru: 'Польский', language_en: 'Polish' },
         };
         this.isInitialized = true;
-        console.log('✅ LanguageManager: загружено', Object.keys(this.languageData).length, 'языков');
     }
 
     getLanguageData() {

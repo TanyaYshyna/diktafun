@@ -14,6 +14,9 @@ import datetime
 import logging
 import requests
 import time
+import librosa
+import soundfile as sf
+from PIL import Image
 
 # from helpers.user_helpers import get_safe_email
 from helpers.user_helpers import get_safe_email_from_token, get_current_user 
@@ -22,7 +25,11 @@ from helpers.user_helpers import get_safe_email_from_token, get_current_user
 # Настройка логгера
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log', encoding='utf-8'),
+        logging.StreamHandler()  # Вывод в консоль
+    ]
 )
 logger = logging.getLogger(__name__)
 
@@ -53,16 +60,16 @@ def edit_dictation(dictation_id, language_original, language_translation):
         with open(info_path, 'r', encoding='utf-8') as f:
             info = json.load(f)
 
-    # Загружаем оригинальные предложения
-    path_sentences_orig = os.path.join(base_path, language_original, 'sentences.json')
+    # Загружаем оригинальные предложения (в папке avto)
+    path_sentences_orig = os.path.join(base_path, language_original, 'avto', 'sentences.json')
     if os.path.exists(path_sentences_orig):
         with open(path_sentences_orig, 'r', encoding='utf-8') as f:
             original_data = json.load(f)
     else:
         original_data = {"title": "", "sentences": []}
 
-    # Загружаем переведённые предложения
-    path_sentences_tr = os.path.join(base_path, language_translation, 'sentences.json')
+    # Загружаем переведённые предложения (в папке avto)
+    path_sentences_tr = os.path.join(base_path, language_translation, 'avto', 'sentences.json')
     if os.path.exists(path_sentences_tr):
         with open(path_sentences_tr, 'r', encoding='utf-8') as f:
             translation_data = json.load(f)
@@ -76,11 +83,13 @@ def edit_dictation(dictation_id, language_original, language_translation):
         with open(audio_words_path, 'r', encoding='utf-8') as f:
             audio_words = json.load(f)
 
-    # Путь к аудиофайлу, если есть
+    # Путь к аудиофайлу (старый файл больше не используется)
+    # Теперь аудио загружается через mp3Data API
     audio_file = None
-    audio_path = os.path.join(base_path, 'audio.mp3')
-    if os.path.exists(audio_path):
-        audio_file = url_for('static', filename=f'data/dictations/{dictation_id}/audio.mp3')
+    # Старый код:
+    # audio_path = os.path.join(base_path, 'audio.mp3')
+    # if os.path.exists(audio_path):
+    #     audio_file = url_for('static', filename=f'data/dictations/{dictation_id}/audio.mp3')
    
     # Получаем текущего пользователя
     from helpers.user_helpers import get_current_user
@@ -170,14 +179,15 @@ def generate_audio():
             return jsonify({"success": False, "error": "Отсутствует ID диктанта"}), 400
 
         text = data.get('text')
-        tipe_audio  = data.get('tipe_audio')
+        tipe_audio  = data.get('tipe_audio') or 'avto'
         filename_audio  = data.get('filename_audio')
         lang = data.get('language')
 
         # Создаем базовую директорию для хранения аудио
         # base_dir = current_app.config.get('AUDIO_BASE_DIR', 'static/data/temp')
         base_dir = 'static/data/temp'
-        audio_dir = os.path.join(base_dir, dictation_id, lang, )
+        # сохраняем внутри подпапки типа аудио (например, avto)
+        audio_dir = os.path.join(base_dir, dictation_id, lang, tipe_audio)
         
         # Проверяем и создаем директории
         try:
@@ -197,8 +207,8 @@ def generate_audio():
             logging.info(f"Аудиофайл успешно сохранен: {filepath}")
             
             # Формируем URL для доступа к файлу
-            # audio_url = url_for('dictation_generator.download', filename=filepath)
-            audio_url = f"/static/data/temp/{safe_email}/{dictation_id}/{lang}/{tipe_audio}/{filename_audio}"
+            # Возвращаем относительный URL до сгенерированного файла
+            audio_url = f"/static/data/temp/{dictation_id}/{lang}/{tipe_audio}/{filename_audio}"
 
             return jsonify({
                 "success": True,
@@ -287,6 +297,280 @@ def save_uploaded_audio():
     return jsonify({"message": "Файл загружен", "audio_url": audio_url})
 
 
+@generator_bp.route('/upload_mp3_file', methods=['POST'])
+def upload_mp3_file():
+    """Загрузка MP3 файла для режима mp3_1"""
+    try:
+        audio = request.files.get('file')
+        dictation_id = request.form.get('dictation_id')
+        language = request.form.get('language', 'en')  # По умолчанию английский
+
+        if not audio or not dictation_id:
+            return jsonify({'error': 'Missing audio file or dictation ID'}), 400
+
+        # Проверяем что это аудио файл
+        if not audio.filename.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a')):
+            return jsonify({'error': 'File must be an audio file'}), 400
+
+        # Создаем путь temp/en/mp3_1/ или temp/ru/mp3_1/
+        temp_path = os.path.join("static", "data", "temp", dictation_id, language, "mp3_1")
+        os.makedirs(temp_path, exist_ok=True)
+
+        # Сохраняем файл с оригинальным именем
+        filename = audio.filename
+        audio_path = os.path.join(temp_path, filename)
+        audio.save(audio_path)
+
+        # Путь для браузера
+        audio_url = f"/static/data/temp/{dictation_id}/{language}/mp3_1/{filename}"
+
+        logger.info(f"✅ MP3 файл загружен: {audio_path}")
+        
+        return jsonify({
+            "success": True,
+            "message": "MP3 файл загружен",
+            "audio_url": audio_url,
+            "filename": filename
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при загрузке MP3 файла: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@generator_bp.route('/split_audio_into_parts', methods=['POST'])
+def split_audio_into_parts():
+    """Разделение аудио файла на равные части для создания предложений"""
+    try:
+        data = request.get_json()
+        logger.info(f"Получены данные для разделения аудио: {data}")
+        
+        dictation_id = data.get('dictation_id')
+        language = data.get('language', 'en')
+        filename = data.get('filename')
+        num_parts = data.get('num_parts', 10)  # Количество частей по умолчанию
+
+        if not dictation_id:
+            logger.error("Missing dictation_id")
+            return jsonify({'error': 'Missing dictation_id'}), 400
+            
+        if not filename:
+            logger.error("Missing filename")
+            return jsonify({'error': 'Missing filename'}), 400
+
+        # Путь к исходному файлу
+        source_path = os.path.join("static", "data", "temp", dictation_id, language, "mp3_1", filename)
+        
+        if not os.path.exists(source_path):
+            return jsonify({'error': 'Source audio file not found'}), 404
+
+        # Создаем папку для частей
+        parts_dir = os.path.join("static", "data", "temp", dictation_id, language, "mp3_1")
+        os.makedirs(parts_dir, exist_ok=True)
+
+        # Получаем длительность аудио файла из параметров start/end
+        start_time = data.get('start_time', 0)
+        end_time = data.get('end_time')
+        
+        if end_time is None:
+            return jsonify({'error': 'End time is required'}), 400
+            
+        audio_duration = end_time - start_time
+        part_duration = audio_duration / num_parts
+
+        # Загружаем исходный аудио файл
+        try:
+            y, sr = librosa.load(source_path, sr=None)
+            logger.info(f"Загружен аудио файл: {len(y)} samples, sample rate: {sr}")
+        except Exception as e:
+            logger.error(f"Ошибка загрузки аудио файла: {e}")
+            return jsonify({'error': f'Cannot load audio file: {str(e)}'}), 400
+
+        created_files = []
+        for i in range(num_parts):
+            # Учитываем время старта диктанта, которое установил пользователь
+            part_start_time = start_time + (i * part_duration)
+            part_end_time = start_time + ((i + 1) * part_duration)
+            
+            # Имя файла в формате 001_en_mp3_1.mp3
+            part_filename = f"{i:03d}_{language}_mp3_1.mp3"
+            part_path = os.path.join(parts_dir, part_filename)
+            
+            # Отрезаем нужный кусок аудио (в сэмплах)
+            start_sample = int(part_start_time * sr)
+            end_sample = int(part_end_time * sr)
+            
+            # Извлекаем отрезок аудио
+            audio_segment = y[start_sample:end_sample]
+            
+            # Сохраняем отрезок как отдельный файл
+            sf.write(part_path, audio_segment, sr)
+            
+            created_files.append({
+                'filename': part_filename,
+                'start_time': part_start_time,
+                'end_time': part_end_time,
+                'url': f"/static/data/temp/{dictation_id}/{language}/mp3_1/{part_filename}"
+            })
+
+        logger.info(f"✅ Создано {len(created_files)} частей аудио")
+        
+        return jsonify({
+            "success": True,
+            "message": f"Аудио разделено на {num_parts} частей",
+            "parts": created_files
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при разделении аудио: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@generator_bp.route('/regenerate_audio_parts', methods=['POST'])
+def regenerate_audio_parts():
+    """Переформирование отдельных частей аудио с новыми временными интервалами"""
+    try:
+        data = request.get_json()
+        logger.info(f"Получены данные для переформирования аудио: {data}")
+        
+        dictation_id = data.get('dictation_id')
+        language = data.get('language', 'en')
+        filename = data.get('filename')
+        parts = data.get('parts', [])  # Список частей для переформирования
+
+        if not dictation_id:
+            logger.error("Missing dictation_id")
+            return jsonify({'error': 'Missing dictation_id'}), 400
+            
+        if not filename:
+            logger.error("Missing filename")
+            return jsonify({'error': 'Missing filename'}), 400
+            
+        if not parts:
+            logger.error("No parts to regenerate")
+            return jsonify({'error': 'No parts to regenerate'}), 400
+
+        # Путь к исходному файлу
+        source_path = os.path.join("static", "data", "temp", dictation_id, language, "mp3_1", filename)
+        
+        if not os.path.exists(source_path):
+            return jsonify({'error': 'Source audio file not found'}), 404
+
+        # Создаем папку для частей
+        parts_dir = os.path.join("static", "data", "temp", dictation_id, language, "mp3_1")
+        os.makedirs(parts_dir, exist_ok=True)
+
+        # Загружаем исходный аудио файл
+        try:
+            y, sr = librosa.load(source_path, sr=None)
+            logger.info(f"Загружен аудио файл: {len(y)} samples, sample rate: {sr}")
+        except Exception as e:
+            logger.error(f"Ошибка загрузки аудио файла: {e}")
+            return jsonify({'error': f'Cannot load audio file: {str(e)}'}), 400
+
+        created_files = []
+        for part_data in parts:
+            row_index = part_data.get('row')
+            start_time = part_data.get('start', 0)
+            end_time = part_data.get('end', 0)
+            
+            if start_time >= end_time:
+                logger.warning(f"Invalid time range for row {row_index}: {start_time} - {end_time}")
+                continue
+            
+            # Имя файла в формате 001_en_mp3_1.mp3
+            part_filename = f"{row_index:03d}_{language}_mp3_1.mp3"
+            part_path = os.path.join(parts_dir, part_filename)
+            
+            # Отрезаем нужный кусок аудио (в сэмплах)
+            start_sample = int(start_time * sr)
+            end_sample = int(end_time * sr)
+            
+            # Извлекаем отрезок аудио
+            audio_segment = y[start_sample:end_sample]
+            
+            # Сохраняем отрезок как отдельный файл
+            sf.write(part_path, audio_segment, sr)
+            
+            created_files.append({
+                'row': row_index,
+                'filename': part_filename,
+                'start_time': start_time,
+                'end_time': end_time,
+                'url': f"/static/data/temp/{dictation_id}/{language}/mp3_1/{part_filename}"
+            })
+
+        logger.info(f"✅ Переформировано {len(created_files)} частей аудио")
+        
+        return jsonify({
+            "success": True,
+            "message": f"Переформировано {len(created_files)} частей аудио",
+            "parts": created_files
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при переформировании аудио: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@generator_bp.route('/save_mp3_dictation', methods=['POST'])
+def save_mp3_dictation():
+    """Сохранение диктанта в режиме MP3"""
+    try:
+        data = request.get_json()
+        dictation_id = data.get('dictation_id')
+        language = data.get('language', 'en')
+        sentences = data.get('sentences', [])
+        
+        if not dictation_id:
+            return jsonify({'error': 'Missing dictation_id'}), 400
+        
+        # Создаем папку для сохранения
+        target_dir = os.path.join('static', 'data', 'dictations', dictation_id, language, 'mp3_1')
+        os.makedirs(target_dir, exist_ok=True)
+        
+        # Получаем данные об исходном аудио файле
+        name_of_shared_audio = data.get('name_of_shared_audio', '')
+        start_audio = data.get('start_audio', 0)
+        end_audio = data.get('end_audio', 0)
+        
+        # Сохраняем sentences.json
+        sentences_data = {
+            'language': language,
+            'speaker': 'mp3_1',
+            'title': data.get('title', ''),
+            'name_of_shared_audio': name_of_shared_audio,
+            'start_audio': start_audio,
+            'end_audio': end_audio,
+            'sentences': sentences
+        }
+        
+        sentences_path = os.path.join(target_dir, 'sentences.json')
+        with open(sentences_path, 'w', encoding='utf-8') as f:
+            json.dump(sentences_data, f, ensure_ascii=False, indent=2)
+        
+        # Копируем аудио файлы из temp в целевую папку
+        temp_mp3_dir = os.path.join('static', 'data', 'temp', dictation_id, language, 'mp3_1')
+        if os.path.exists(temp_mp3_dir):
+            for filename in os.listdir(temp_mp3_dir):
+                if filename.endswith('.mp3'):
+                    source_path = os.path.join(temp_mp3_dir, filename)
+                    target_path = os.path.join(target_dir, filename)
+                    shutil.copy2(source_path, target_path)
+                    logger.info(f"Скопирован аудио файл: {filename}")
+        
+        logger.info(f"✅ MP3 диктант сохранен: {target_dir}")
+        
+        return jsonify({
+            "success": True,
+            "message": "MP3 диктант сохранен"
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при сохранении MP3 диктанта: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 # ==============================================================
 # транслятор
 translator = Translator()
@@ -311,8 +595,6 @@ def serve_temp_audio(lang, filename):
 
 @generator_bp.route('/save_json', methods=['POST'])
 def save_json():
-    import os
-    from flask import request, jsonify
 
     data = request.get_json()
     file_path = data.get('path')
@@ -328,7 +610,6 @@ def save_json():
     try:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, 'w', encoding='utf-8') as f:
-            import json
             json.dump(content, f, ensure_ascii=False, indent=2)
         return jsonify({"success": True})
     except Exception as e:
@@ -405,6 +686,235 @@ def create_dictation_folders():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
     
+
+# ========================= Сохранение ОДНОГО языка/папки =============================
+@generator_bp.route('/save_audio_folder_single', methods=['POST'])
+def save_audio_folder_single():
+    try:
+        data = request.get_json(force=True)
+
+        dictation_id = data.get('dictation_id')
+        language = data.get('language')
+        folder_name = (data.get('folder_name') or 'avto')
+        title = data.get('title') or ''
+        sentences = data.get('sentences') or []
+        audio_extensions = [ext.lower() for ext in (data.get('audio_extensions') or ['.mp3'])]
+
+        if not dictation_id or not language:
+            return jsonify({"success": False, "error": "Missing dictation_id or language"}), 400
+
+        base_dictation_dir = os.path.join('static', 'data', 'dictations', dictation_id)
+        temp_lang_dir = os.path.join('static', 'data', 'temp', dictation_id, language, folder_name)
+        target_lang_dir = os.path.join(base_dictation_dir, language, folder_name)
+
+        # Очистить целевую папку
+        if os.path.exists(target_lang_dir):
+            shutil.rmtree(target_lang_dir)
+        os.makedirs(target_lang_dir, exist_ok=True)
+
+        # sentences.json
+        sentences_json = {
+            'language': language,
+            'speaker': folder_name,
+            'title': title,
+            'sentences': sentences
+        }
+        with open(os.path.join(target_lang_dir, 'sentences.json'), 'w', encoding='utf-8') as f:
+            json.dump(sentences_json, f, ensure_ascii=False, indent=2)
+
+        # Копирование аудио
+        if os.path.isdir(temp_lang_dir):
+            for name in os.listdir(temp_lang_dir):
+                lower = name.lower()
+                if any(lower.endswith(ext) for ext in audio_extensions):
+                    shutil.copy2(os.path.join(temp_lang_dir, name), os.path.join(target_lang_dir, name))
+
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.error(f"Ошибка в save_audio_folder_single: {e}", exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@generator_bp.route('/add_dictation_to_category', methods=['POST'])
+def add_dictation_to_category():
+    try:
+        data = request.get_json()
+        dictation_id = data.get('dictation_id')
+        category_key = data.get('category_key')
+        
+        if not dictation_id or not category_key:
+            return jsonify({"success": False, "error": "Missing dictation_id or category_key"}), 400
+        
+        # Загружаем categories.json
+        categories_path = 'static/data/categories.json'
+        with open(categories_path, 'r', encoding='utf-8') as f:
+            categories = json.load(f)
+        
+        # Находим категорию по ключу и добавляем ID диктанта
+        def find_and_update_category(node, target_key):
+            if node.get('key') == target_key:
+                if 'data' not in node:
+                    node['data'] = {}
+                if 'dictations' not in node['data']:
+                    node['data']['dictations'] = []
+                
+                # Добавляем ID диктанта, если его еще нет
+                if dictation_id not in node['data']['dictations']:
+                    node['data']['dictations'].append(dictation_id)
+                return True
+            
+            # Рекурсивно ищем в дочерних узлах
+            for child in node.get('children', []):
+                if find_and_update_category(child, target_key):
+                    return True
+            return False
+        
+        # Ищем и обновляем категорию
+        found = False
+        for root_child in categories.get('children', []):
+            if find_and_update_category(root_child, category_key):
+                found = True
+                break
+        
+        if not found:
+            return jsonify({"success": False, "error": f"Category with key '{category_key}' not found"}), 404
+        
+        # Сохраняем обновленный categories.json
+        with open(categories_path, 'w', encoding='utf-8') as f:
+            json.dump(categories, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"✅ Добавлен диктант {dictation_id} в категорию {category_key}")
+        return jsonify({"success": True})
+        
+    except Exception as e:
+        logger.error(f"Ошибка в add_dictation_to_category: {e}", exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@generator_bp.route('/save_dictation_with_category', methods=['POST'])
+def save_dictation_with_category():
+    """Сохраняет диктант и добавляет его в категорию одним запросом"""
+    try:
+        data = request.get_json()
+        dictation_id = data.get('dictation_id')
+        category = data.get('category', {})
+        
+        if not dictation_id:
+            return jsonify({"success": False, "error": "Missing dictation_id"}), 400
+        
+        # Сохраняем диктант (если нужно)
+        # Здесь можно добавить логику сохранения диктанта
+        
+        # Добавляем в категорию, если указана
+        if category and category.get('key'):
+            category_key = category['key']
+            
+            # Загружаем categories.json
+            categories_path = 'static/data/categories.json'
+            with open(categories_path, 'r', encoding='utf-8') as f:
+                categories = json.load(f)
+            
+            # Находим категорию по ключу и добавляем ID диктанта
+            def find_and_update_category(node, target_key):
+                if node.get('key') == target_key:
+                    if 'data' not in node:
+                        node['data'] = {}
+                    if 'dictations' not in node['data']:
+                        node['data']['dictations'] = []
+                    
+                    # Добавляем ID диктанта, если его еще нет
+                    if dictation_id not in node['data']['dictations']:
+                        node['data']['dictations'].append(dictation_id)
+                    return True
+                
+                # Рекурсивно ищем в дочерних узлах
+                for child in node.get('children', []):
+                    if find_and_update_category(child, target_key):
+                        return True
+                return False
+            
+            # Ищем и обновляем категорию
+            found = False
+            for root_child in categories.get('children', []):
+                if find_and_update_category(root_child, category_key):
+                    found = True
+                    break
+            
+            if found:
+                # Сохраняем обновленный categories.json
+                with open(categories_path, 'w', encoding='utf-8') as f:
+                    json.dump(categories, f, ensure_ascii=False, indent=2)
+                logger.info(f"✅ Добавлен диктант {dictation_id} в категорию {category_key}")
+            else:
+                logger.warning(f"⚠️ Категория {category_key} не найдена")
+        
+        return jsonify({"success": True})
+        
+    except Exception as e:
+        logger.error(f"Ошибка в save_dictation_with_category: {e}", exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@generator_bp.route('/copy_dictation_to_temp', methods=['POST'])
+def copy_dictation_to_temp():
+    """Копирует диктант в temp для редактирования"""
+    try:
+        data = request.get_json()
+        dictation_id = data.get('dictation_id')
+        language_original = data.get('language_original')
+        language_translation = data.get('language_translation')
+        
+        if not dictation_id or not language_original or not language_translation:
+            return jsonify({"success": False, "error": "Missing required parameters"}), 400
+        
+        # Пути к исходным папкам
+        source_dictation_path = os.path.join('static', 'data', 'dictations', dictation_id)
+        temp_dictation_path = os.path.join('static', 'data', 'temp', dictation_id)
+        
+        # Создаем temp папку
+        os.makedirs(temp_dictation_path, exist_ok=True)
+        
+        # Копируем папки языков
+        for lang in [language_original, language_translation]:
+            # Копируем папку avto
+            source_lang_path = os.path.join(source_dictation_path, lang, 'avto')
+            temp_lang_path = os.path.join(temp_dictation_path, lang, 'avto')
+            
+            if os.path.exists(source_lang_path):
+                # Создаем папку в temp
+                os.makedirs(temp_lang_path, exist_ok=True)
+                
+                # Копируем все файлы
+                for file_name in os.listdir(source_lang_path):
+                    source_file = os.path.join(source_lang_path, file_name)
+                    temp_file = os.path.join(temp_lang_path, file_name)
+                    shutil.copy2(source_file, temp_file)
+                
+                logger.info(f"✅ Скопированы файлы avto для языка {lang}")
+            else:
+                logger.warning(f"⚠️ Папка {source_lang_path} не найдена")
+            
+            # Копируем папку mp3_1
+            source_mp3_path = os.path.join(source_dictation_path, lang, 'mp3_1')
+            temp_mp3_path = os.path.join(temp_dictation_path, lang, 'mp3_1')
+            
+            if os.path.exists(source_mp3_path):
+                # Создаем папку в temp
+                os.makedirs(temp_mp3_path, exist_ok=True)
+                
+                # Копируем все файлы
+                for file_name in os.listdir(source_mp3_path):
+                    source_file = os.path.join(source_mp3_path, file_name)
+                    temp_file = os.path.join(temp_mp3_path, file_name)
+                    shutil.copy2(source_file, temp_file)
+                
+                logger.info(f"✅ Скопированы файлы mp3_1 для языка {lang}")
+            else:
+                logger.warning(f"⚠️ Папка {source_mp3_path} не найдена")
+        
+        return jsonify({"success": True, "message": "Dictation copied to temp"})
+        
+    except Exception as e:
+        logger.error(f"Ошибка в copy_dictation_to_temp: {e}", exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+
 # ===========================================================================
 # распознать текст
 from dotenv import load_dotenv
@@ -430,7 +940,6 @@ def wait_for_result(transcript_id):
             return data
         elif data['status'] == 'error':
             raise Exception(f"Ошибка AssemblyAI: {data['error']}")
-        import time
         time.sleep(1)
 
 
@@ -449,9 +958,6 @@ def upload_to_assemblyai(file_path):
 
 # 🔹 Запускаем транскрипцию
 def request_transcription(audio_url):
-    import requests
-    import logging
-    import json
 
     endpoint = "https://api.assemblyai.com/v2/transcript"
     headers = {
@@ -558,6 +1064,61 @@ def recognize_words():
         logger.error(f"Неожиданная ошибка: {str(e)}", exc_info=True)
         return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
     
+
+@generator_bp.route('/api/cover', methods=['POST'])
+def api_upload_cover():
+    """Загрузка cover для диктанта"""
+    try:
+        # Получаем данные из формы
+        dictation_id = request.form.get('dictation_id')
+        if not dictation_id:
+            return jsonify({'error': 'dictation_id is required'}), 400
+        
+        if 'cover' not in request.files:
+            return jsonify({'error': 'No cover file provided'}), 400
+        
+        cover_file = request.files['cover']
+        
+        if cover_file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        # Проверяем что это изображение
+        if not cover_file.content_type.startswith('image/'):
+            return jsonify({'error': 'File must be an image'}), 400
+        
+        # Проверяем размер файла (максимум 5MB)
+        if len(cover_file.read()) > 5 * 1024 * 1024:
+            return jsonify({'error': 'File size must be less than 5MB'}), 400
+        
+        # Сбрасываем позицию файла
+        cover_file.seek(0)
+        
+        # Создаем папку диктанта если её нет
+        dictation_path = os.path.join('static', 'data', 'dictations', dictation_id)
+        os.makedirs(dictation_path, exist_ok=True)
+        
+        # Сохраняем cover
+        cover_path = os.path.join(dictation_path, 'cover.webp')
+        
+        # Открываем изображение и конвертируем в WEBP
+        image = Image.open(cover_file.stream)
+        
+        # Изменяем размер до 200x120 (как в карточках)
+        image = image.resize((200, 120), Image.Resampling.LANCZOS)
+        
+        # Сохраняем в формате WEBP
+        image.save(cover_path, 'WEBP', quality=85)
+        
+        logger.info(f"Cover сохранен: {cover_path}")
+        
+        return jsonify({
+            'success': True,
+            'cover_url': f'/static/data/dictations/{dictation_id}/cover.webp'
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при загрузке cover: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
 def cleanup_user_temp_files(safe_email, older_than_days=7):
     """Очищает временные файлы пользователя старше N дней"""

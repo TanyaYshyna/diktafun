@@ -1,29 +1,28 @@
 class UserManager {
   constructor() {
     if (window.UM) {
-      console.warn('⚠️ UserManager уже создан, возвращаем существующий экземпляр');
+      // console.warn('⚠️ UserManager уже создан, возвращаем существующий экземпляр');
       return window.UM;
     }
 
     this.token = localStorage.getItem('jwt_token');
-    console.log('✅ 1 ✅✅✅✅✅✅token  constructor()', this.token);
     this.userData = null;
     this.isInitialized = false;
 
 
     // ✅ АВТОМАТИЧЕСКАЯ ИНИЦИАЛИЗАЦИЯ
     this.init().then(() => {
-      console.log('✅ UserManager авто-инициализирован');
+      // console.log('✅ UserManager авто-инициализирован');
     });
   }
 
-   getSafeEmail() {
+  getSafeEmail() {
     if (this.userData && this.userData.email) {
       return this.userData.email.replace('@', '_at_').replace('.', '_dot_');
     }
     return 'anonymous';
   }
-  
+
   isAuthenticated() {
     return !!this.userData;
   }
@@ -34,29 +33,28 @@ class UserManager {
   // Инициализация пользователя
   async init() {
     try {
-      console.log('🔄 Инициализация UserManager, токен:', this.token);
+      // console.log('🔄 Инициализация UserManager, токен:', this.token);
 
       if (this.token) {
-        console.log('🔍 Проверяем токен...');
         this.userData = await this.validateToken(this.token);
 
         if (this.userData) {
-          console.log('✅ Пользователь авторизован:', this.userData.username);
+          // console.log('✅ Пользователь авторизован:', this.userData.username);
           this.setupAuthenticatedUser(this.userData);
         } else {
-          console.log('❌ Токен невалиден, очищаем');
+          // console.log('❌ Токен невалиден, очищаем');
           localStorage.removeItem('jwt_token');
           this.token = null;
           this.setupGuestMode();
         }
       } else {
-        console.log('👤 Гостевой режим');
+        // console.log('👤 Гостевой режим');
         this.setupGuestMode();
       }
 
       this.setupAuthHandlers();
       this.isInitialized = true;
-      console.log('✅ UserManager инициализирован');
+      // console.log('✅ UserManager инициализирован');
 
     } catch (error) {
       console.error('🚨 Ошибка инициализации пользователя:', error);
@@ -66,16 +64,13 @@ class UserManager {
 
   // Получение URL аватара
   getAvatarUrl(size = 'small') {
-    console.log('🖼️🖼️🖼️🖼️🖼️🖼️🖼️🖼️ Получение URL аватара, размер:', size);
 
     if (!this.userData?.avatar) {
-      console.log('❌❌❌❌❌❌❌ Аватар не найден в userData');
       return null;
     }
 
     // avatar - объект с полями large и small
     const avatarUrl = this.userData.avatar[size];
-    console.log('🔗🔗🔗🔗🔗🔗🔗🔗🔗 URL аватара:', avatarUrl);
 
     return avatarUrl || null;
   }
@@ -83,7 +78,7 @@ class UserManager {
   // Валидация токена
   async validateToken(token) {
     try {
-      console.log('🔐 Валидация токена:', token);
+      // console.log('🔐 Валидация токена:', token);
 
       const response = await fetch('/user/api/me', {
         method: 'GET',
@@ -93,11 +88,11 @@ class UserManager {
         }
       });
 
-      console.log('📡 Статус ответа:', response.status);
+      // console.log('📡 Статус ответа:', response.status);
 
       if (response.ok) {
         const userData = await response.json();
-        console.log('✅ Данные пользователя получены:', userData);
+        // console.log('✅ Данные пользователя получены:', userData);
         return userData;
       } else {
         console.log('❌ Ошибка валидации, статус:', response.status);
@@ -119,14 +114,13 @@ class UserManager {
   // Выход
   logout() {
     localStorage.removeItem('jwt_token');
-    console.log('✅✅✅✅✅✅ 2 ✅token  Выход', this.token);
+    // console.log('✅✅✅✅✅✅ 2 ✅token  Выход', this.token);
     this.token = null;
     this.userData = null;
     this.setupGuestMode();
     window.location.href = '/';
   }
 
-  // Настройка авторизованного пользователя
   // Настройка авторизованного пользователя
   setupAuthenticatedUser(userData) {
     const userSection = document.getElementById('user-section');
@@ -135,7 +129,7 @@ class UserManager {
       return;
     }
 
-    console.log('🔄 Настройка интерфейса для авторизованного пользователя');
+    // console.log('🔄 Настройка интерфейса для авторизованного пользователя');
 
     // Находим блоки
     const authButtons = userSection.querySelector('.auth-buttons');
@@ -144,13 +138,13 @@ class UserManager {
     const avatarElement = userSection.querySelector('.user-avatar-small');
     const streakElement = userSection.querySelector('.streak-days');
 
-    console.log('📋 Найденные элементы:', {
-      authButtons,
-      userInfo,
-      usernameElement,
-      avatarElement,
-      streakElement
-    });
+    // console.log('📋 Найденные элементы:', {
+    //   authButtons,
+    //   userInfo,
+    //   usernameElement,
+    //   avatarElement,
+    //   streakElement
+    // });
 
     // Заполняем данные пользователя
     if (usernameElement) {
@@ -160,7 +154,6 @@ class UserManager {
     // Аватар
     if (avatarElement && userData.avatar) {
       const avatarUrl = this.getAvatarUrl('small');
-      console.log('🎯 Устанавливаем аватар:', avatarUrl);
 
       if (avatarUrl) {
         // Добавляем временную метку для избежания кэширования
@@ -188,7 +181,7 @@ class UserManager {
     if (authButtons) authButtons.style.display = 'none';
     if (userInfo) userInfo.style.display = 'flex';
 
-    console.log('✅ Интерфейс настроен для авторизованного пользователя');
+    // console.log('✅ Интерфейс настроен для авторизованного пользователя');
   }
 
   // Гостевой режим
@@ -207,7 +200,7 @@ class UserManager {
     if (authButtons) authButtons.style.display = 'flex';
     if (userInfo) userInfo.style.display = 'none';
 
-    console.log('✅ Интерфейс настроен для гостя');
+    // console.log('✅ Интерфейс настроен для гостя');
   }
 
 
@@ -391,10 +384,3 @@ class UserManager {
 if (!window.UM) {
   window.UM = new UserManager();
 }
-
-// ВЫЗОВ ИНИЦИАЛИЗАЦИИ
-// window.UM.init().then(() => {
-//   console.log('✅ UserManager инициализирован, пользователь:', window.UM.getCurrentUser());
-// }).catch(error => {
-//   console.error('❌ Ошибка инициализации UserManager:', error);
-// });

@@ -13,6 +13,7 @@ const GRID = document.getElementById('dictationsGrid');
 let language_original = "en";
 let language_translation = "ru";
 let selectedCategory = null;
+let selectedCategoryForDictation = null; // Сохраняем категорию для создания диктанта
 
 
 
@@ -128,6 +129,8 @@ function createCardDOM(d) {
     // const openUrl = d.openUrl || (d.link ? hrefFromHTML(d.link) : '#');
     // const editUrl = d.editUrl || (d.link_red ? hrefFromHTML(d.link_red) : openUrl);
     const openUrl = `/dictation/${d.id}/${language_original}/${language_translation}`;
+    
+    // Для редактирования используем простой URL (категория будет загружена из диктанта)
     const editUrl = `/dictation_generator/${d.id}/${language_original}/${language_translation}`;
 
     // <article class="short-card">
@@ -777,9 +780,28 @@ function newDictation() {
         return;
     }
 
-    // const langOrig = selectedCategory.data.languages.original;
-    // const langTrans = selectedCategory.data.languages.translation;
+    // Сохраняем информацию о категории для передачи при сохранении диктанта
+    selectedCategoryForDictation = {
+        key: selectedCategory.key,
+        title: selectedCategory.title,
+        path: getCategoryPath(selectedCategory)
+    };
+    
+    // Переходим к созданию диктанта (категория будет передана через HTTP POST при сохранении)
     window.location.href = `/dictation_generator/${language_original}/${language_translation}`;
+}
+
+// Функция для получения пути к категории в дереве
+function getCategoryPath(categoryNode) {
+    const path = [];
+    let currentNode = categoryNode;
+    
+    while (currentNode && currentNode.title !== 'root') {
+        path.unshift(currentNode.title);
+        currentNode = currentNode.parent;
+    }
+    
+    return path.join(' > ');
 }
 
 // Функция для подсветки контейнера дерева

@@ -498,22 +498,22 @@
             console.log('🚀 Начало инициализации диктанта...');
 
             // Проверяем что LanguageManager загружен
-            if (window.LanguageManager) {
-                console.log('✅ LanguageManager доступен');
-                console.log('Методы LanguageManager:', Object.keys(window.LanguageManager));
+            // if (window.LanguageManager) {
+            //     console.log('✅ LanguageManager доступен');
+            //     console.log('Методы LanguageManager:', Object.keys(window.LanguageManager));
+            // } else {
+            //     console.warn('⚠️ LanguageManager не доступен');
+            // }
+
+
+            // Используем уже существующий UserManager (не создаем новый!)
+            if (!window.UM) {
+                console.warn('⚠️ UserManager не найден, создаем новый экземпляр');
+                window.UM = new UserManager({ apiBase: '/user/api' });
             } else {
-                console.warn('⚠️ LanguageManager не доступен');
+                // console.log('✅ Используем существующий UserManager');
             }
-
-
-            // Инициализируем UserManager
-            window.UM = new UserManager({ apiBase: '/user/api' });
-            try {
-                await window.UM.init();
-                console.log('✅ UserManager initialized in dictation');
-            } catch (error) {
-                console.error('❌ JWT initialization error:', error);
-            }
+            
 
             // Проверяем что основной скрипт загружен
             // Запускаем инициализацию диктанта
