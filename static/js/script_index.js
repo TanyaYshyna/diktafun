@@ -432,6 +432,17 @@ function initFancyTree() {
                 const node = data.node;
                 selectedCategory = node; // Сохраняем выбранную категорию
                 console.log("✅ FancyTree selectedCategory", selectedCategory);
+                
+                // Сохраняем данные категории в sessionStorage для использования при редактировании
+                const categoryData = {
+                    key: node.key,
+                    title: node.title,
+                    path: getCategoryPath(node),
+                    language_original: language_original,
+                    language_translation: language_translation
+                };
+                sessionStorage.setItem('selectedCategoryForDictation', JSON.stringify(categoryData));
+                
                 const ids = node.data.dictations || [];
 
                 // Обновляем языки на текущие
@@ -899,10 +910,10 @@ function restoreTreePosition() {
                         console.error('❌ Ошибка при работе с деревом:', treeError);
                     }
                     
-                    // Очищаем sessionStorage после восстановления
-                    setTimeout(() => {
-                        sessionStorage.removeItem('selectedCategoryForDictation');
-                    }, 2000);
+                    // НЕ очищаем sessionStorage - он нужен для редактирования диктантов
+                    // setTimeout(() => {
+                    //     sessionStorage.removeItem('selectedCategoryForDictation');
+                    // }, 2000);
                     
                 } else if (attempts >= maxAttempts) {
                     clearInterval(waitForTree);

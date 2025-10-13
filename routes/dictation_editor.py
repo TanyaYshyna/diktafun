@@ -99,6 +99,14 @@ def dictation_editor(dictation_id, language_original, language_translation):
 
     # Получаем safe_email из JWT токена
     safe_email = get_safe_email_from_token()
+    
+    # Для редактирования категория будет загружена из sessionStorage в JavaScript
+    # Передаем пустую информацию о категории - она будет заполнена из sessionStorage
+    category_info = {
+        "key": "",
+        "title": "",
+        "path": ""
+    }
  
     return render_template(
         'dictation_editor.html',
@@ -116,11 +124,7 @@ def dictation_editor(dictation_id, language_original, language_translation):
         current_user=current_user,
         safe_email=safe_email,
             # edit_mode удален - определяется по dictation_id
-        category_info={
-            "key": info.get("category_key", ""),
-            "title": info.get("category_title", ""),
-            "path": info.get("category_path", "")
-        }
+        category_info=category_info
     )
 
 
@@ -297,135 +301,6 @@ def save_json():
         return jsonify({"success": False, "error": str(e)}), 500
     
 
-@editor_bp.route('/save_dictation', methods=['POST'])
-def save_dictation():
-    data = request.get_json()
-    dictation_id = data.get('id')
-    if not dictation_id:
-        return jsonify({'error': 'Missing dictation ID'}), 400
-
-    base_path = os.path.join('static', 'data', 'temp', dictation_id)
-    os.makedirs(base_path, exist_ok=True)
-
-    # 📁 Сохраняем info.json (новая структура)
-    info = {
-        "id": dictation_id,
-        "language_original": data.get("language_original"),
-        "title": data.get("title"),
-        "level": data.get("level"),
-        "is_dialog": data.get("is_dialog", False),
-        "speakers": data.get("speakers", {})
-    }
-    info_path = os.path.join(base_path, 'info.json')
-    with open(info_path, 'w', encoding='utf-8') as f:
-        json.dump(info, f, ensure_ascii=False, indent=2)
-
-    # 📁 Сохраняем предложения в папки языков (новая структура)
-    # Получаем все языки из данных (оригинал + все переводы)
-    sentences_data = data.get('sentences', {})
-    
-    for lang, lang_data in sentences_data.items():
-        if not lang_data:
-            continue  # Пропускаем, если для этого языка ничего нет
-
-        lang_dir = os.path.join(base_path, lang)
-        os.makedirs(lang_dir, exist_ok=True)
-
-        sentences_json = {
-            "language": lang,
-            "title": lang_data.get("title", ""),
-            "speakers": lang_data.get("speakers", {}),
-            "sentences": lang_data.get("sentences", [])
-        }
-
-        with open(os.path.join(lang_dir, "sentences.json"), 'w', encoding='utf-8') as f:
-            json.dump(sentences_json, f, ensure_ascii=False, indent=2)
-
-        # Аудиофайлы уже в temp, копирование не нужно
-
-    # Очищаем неиспользуемые файлы
-    cleanup_unused_audio_files(dictation_id)
-
-    return jsonify({'success': True})
-
-@editor_bp.route('/create_dictation_folders', methods=['POST'])
-def create_dictation_folders():
-    data = request.json
-    dictation_id = data.get('dictation_id')
-    languages = data.get('languages', [])
-    
-    if not dictation_id:
-        return jsonify({"success": False, "error": "Missing dictation ID"}), 400
-
-    base_path = os.path.join('static', 'data', 'dictations', dictation_id)
-    try:
-        # Создаем основную папку
-        os.makedirs(base_path, exist_ok=True)
-        
-        # Создаем папки для каждого языка
-        for lang in languages:
-            os.makedirs(os.path.join(base_path, lang), exist_ok=True)
-            
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
-@editor_bp.route('/add_dictation_to_category', methods=['POST'])
-def add_dictation_to_category():
-    try:
-        data = request.get_json()
-        dictation_id = data.get('dictation_id')
-        category_key = data.get('category_key')
-        
-        if not dictation_id or not category_key:
-            return jsonify({"success": False, "error": "Missing dictation_id or category_key"}), 400
-        
-        # Загружаем categories.json
-        categories_path = 'static/data/categories.json'
-        with open(categories_path, 'r', encoding='utf-8') as f:
-            categories = json.load(f)
-        
-        # Находим категорию по ключу и добавляем ID диктанта
-        def find_and_update_category(node, target_key):
-            if node.get('key') == target_key:
-                if 'data' not in node:
-                    node['data'] = {}
-                if 'dictations' not in node['data']:
-                    node['data']['dictations'] = []
-                
-                # Добавляем ID диктанта, если его еще нет
-                if dictation_id not in node['data']['dictations']:
-                    node['data']['dictations'].append(dictation_id)
-                return True
-            
-            # Рекурсивно ищем в дочерних узлах
-            for child in node.get('children', []):
-                if find_and_update_category(child, target_key):
-                    return True
-            return False
-        
-        # Ищем и обновляем категорию
-        found = False
-        for root_child in categories.get('children', []):
-            if find_and_update_category(root_child, category_key):
-                found = True
-                break
-        
-        if not found:
-            return jsonify({"success": False, "error": f"Category with key '{category_key}' not found"}), 404
-        
-        # Сохраняем обновленный categories.json
-        with open(categories_path, 'w', encoding='utf-8') as f:
-            json.dump(categories, f, ensure_ascii=False, indent=2)
-        
-        logger.info(f"✅ Добавлен диктант {dictation_id} в категорию {category_key}")
-        return jsonify({"success": True})
-        
-    except Exception as e:
-        logger.error(f"Ошибка в add_dictation_to_category: {e}", exc_info=True)
-        return jsonify({"success": False, "error": str(e)}), 500
-
 
 @editor_bp.route('/api/cover', methods=['POST'])
 def api_upload_cover():
@@ -480,45 +355,6 @@ def api_upload_cover():
     except Exception as e:
         logger.error(f"Ошибка при загрузке cover: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
-
-
-def cleanup_unused_audio_files(dictation_id):
-    """Удаляет неиспользуемые аудиофайлы"""
-    try:
-        base_path = os.path.join('static', 'data', 'temp', dictation_id)
-        
-        # Получаем список используемых файлов из sentences.json
-        used_files = set()
-        
-        # Найти все папки языков в диктанте
-        if os.path.exists(base_path):
-            for item in os.listdir(base_path):
-                lang_path = os.path.join(base_path, item)
-                if os.path.isdir(lang_path) and item != '__pycache__':
-                    sentences_path = os.path.join(lang_path, 'sentences.json')
-                    if os.path.exists(sentences_path):
-                        with open(sentences_path, 'r', encoding='utf-8') as f:
-                            data = json.load(f)
-                            
-                        for sentence in data.get('sentences', []):
-                            if sentence.get('audio'):
-                                used_files.add(sentence['audio'])
-                            if sentence.get('shared_audio'):
-                                used_files.add(sentence['shared_audio'])
-        
-        # Удаляем неиспользуемые файлы
-        if os.path.exists(base_path):
-            for item in os.listdir(base_path):
-                lang_path = os.path.join(base_path, item)
-                if os.path.isdir(lang_path) and item != '__pycache__':
-                    for filename in os.listdir(lang_path):
-                        if filename.lower().endswith('.mp3') and filename not in used_files:
-                            file_path = os.path.join(lang_path, filename)
-                            os.remove(file_path)
-                            logger.info(f"Удален неиспользуемый файл: {filename}")
-                        
-    except Exception as e:
-        logger.error(f"Ошибка очистки неиспользуемых файлов: {e}")
 
 
 
@@ -653,43 +489,48 @@ def copy_dictation_to_temp():
         # Создаем temp папку
         os.makedirs(temp_dictation_path, exist_ok=True)
         
+        # Копируем info.json
+        source_info_path = os.path.join(source_dictation_path, 'info.json')
+        temp_info_path = os.path.join(temp_dictation_path, 'info.json')
+        
+        if os.path.exists(source_info_path):
+            shutil.copy2(source_info_path, temp_info_path)
+        else:
+            logger.warning(f"⚠️ Файл {source_info_path} не найден")
+        
+        # Копируем cover.webp
+        source_cover_path = os.path.join(source_dictation_path, 'cover.webp')
+        temp_cover_path = os.path.join(temp_dictation_path, 'cover.webp')
+        
+        if os.path.exists(source_cover_path):
+            shutil.copy2(source_cover_path, temp_cover_path)
+        else:
+            logger.warning(f"⚠️ Файл {source_cover_path} не найден")
+        
         # Копируем папки языков
         for lang in [language_original, language_translation]:
-            # Копируем папку avto
-            source_lang_path = os.path.join(source_dictation_path, lang, 'avto')
-            temp_lang_path = os.path.join(temp_dictation_path, lang, 'avto')
+            # Создаем папку языка в temp
+            temp_lang_path = os.path.join(temp_dictation_path, lang)
+            os.makedirs(temp_lang_path, exist_ok=True)
+            
+            # Копируем sentences.json
+            source_sentences_path = os.path.join(source_dictation_path, lang, 'sentences.json')
+            temp_sentences_path = os.path.join(temp_lang_path, 'sentences.json')
+            
+            if os.path.exists(source_sentences_path):
+                shutil.copy2(source_sentences_path, temp_sentences_path)
+            else:
+                logger.warning(f"⚠️ Файл {source_sentences_path} не найден")
+            
+            # Копируем аудио файлы напрямую из папки языка
+            source_lang_path = os.path.join(source_dictation_path, lang)
             
             if os.path.exists(source_lang_path):
-                # Создаем папку в temp
-                os.makedirs(temp_lang_path, exist_ok=True)
-                
-                # Копируем все файлы
                 for file_name in os.listdir(source_lang_path):
-                    source_file = os.path.join(source_lang_path, file_name)
-                    temp_file = os.path.join(temp_lang_path, file_name)
-                    shutil.copy2(source_file, temp_file)
-                
-                logger.info(f"✅ Скопированы файлы avto для языка {lang}")
-            else:
-                logger.warning(f"⚠️ Папка {source_lang_path} не найдена")
-            
-            # Копируем папку mp3_1
-            source_mp3_path = os.path.join(source_dictation_path, lang, 'mp3_1')
-            temp_mp3_path = os.path.join(temp_dictation_path, lang, 'mp3_1')
-            
-            if os.path.exists(source_mp3_path):
-                # Создаем папку в temp
-                os.makedirs(temp_mp3_path, exist_ok=True)
-                
-                # Копируем все файлы
-                for file_name in os.listdir(source_mp3_path):
-                    source_file = os.path.join(source_mp3_path, file_name)
-                    temp_file = os.path.join(temp_mp3_path, file_name)
-                    shutil.copy2(source_file, temp_file)
-                
-                logger.info(f"✅ Скопированы файлы mp3_1 для языка {lang}")
-            else:
-                logger.warning(f"⚠️ Папка {source_mp3_path} не найдена")
+                    if file_name.lower().endswith(('.mp3', '.wav', '.ogg')):
+                        source_file = os.path.join(source_lang_path, file_name)
+                        temp_file = os.path.join(temp_lang_path, file_name)
+                        shutil.copy2(source_file, temp_file)
         
         return jsonify({"success": True, "message": "Dictation copied to temp"})
         
@@ -722,44 +563,6 @@ def copy_audio_files_from_temp(dictation_id, language):
                 
     except Exception as e:
         logger.error(f"Ошибка копирования аудиофайлов: {e}")
-
-def cleanup_unused_audio_files(dictation_id):
-    """Удаляет неиспользуемые аудиофайлы"""
-    try:
-        base_path = os.path.join('static', 'data', 'temp', dictation_id)
-        
-        # Получаем список используемых файлов из sentences.json
-        used_files = set()
-        
-        # Найти все папки языков в диктанте
-        if os.path.exists(base_path):
-            for item in os.listdir(base_path):
-                lang_path = os.path.join(base_path, item)
-                if os.path.isdir(lang_path) and item != '__pycache__':
-                    sentences_path = os.path.join(lang_path, 'sentences.json')
-                    if os.path.exists(sentences_path):
-                        with open(sentences_path, 'r', encoding='utf-8') as f:
-                            data = json.load(f)
-                            
-                        for sentence in data.get('sentences', []):
-                            if sentence.get('audio'):
-                                used_files.add(sentence['audio'])
-                            if sentence.get('shared_audio'):
-                                used_files.add(sentence['shared_audio'])
-        
-        # Удаляем неиспользуемые файлы
-        if os.path.exists(base_path):
-            for item in os.listdir(base_path):
-                lang_path = os.path.join(base_path, item)
-                if os.path.isdir(lang_path) and item != '__pycache__':
-                    for filename in os.listdir(lang_path):
-                        if filename.lower().endswith('.mp3') and filename not in used_files:
-                            file_path = os.path.join(lang_path, filename)
-                            os.remove(file_path)
-                            logger.info(f"Удален неиспользуемый файл: {filename}")
-                        
-    except Exception as e:
-        logger.error(f"Ошибка очистки неиспользуемых файлов: {e}")
 
 
 
@@ -807,7 +610,7 @@ def save_dictation_final():
 
             sentences_json = {
                 "language": lang,
-                "title": data.get("title", ""),  # Берем название из шапки документа
+                "title": lang_data.get("title", ""),  # Берем название из данных языка
                 "speakers": lang_data.get("speakers", {}),
                 "sentences": lang_data.get("sentences", [])
             }
@@ -846,7 +649,11 @@ def save_dictation_final():
         # Добавляем диктант в категорию
         result = add_dictation_to_categories(dictation_id, info, category_key)
         
-        return jsonify({"success": True, "message": "Dictation saved to final location and added to category"})
+        if result:
+            return jsonify({"success": True, "message": "Dictation saved to final location and added to category"})
+        else:
+            logger.warning("⚠️ Диктант сохранен, но не добавлен в категорию")
+            return jsonify({"success": True, "message": "Dictation saved to final location (category addition failed)"})
         
     except Exception as e:
         logger.error(f"Ошибка в save_dictation_final: {e}")
@@ -959,6 +766,8 @@ def add_dictation_to_categories(dictation_id, info_data, category_key=None):
         
         if target_category:
             # Добавляем диктант в найденную категорию
+            if 'data' not in target_category:
+                target_category['data'] = {}
             if 'dictations' not in target_category['data']:
                 target_category['data']['dictations'] = []
             

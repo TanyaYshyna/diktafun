@@ -157,7 +157,6 @@ async function loadCoverForExistingDictation(dictationId, originalLanguage) {
         const response = await fetch(dictationCoverUrl, { method: 'HEAD' });
         if (response.ok) {
             coverImage.src = dictationCoverUrl;
-            console.log('✅ Загружен cover диктанта:', dictationCoverUrl);
             return;
         }
     } catch (error) {
@@ -167,7 +166,6 @@ async function loadCoverForExistingDictation(dictationId, originalLanguage) {
     // Если cover диктанта нет, используем cover по умолчанию
     const defaultCoverUrl = `/static/data/covers/cover_${originalLanguage}.webp`;
     coverImage.src = defaultCoverUrl;
-    console.log('📝 Используется cover по умолчанию:', defaultCoverUrl);
 }
 
 
@@ -302,8 +300,9 @@ async function loadExistingDictation(initData) {
         safe_email
     } = initData;
 
-    // Получаем информацию о категории из initData
-    const categoryInfo = initData.category_info || {};
+    // Для редактирования диктанта категория берется из sessionStorage (текущее местоположение в дереве)
+    const categoryDataStr = sessionStorage.getItem('selectedCategoryForDictation');
+    const categoryInfo = categoryDataStr ? JSON.parse(categoryDataStr) : {};
 
     currentDictation = {
         id: dictation_id,
@@ -315,7 +314,9 @@ async function loadExistingDictation(initData) {
         category_key: categoryInfo.key || '',
         category_title: categoryInfo.title || '',
         category_path: categoryInfo.path || '',
-        coverFile: null // загруженный файл cover в памяти
+        coverFile: null, // загруженный файл cover в памяти
+        is_dialog: original_data?.is_dialog || false,
+        speakers: original_data?.speakers || {}
     };
 
     // Обновляем заголовки
@@ -330,7 +331,6 @@ async function loadExistingDictation(initData) {
     if (currentDictation.category_path) {
         updateCategoryPathDisplay(currentDictation.category_path);
     }
-
 
     // Копируем диктант в temp для редактирования
     try {
@@ -353,11 +353,20 @@ async function loadExistingDictation(initData) {
         console.error('❌ Ошибка при копировании диктанта в temp:', error);
     }
 
-    // TODO:Создаём таблицу с предложениями
-    // applyPairedOutput(original_data, translation_data);
 
-    // TODO:Заполнение таблицы фраз (теперь работает с temp файлами)
-    // await renderSentenceTable(original_data?.sentences || [], translation_data?.sentences || []);
+    // Создаём таблицу с предложениями из загруженных данных
+    workingData = {
+        original: original_data || {},
+        translation: translation_data || {}
+    };
+    
+    // Создаем таблицу
+    createTable();
+    
+    // Инициализируем Lucide иконки
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 
@@ -476,11 +485,9 @@ function initLanguageFlags(initData) {
 
 let currentPlayingButton = null;
 let currentAudio = null;
-let audioQueue = []; // Очередь кнопок для проигрывания
-let processingAudio = false; // Флаг обработки аудио
 
 /**
- * Универсальная функция проигрывания аудио с системой очереди
+ * Универсальная функция проигрывания аудио
  * @param {Event} event - событие клика
  */
 async function handleAudioPlayback(event) {
@@ -491,116 +498,26 @@ async function handleAudioPlayback(event) {
     const fieldName = button.dataset.fieldName; // 'audio', 'shared_audio', 'avto_audio'
     const shouldCreate = button.dataset.create === 'true'; // нужно ли создавать файл
 
-    console.log('🎵 Добавляем в очередь:', { language, fieldName, shouldCreate });
-
-    // Помечаем все кнопки как "отмененные" (кроме текущей)
-    markAllButtonsAsCancelled(button);
-
-    // Очищаем очередь от предыдущих запросов
-    audioQueue = [];
-
-    // Добавляем новую кнопку в очередь
-    audioQueue.push({
-        button: button,
-        language: language,
-        fieldName: fieldName,
-        shouldCreate: shouldCreate,
-        timestamp: Date.now()
-    });
-
-    // Запускаем обработку очереди
-    processAudioQueue();
-}
-
-/**
- * Обработка очереди аудио
- */
-async function processAudioQueue() {
-    if (processingAudio || audioQueue.length === 0) return;
-
-    processingAudio = true;
-
-    while (audioQueue.length > 0) {
-        const request = audioQueue.shift(); // Берем первый элемент из очереди
-
-        // Проверяем, не была ли кнопка отменена
-        if (request.button.dataset.cancelled === 'true') {
-            console.log('🚫 Пропускаем отмененную кнопку');
-            setButtonState(request.button, 'ready');
-            continue;
-        }
-
-        console.log('🎵 Обрабатываем:', {
-            language: request.language,
-            fieldName: request.fieldName,
-            shouldCreate: request.shouldCreate
-        });
-
-        try {
-            // Останавливаем предыдущее проигрывание
-            await stopCurrentPlayback();
-
-            // Устанавливаем текущую кнопку
-            currentPlayingButton = request.button;
-
-            if (request.shouldCreate) {
-                // Режим создания файла
-                await createAndPlayAudio(request.button, request.language, request.fieldName);
-            } else {
-                // Режим проигрывания существующего файла
-                await playExistingAudio(request.button, request.language, request.fieldName);
-            }
-        } catch (error) {
-            console.error('❌ Ошибка при проигрывании аудио:', error);
-            setButtonState(request.button, 'ready');
-        }
-    }
-
-    processingAudio = false;
-}
-
-/**
- * Пометить все кнопки как отмененные (кроме указанной)
- */
-function markAllButtonsAsCancelled(exceptButton) {
-    const allAudioButtons = document.querySelectorAll('button.audio-btn');
-    allAudioButtons.forEach(btn => {
-        if (btn !== exceptButton) {
-            btn.dataset.cancelled = 'true';
-            // Если кнопка была в процессе создания, возвращаем в готовое состояние
-            if (btn.classList.contains('state-creating')) {
-                setButtonState(btn, 'ready');
-            }
-        }
-    });
-}
-
-/**
- * Полностью остановить все аудио и очистить очередь
- */
-function stopAllAudio() {
-    console.log('🛑 Останавливаем все аудио');
-
-    // Останавливаем текущее проигрывание
-    if (currentAudio) {
+    // Если уже играет другой файл - останавливаем его
+    if (currentAudio && currentPlayingButton) {
         currentAudio.pause();
         currentAudio.currentTime = 0;
-        currentAudio = null;
+        setButtonState(currentPlayingButton, 'ready');
     }
 
-    // Очищаем очередь
-    audioQueue = [];
-    processingAudio = false;
-
-    // Возвращаем все кнопки в готовое состояние
-    const allAudioButtons = document.querySelectorAll('button.audio-btn');
-    allAudioButtons.forEach(btn => {
-        btn.dataset.cancelled = 'false';
-        setButtonState(btn, 'ready');
-    });
-
-    currentPlayingButton = null;
+    try {
+        if (shouldCreate) {
+            await createAndPlayAudio(button, language, fieldName);
+        } else {
+            await playExistingAudio(button, language, fieldName);
+        }
+    } catch (error) {
+        console.error('❌ Ошибка при проигрывании аудио:', error);
+        setButtonState(button, 'ready');
+    }
 }
+
+
 
 /**
  * Обновить состояние кнопки после изменения текста
@@ -645,7 +562,8 @@ async function createAndPlayAudio(button, language, fieldName) {
         button.dataset.create = 'false';
         button.title = 'Воспроизвести аудио';
 
-        // Проигрываем созданный файл
+        // Устанавливаем текущую кнопку и проигрываем созданный файл
+        currentPlayingButton = button;
         await playAudioFile(audioFile, language);
 
         // После окончания воспроизведения кнопка автоматически вернется в состояние 'ready'
@@ -670,6 +588,8 @@ async function playExistingAudio(button, language, fieldName) {
         return;
     }
 
+    // Устанавливаем текущую кнопку
+    currentPlayingButton = button;
     setButtonState(button, 'playing');
     await playAudioFile(audioFile, language);
 }
@@ -728,8 +648,6 @@ async function stopCurrentPlayback() {
         currentPlayingButton = null;
     }
 
-    // Очищаем очередь от отмененных запросов
-    audioQueue = audioQueue.filter(request => request.button.dataset.cancelled !== 'true');
 }
 
 /**
@@ -767,10 +685,6 @@ function setButtonState(button, state) {
     // Добавляем новое состояние
     button.classList.add(`state-${state}`);
 
-    // Очищаем флаг отмены при установке нового состояния
-    if (state !== 'ready') {
-        button.dataset.cancelled = 'false';
-    }
 
     let newIcon = '';
     switch (state) {
@@ -1115,26 +1029,55 @@ async function saveDictationAndExit() {
             }
         };
 
+        // Проверяем обязательные поля
+        if (!saveData.id) {
+            alert('Ошибка: отсутствует ID диктанта');
+            hideLoadingIndicator();
+            return;
+        }
+
+        if (!currentDictation.category_key) {
+            alert('Ошибка: не выбрана категория для диктанта');
+            hideLoadingIndicator();
+            return;
+        }
+
+
         // Сохраняем диктант сразу в финальную папку и добавляем в категорию
+        const requestData = {
+            ...saveData,
+            category_key: currentDictation.category_key
+        };
+        
+        
         const response = await fetch('/save_dictation_final', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                ...saveData,
-                category_key: currentDictation.category_key
-            })
+            body: JSON.stringify(requestData)
         });
 
         const result = await response.json();
         
+        
         if (result.success) {
             console.log('Диктант сохранен в финальную папку и добавлен в категорию');
+            
+            // Сохраняем текущую категорию в sessionStorage перед переходом
+            const currentCategoryData = {
+                key: currentDictation.category_key,
+                title: currentDictation.category_title,
+                path: currentDictation.category_path,
+                language_original: currentDictation.language_original,
+                language_translation: currentDictation.language_translation
+            };
+            sessionStorage.setItem('selectedCategoryForDictation', JSON.stringify(currentCategoryData));
             
             // Перенаправить на главную страницу (позиция в дереве восстановится автоматически)
             window.location.href = '/';
         } else {
+            console.error('❌ Ошибка сохранения диктанта:', result);
             alert('Ошибка сохранения диктанта: ' + (result.error || 'Неизвестная ошибка'));
             hideLoadingIndicator();
         }
@@ -1668,27 +1611,44 @@ function createTableRow(key, originalSentence, translationSentence) {
 
 function setupTitleTranslationHandler() {
     const titleInput = document.getElementById('title');
-    const translationTitleInput = document.getElementById('translationTitle');
+    const translationTitleInput = document.getElementById('title_translation');
+    
+    console.log('🔍 Настройка обработчика перевода названия:', {
+        titleInput: !!titleInput,
+        translationTitleInput: !!translationTitleInput
+    });
     
     if (!titleInput) {
-        console.log('Поле title не найдено');
+        console.log('❌ Поле title не найдено');
         return;
     }
     
+    if (!translationTitleInput) {
+        console.log('❌ Поле title_translation не найдено');
+        return;
+    }
+    
+    // Обработчик для автоматического перевода по Enter
     titleInput.addEventListener('keydown', async function(event) {
         // Переводим только при нажатии Enter
         if (event.key === 'Enter') {
             event.preventDefault();
             
             const originalTitle = titleInput.value.trim();
-            if (!originalTitle) return;
+            console.log('🔄 Enter нажат в поле title:', originalTitle);
             
-            // Если поле перевода уже заполнено, не переводим
-            if (translationTitleInput && translationTitleInput.value.trim()) {
+            if (!originalTitle || !translationTitleInput) {
+                console.log('❌ Нет текста или поля перевода');
                 return;
             }
             
             try {
+                console.log('🌐 Отправляем запрос на перевод:', {
+                    text: originalTitle,
+                    source_lang: currentDictation.language_original,
+                    target_lang: currentDictation.language_translation
+                });
+                
                 const response = await fetch('/translate', {
                     method: 'POST',
                     headers: {
@@ -1701,20 +1661,53 @@ function setupTitleTranslationHandler() {
                     })
                 });
                 
+                console.log('📡 Ответ от сервера:', response.ok);
+                
                 if (response.ok) {
                     const result = await response.json();
-                    if (result.translated_text && translationTitleInput) {
-                        translationTitleInput.value = result.translated_text;
-                        console.log(`Переведено: "${originalTitle}" → "${result.translated_text}"`);
+                    console.log('📝 Результат перевода:', result);
+                    
+                    if (result.translation) {
+                        translationTitleInput.value = result.translation;
+                        console.log('✅ Перевод записан в поле:', result.translation);
+                        // Обновляем title в workingData после перевода
+                        updateTitlesInWorkingData();
+                    } else {
+                        console.log('❌ Нет переведенного текста в ответе');
                     }
+                } else {
+                    console.log('❌ Ошибка ответа сервера:', response.status);
                 }
             } catch (error) {
-                console.error('Ошибка при переводе названия:', error);
+                console.error('❌ Ошибка при переводе названия:', error);
             }
         }
     });
     
+    // Обработчики для обновления workingData при изменении полей
+    titleInput.addEventListener('input', updateTitlesInWorkingData);
+    if (translationTitleInput) {
+        translationTitleInput.addEventListener('input', updateTitlesInWorkingData);
+    }
+    
     console.log('Обработчик перевода названия по Enter настроен');
+}
+
+function updateTitlesInWorkingData() {
+    const titleInput = document.getElementById('title');
+    const translationTitleInput = document.getElementById('title_translation');
+    
+    if (!titleInput || !workingData) return;
+    
+    // Обновляем title для оригинального языка
+    if (workingData.original) {
+        workingData.original.title = titleInput.value || 'Диктант';
+    }
+    
+    // Обновляем title для языка перевода
+    if (workingData.translation && translationTitleInput) {
+        workingData.translation.title = translationTitleInput.value || 'Перевод';
+    }
 }
 
 // ============================================================================

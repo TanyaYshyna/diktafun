@@ -1,0 +1,109 @@
+{
+  "language": "en",
+  "title": "2: Anime",
+  "speakers": {
+    "1": "Спикер 1"
+  },
+  "sentences": [
+    {
+      "key": "000",
+      "speaker": "1",
+      "text": "Goku thought: \"What a great fight!\"",
+      "audio": "000_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "001",
+      "speaker": "1",
+      "text": "Naruto could eat all the ramen.",
+      "audio": "001_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "002",
+      "speaker": "1",
+      "text": "Pikachu was full of sugar.",
+      "audio": "002_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "003",
+      "speaker": "1",
+      "text": "Luffy said, \"Break the door!\"",
+      "audio": "003_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "004",
+      "speaker": "1",
+      "text": "Sailor Moon has a beautiful grass skirt.",
+      "audio": "004_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "005",
+      "speaker": "1",
+      "text": "Tanjiro moves through the water fast.",
+      "audio": "005_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "006",
+      "speaker": "1",
+      "text": "Deku would improve his power.",
+      "audio": "006_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "007",
+      "speaker": "1",
+      "text": "Sasuke doesn’t pass the class.",
+      "audio": "007_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "008",
+      "speaker": "1",
+      "text": "Totoro loves everybody in the house.",
+      "audio": "008_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "009",
+      "speaker": "1",
+      "text": "Zenitsu was busy last hour.",
+      "audio": "009_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "language": "en",
+  "title": "1: The robot",
+  "speakers": {
+    "1": "Спикер 1"
+  },
+  "sentences": [
+    {
+      "audio": "000_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "000",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "The robot is fast!"
+    },
+    {
+      "audio": "001_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "001",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "I love my robot friend."
+    },
+    {
+      "audio": "002_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "002",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "He has a little house."
+    },
+    {
+      "audio": "003_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "003",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "She says, Oh, no!"
+    },
+    {
+      "audio": "004_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "004",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "We go to school today."
+    },
+    {
+      "audio": "005_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "005",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "You should ask your parents."
+    },
+    {
+      "audio": "006_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "006",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "They put money into the bath."
+    },
+    {
+      "audio": "007_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "007",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "Mr. Robot can’t climb the path."
+    },
+    {
+      "audio": "008_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "008",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "Her eye is pretty like a plant."
+    },
+    {
+      "audio": "009_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "009",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "My father works after Christmas."
+    }
+  ]
+}
