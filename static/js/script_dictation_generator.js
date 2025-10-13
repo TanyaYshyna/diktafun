@@ -3,8 +3,14 @@ const userManager = window.UM;
 const audioPlayers = {};
 
 // для дерева и модального окна к нему
-const modal = document.getElementById('modal');
-const titleField = document.getElementById('modalTitle');
+// const modal = document.getElementById('modal');
+// const titleField = document.getElementById('modalTitle');
+
+// Модальные окна для новой архитектуры
+let startModal = null; // стартовое модальное окно
+let audioSettingsModal = null; // модальное окно настроек аудио
+
+let currentAudioFile = null; // текущий файл в настройках аудио
 
 let selectedCategory = null;
 let currentPath = []; // Текущий путь (например, ["Книга 2", "Раздел 1"])
@@ -23,7 +29,11 @@ let currentDictation = {
     coverFile: null, // загруженный файл cover в памяти
     dictationStartTime: 0, // начало диктанта
     dictationEndTime: 0, // конец диктанта
-    tableFilled: false // флаг заполнения таблицы
+    tableFilled: false, // флаг заполнения таблицы
+    is_dialog: false, // флаг диалога
+    speakers: {}, // словарь спикеров {"1": "Таня", "2": "Ваня"}
+    current_edit_mode: null, // 'original' | 'translation' | null
+    current_row_key: null // текущая строка для настроек аудио
 };
 
 let currentRowIndex = 0;
@@ -41,12 +51,14 @@ let workingData = {
     original: {
         language: '',
         title: '',
-        sentences: [] // {key, text, audio}
+        speakers: {}, // словарь спикеров {"1": "Таня", "2": "Ваня"}
+        sentences: [] // {key, speaker, text, audio, shared_audio, start, end, chain}
     },
     translation: {
         language: '',
         title: '',
-        sentences: [] // {key, text, audio}
+        speakers: {}, // словарь спикеров {"1": "Таня", "2": "Ваня"}
+        sentences: [] // {key, speaker, text, audio, shared_audio, start, end, chain}
     }
 };
 
@@ -254,8 +266,8 @@ function selectRowByKey(key, { scrollIntoView = true, focusEditable = false } = 
     const startTime = parseFloat(top.querySelector('.start-time')?.textContent) || 0;
     const endTime = parseFloat(top.querySelector('.end-time')?.textContent) || 0;
 
-    document.getElementById('startTime').value = startTime.toFixed(2);
-    document.getElementById('endTime').value = endTime.toFixed(2);
+    // safeGetElementById('startTime').value = startTime.toFixed(2);
+    // safeGetElementById('endTime').value = endTime.toFixed(2);
 
     // Если есть WaveformCanvas - создаем сегмент
     if (waveformCanvas) {
@@ -388,57 +400,86 @@ function updateRegionInputs(region) {
         return;
     }
 
-    const startInput = document.getElementById('startTime');
-    const endInput = document.getElementById('endTime');
-
-    if (startInput) startInput.value = region.start.toFixed(2);
-    if (endInput) endInput.value = region.end.toFixed(2);
+    // startTime и endTime элементы больше не существуют
+    // const startInput = safeGetElementById('startTime');
+    // const endInput = safeGetElementById('endTime');
+    // if (startInput) startInput.value = region.start.toFixed(2);
+    // if (endInput) endInput.value = region.end.toFixed(2);
 
     // Обновляем значение в таблице
-    updateCurrentRowTimes(region.start, region.end);
+    // updateCurrentRowTimes(region.start, region.end); // Функция использует старую структуру
 }
 
-document.getElementById('startTime').addEventListener('input', (e) => {
-    const newStart = parseFloat(e.target.value);
-    if (!isNaN(newStart) && waveformCanvas) {
-        // Получаем текущее значение endTime
-        const currentEnd = parseFloat(document.getElementById('endTime').value) || 0;
-        const duration = waveformCanvas.getDuration();
-        
-        // Проверяем валидность
-        if (newStart >= 0 && newStart < currentEnd && newStart < duration) {
-            waveformCanvas.updateRegion({ start: newStart });
-            // Обновляем значение в таблице
-            updateCurrentRowTimes(newStart, currentEnd);
-        } else {
-            console.warn('⚠️ Некорректное время начала:', newStart, '(должно быть >= 0, < end, < duration)');
-            // Восстанавливаем предыдущее значение
-            const currentStart = parseFloat(e.target.value) || 0;
-            e.target.value = currentStart.toFixed(2);
-        }
-    }
-});
+// Event listener для startTime удален - элемент больше не существует
 
-document.getElementById('endTime').addEventListener('input', (e) => {
-    const newEnd = parseFloat(e.target.value);
-    if (!isNaN(newEnd) && waveformCanvas) {
-        // Получаем текущее значение startTime
-        const currentStart = parseFloat(document.getElementById('startTime').value) || 0;
-        const duration = waveformCanvas.getDuration();
-        
-        // Проверяем валидность
-        if (newEnd > currentStart && newEnd <= duration) {
-            waveformCanvas.updateRegion({ end: newEnd });
-            // Обновляем значение в таблице
-            updateCurrentRowTimes(currentStart, newEnd);
-        } else {
-            console.warn('⚠️ Некорректное время окончания:', newEnd, '(должно быть > start, <= duration)');
-            // Восстанавливаем предыдущее значение
-            const currentEnd = parseFloat(e.target.value) || 0;
-            e.target.value = currentEnd.toFixed(2);
-        }
+// Event listener для endTime удален - элемент больше не существует
+
+// Вспомогательная функция для безопасного получения элементов
+function getElementByIdSafe(id) {
+    const element = document.getElementById(id);
+    if (!element) {
+        console.warn(`Element with id '${id}' not found`);
+        return null;
     }
-});
+    return element;
+}
+
+// Заменяем все вызовы getElementById('startTime') и getElementById('endTime')
+// на заглушки, чтобы избежать ошибок
+function safeGetStartTimeElement() { return null; }
+function safeGetEndTimeElement() { return null; }
+
+// Временная заглушка для всех проблемных вызовов
+function safeGetElementById(id) {
+    if (id === 'startTime' || id === 'endTime') {
+        return null;
+    }
+    return document.getElementById(id);
+}
+
+// Функции для работы с полями времени в модальном окне настроек аудио
+function getAudioStartTimeElement() {
+    return document.getElementById('audioStartTime');
+}
+
+function getAudioEndTimeElement() {
+    return document.getElementById('audioEndTime');
+}
+
+// Синхронизация между видимыми полями (audioStartTime/audioEndTime) и скрытыми (startTime/endTime)
+function syncTimeFields() {
+    const audioStart = document.getElementById('audioStartTime');
+    const audioEnd = document.getElementById('audioEndTime');
+    const startTime = document.getElementById('startTime');
+    const endTime = document.getElementById('endTime');
+    
+    if (audioStart && startTime) {
+        audioStart.value = startTime.value;
+    }
+    if (audioEnd && endTime) {
+        audioEnd.value = endTime.value;
+    }
+}
+
+// Обратные event listeners для синхронизации
+function setupTimeFieldSync() {
+    const audioStart = document.getElementById('audioStartTime');
+    const audioEnd = document.getElementById('audioEndTime');
+    const startTime = document.getElementById('startTime');
+    const endTime = document.getElementById('endTime');
+    
+    if (audioStart && startTime) {
+        audioStart.addEventListener('input', () => {
+            startTime.value = audioStart.value;
+        });
+    }
+    
+    if (audioEnd && endTime) {
+        audioEnd.addEventListener('input', () => {
+            endTime.value = audioEnd.value;
+        });
+    }
+}
 
 async function initWaveform(audioUrl) {
     if (audioUrl) lastAudioUrl = audioUrl;
@@ -508,10 +549,10 @@ async function initWaveform(audioUrl) {
                 waveformCanvas.setRegion(roundedStart, roundedEnd);
                 
                 // Обновляем поля в DOM
-                const startTimeInput = document.getElementById('startTime');
-                const endTimeInput = document.getElementById('endTime');
-                if (startTimeInput) startTimeInput.value = roundedStart.toFixed(2);
-                if (endTimeInput) endTimeInput.value = roundedEnd.toFixed(2);
+                // const startTimeInput = safeGetElementById('startTime');
+                // const endTimeInput = safeGetElementById('endTime');
+                // if (startTimeInput) startTimeInput.value = roundedStart.toFixed(2);
+                // if (endTimeInput) endTimeInput.value = roundedEnd.toFixed(2);
                 console.log('✅ Поля обновлены из currentDictation:', roundedStart.toFixed(2), '-', roundedEnd.toFixed(2));
             } else {
                 console.log('⚠️ initWaveform: Времена из currentDictation некорректны или превышают длительность');
@@ -527,19 +568,19 @@ async function initWaveform(audioUrl) {
             waveformCanvas.setRegion(0, roundedDuration);
             
             // Обновляем поля в DOM
-            const startTimeInput = document.getElementById('startTime');
-            const endTimeInput = document.getElementById('endTime');
-            if (startTimeInput) startTimeInput.value = '0.00';
-            if (endTimeInput) endTimeInput.value = roundedDuration.toFixed(2);
+            // const startTimeInput = safeGetElementById('startTime');
+            // const endTimeInput = safeGetElementById('endTime');
+            // if (startTimeInput) startTimeInput.value = '0.00';
+            // if (endTimeInput) endTimeInput.value = roundedDuration.toFixed(2);
             console.log('✅ Поля обновлены по умолчанию: 0.00 -', roundedDuration.toFixed(2));
         }
 
         // Настраиваем callback для обновления региона
         waveformCanvas.onRegionUpdate((region) => {
-            const startTimeInput = document.getElementById('startTime');
-            const endTimeInput = document.getElementById('endTime');
-            if (startTimeInput) startTimeInput.value = region.start.toFixed(2);
-            if (endTimeInput) endTimeInput.value = region.end.toFixed(2);
+            // const startTimeInput = safeGetElementById('startTime');
+            // const endTimeInput = safeGetElementById('endTime');
+            // if (startTimeInput) startTimeInput.value = region.start.toFixed(2);
+            // if (endTimeInput) endTimeInput.value = region.end.toFixed(2);
         });
 
         // Настраиваем callback для перемотки
@@ -569,7 +610,7 @@ async function loadAudioToCanvas(audioUrl) {
         // Автоматически заполняем поле endTime реальной длительностью аудио
         const duration = audioBuffer.duration;
         if (duration && duration > 0) {
-            const endTimeInput = document.getElementById('endTime');
+            const endTimeInput = safeGetElementById('endTime');
             if (endTimeInput && (!endTimeInput.value || parseFloat(endTimeInput.value) <= 0)) {
                 endTimeInput.value = duration.toFixed(2);
                 console.log('✅ Поле endTime обновлено:', endTimeInput.value);
@@ -701,7 +742,7 @@ function createSegment(startTime, endTime, index) {
 //         const duration = waveSurfer.getDuration();
 //         console.log('⏱️ Длительность аудио:', duration);
 //         if (duration && duration > 0) {
-//             const endTimeInput = document.getElementById('endTime');
+//             const endTimeInput = safeGetElementById('endTime');
 //             if (endTimeInput && (!endTimeInput.value || parseFloat(endTimeInput.value) <= 0)) {
 //                 endTimeInput.value = duration.toFixed(2);
 //                 console.log('✅ Поле endTime обновлено:', endTimeInput.value);
@@ -820,8 +861,8 @@ function createRegion(start, end, index) {
     waveformCanvas.setRegion(start, end);
     
     // Обновляем поля в DOM
-    const startTimeInput = document.getElementById('startTime');
-    const endTimeInput = document.getElementById('endTime');
+    const startTimeInput = safeGetElementById('startTime');
+    const endTimeInput = safeGetElementById('endTime');
     if (startTimeInput) startTimeInput.value = start.toFixed(2);
     if (endTimeInput) endTimeInput.value = end.toFixed(2);
     
@@ -830,8 +871,8 @@ function createRegion(start, end, index) {
 }
 
 function updateCurrentTimesUI(start, end) {
-    const startSpan = document.getElementById('startTime');
-    const endSpan = document.getElementById('endTime');
+    const startSpan = safeGetElementById('startTime');
+    const endSpan = safeGetElementById('endTime');
 
     if (startSpan) startSpan.textContent = start.toFixed(2);
     if (endSpan) endSpan.textContent = end.toFixed(2);
@@ -1033,8 +1074,8 @@ function startPlayback() {
     if (!lastAudioUrl) return;
     
     // Получаем времена региона
-    const startTime = parseFloat(document.getElementById('startTime').value) || 0;
-    const endTime = parseFloat(document.getElementById('endTime').value) || (waveformCanvas?.getDuration() || 0);
+    const startTime = parseFloat(safeGetElementById('startTime').value) || 0;
+    const endTime = parseFloat(safeGetElementById('endTime').value) || (waveformCanvas?.getDuration() || 0);
     
     console.log('🎵 Начинаем воспроизведение:', startTime, '-', endTime);
     
@@ -1087,7 +1128,7 @@ function updatePlayhead() {
         waveformCanvas.setCurrentTime(currentTime);
         
         // Проверяем, не достигли ли конца региона
-        const endTime = parseFloat(document.getElementById('endTime').value) || 0;
+        const endTime = parseFloat(safeGetElementById('endTime').value) || 0;
         if (currentTime >= endTime) {
             stopPlayback();
         }
@@ -1632,8 +1673,8 @@ document.addEventListener('click', async (e) => {
             //   await applyAudioToLine({ key, audioUrl });
         } else {
             // (2) Вырезка по Start/End из волны
-            const start = parseFloat(document.getElementById('startTime').value);
-            const end = parseFloat(document.getElementById('endTime').value);
+            const start = parseFloat(safeGetElementById('startTime').value);
+            const end = parseFloat(safeGetElementById('endTime').value);
             await validateCutRange(start, end);
 
             const audioUrl = await cutAudioForLine({ key, start, end });
@@ -1767,6 +1808,8 @@ async function saveAvtoToDisk() {
     }
 }
 
+// Функция setupButtons удалена - больше не нужна в новой архитектуре
+/*
 function setupButtons() {
     // Обработчик кнопки "Разбить на предложения"
     document.getElementById('split-avto-btn').addEventListener('click', async function () {
@@ -1981,8 +2024,10 @@ function setupButtons() {
     // Обработчики для MP3 режима
     setupMp3Handlers();
 }
+*/
 
-// Настройка обработчиков для MP3 режима
+// Настройка обработчиков для MP3 режима - функция удалена
+/*
 function setupMp3Handlers() {
     // Обработчики для переключения режимов отображения start/end
     const waveModeRadios = document.querySelectorAll('input[name="waveMode"]');
@@ -2005,6 +2050,7 @@ function setupMp3Handlers() {
         saveMp3Btn.addEventListener('click', saveMp3Dictation);
     }
 }
+*/
 
 // Обновление режима отображения волны
 function updateWaveMode(mode) {
@@ -2014,13 +2060,13 @@ function updateWaveMode(mode) {
         // Режим 1: начало и конец диктанта
         if (currentDictation.dictationStartTime && currentDictation.dictationEndTime) {
             // Используем сохраненное время диктанта
-            document.getElementById('startTime').value = currentDictation.dictationStartTime.toFixed(2);
-            document.getElementById('endTime').value = currentDictation.dictationEndTime.toFixed(2);
+            safeGetElementById('startTime').value = currentDictation.dictationStartTime.toFixed(2);
+            safeGetElementById('endTime').value = currentDictation.dictationEndTime.toFixed(2);
             waveformCanvas.setRegion(currentDictation.dictationStartTime, currentDictation.dictationEndTime);
         } else {
             // Если нет сохраненных времен, используем текущие значения полей
-            const startTime = parseFloat(document.getElementById('startTime').value) || 0;
-            const endTime = parseFloat(document.getElementById('endTime').value) || waveformCanvas.getDuration();
+            const startTime = parseFloat(safeGetElementById('startTime').value) || 0;
+            const endTime = parseFloat(safeGetElementById('endTime').value) || waveformCanvas.getDuration();
             waveformCanvas.setRegion(startTime, endTime);
         }
         
@@ -2042,8 +2088,8 @@ function updateWaveMode(mode) {
                     const start = parseFloat(startInput.value) || 0;
                     const end = parseFloat(endInput.value) || 0;
                     
-                    document.getElementById('startTime').value = start.toFixed(2);
-                    document.getElementById('endTime').value = end.toFixed(2);
+                    safeGetElementById('startTime').value = start.toFixed(2);
+                    safeGetElementById('endTime').value = end.toFixed(2);
                     
                     waveformCanvas.setRegion(start, end);
                 }
@@ -2073,15 +2119,15 @@ async function createMp3Table() {
     // Объявляем createBtn в начале функции для доступа в catch блоке
     const createBtn = document.getElementById('createTableBtn');
     
-    const startTime = parseFloat(document.getElementById('startTime').value) || 0;
-    let endTime = parseFloat(document.getElementById('endTime').value);
+    const startTime = parseFloat(safeGetElementById('startTime').value) || 0;
+    let endTime = parseFloat(safeGetElementById('endTime').value);
     
     // Если endTime не указан, используем полную длительность аудио файла
     if (!endTime || endTime <= 0) {
         const duration = waveformCanvas ? waveformCanvas.getDuration() : 0;
         // Округляем длительность до 2 знаков после запятой
         endTime = Math.floor(duration * 100) / 100;
-        document.getElementById('endTime').value = endTime.toFixed(2);
+        safeGetElementById('endTime').value = endTime.toFixed(2);
     }
     
     if (endTime <= startTime) {
@@ -2452,7 +2498,7 @@ function markRowAsChanged(rowIndex) {
 
 // Обновить глобальное время начала
 function updateGlobalStartTime(newStartTime) {
-    const globalStartInput = document.getElementById('startTime');
+    const globalStartInput = safeGetElementById('startTime');
     if (globalStartInput) {
         globalStartInput.value = newStartTime.toFixed(2);
     }
@@ -2461,7 +2507,7 @@ function updateGlobalStartTime(newStartTime) {
 
 // Обновить глобальное время окончания
 function updateGlobalEndTime(newEndTime) {
-    const globalEndInput = document.getElementById('endTime');
+    const globalEndInput = safeGetElementById('endTime');
     if (globalEndInput) {
         globalEndInput.value = newEndTime.toFixed(2);
     }
@@ -2742,13 +2788,62 @@ function updateNextRowStartTime(currentRow) {
 }
 
 // Проигрывание части аудио
-function playAudioPart(audioUrl, startTime = null, endTime = null) {
+function playAudioPart(audioUrl, startTime = null, endTime = null, onEndCallback = null) {
     if (audioUrl) {
-        // Используем тот же проигрыватель, что и на странице avto
+        // Остановить предыдущее аудио, если оно играет
+        if (window.currentAudio) {
+            window.currentAudio.pause();
+            window.currentAudio = null;
+        }
+        
+        // Создать новое аудио
         const audio = new Audio(audioUrl);
+        window.currentAudio = audio;
+        
+        // Установить начальное время, если указано
+        if (startTime !== null && startTime > 0) {
+            audio.currentTime = startTime;
+        }
+        
+        // Обработчик окончания воспроизведения
+        audio.addEventListener('ended', () => {
+            window.currentAudio = null;
+            if (onEndCallback) {
+                onEndCallback();
+            }
+        });
+        
+        // Обработчик ошибок
+        audio.addEventListener('error', (e) => {
+            console.error('Ошибка проигрывания аудио:', e);
+            window.currentAudio = null;
+            if (onEndCallback) {
+                onEndCallback();
+            }
+        });
+        
+        // Начать воспроизведение
         audio.play().catch(e => {
             console.error('Ошибка проигрывания аудио:', e);
+            window.currentAudio = null;
+            if (onEndCallback) {
+                onEndCallback();
+            }
         });
+        
+        // Если указано время окончания, остановить в нужное время
+        if (endTime !== null && endTime > 0) {
+            const duration = endTime - (startTime || 0);
+            setTimeout(() => {
+                if (window.currentAudio === audio) {
+                    audio.pause();
+                    window.currentAudio = null;
+                    if (onEndCallback) {
+                        onEndCallback();
+                    }
+                }
+            }, duration * 1000);
+        }
     } else if (startTime !== null && endTime !== null && waveformCanvas) {
         // Fallback: проигрываем конкретный отрезок через WaveformCanvas
         // WaveformCanvas не имеет встроенного проигрывателя, используем Audio API
@@ -2759,12 +2854,27 @@ function playAudioPart(audioUrl, startTime = null, endTime = null) {
         const audio = new Audio();
         audio.src = lastAudioUrl;
         audio.currentTime = startTime;
+        window.currentAudio = audio;
+        
+        audio.addEventListener('ended', () => {
+            window.currentAudio = null;
+            if (onEndCallback) {
+                onEndCallback();
+            }
+        });
+        
         audio.play();
         
         // Останавливаем в нужное время
         const stopAt = endTime - startTime;
         setTimeout(() => {
-            audio.pause();
+            if (window.currentAudio === audio) {
+                audio.pause();
+                window.currentAudio = null;
+                if (onEndCallback) {
+                    onEndCallback();
+                }
+            }
         }, stopAt * 1000);
     }
 }
@@ -2801,8 +2911,8 @@ function selectMp3Row(row) {
             textOriginalRow.textContent = `(${rowNumber}) ${text}`;
         }
         
-        const startTimeInput = document.getElementById('startTime');
-        const endTimeInput = document.getElementById('endTime');
+        const startTimeInput = safeGetElementById('startTime');
+        const endTimeInput = safeGetElementById('endTime');
         if (startTimeInput && endTimeInput) {
             // Проверяем валидность времен из таблицы
             const duration = waveformCanvas ? waveformCanvas.getDuration() : 0;
@@ -3076,7 +3186,7 @@ function initNewDictation(safe_email, initData) {
     const language_translation = langDiv.dataset.translation;
 
     // Получаем информацию о категории из глобальной переменной (если есть)
-    const categoryInfo = window.selectedCategoryForDictation || {};
+    // Данные категории теперь читаются из info.json через POST запрос
 
     // Получаем safe_email из initData
     currentDictation = {
@@ -3088,7 +3198,11 @@ function initNewDictation(safe_email, initData) {
         category_key: categoryInfo.key || '',
         category_title: categoryInfo.title || '',
         category_path: categoryInfo.path || '',
-        coverFile: null // загруженный файл cover в памяти
+        coverFile: null, // загруженный файл cover в памяти
+        is_dialog: false,
+        speakers: {},
+        current_edit_mode: null,
+        current_row_key: null
     };
 
     // Очищаем поля формы
@@ -3097,6 +3211,15 @@ function initNewDictation(safe_email, initData) {
     document.getElementById('text').value = '';
     document.querySelector('#sentences-table tbody').innerHTML = '';
     document.getElementById('dictation-id').textContent = `Новый диктант: ` + dictation_id;
+    
+    // Показать поле ввода, скрыть кнопку "Внести заново"
+    document.getElementById('textInputSection').style.display = 'block';
+    document.getElementById('reenterTextSection').style.display = 'none';
+    
+    // Открыть стартовое модальное окно для нового диктанта
+    setTimeout(() => {
+        openStartModal();
+    }, 100);
     
     // Показываем путь к категории если есть
     if (currentDictation.category_path) {
@@ -3347,8 +3470,8 @@ async function loadMp3DataForExistingDictation(dictation_id, language) {
             });
             
             // Обновляем поля start/end если они есть на странице
-            const startTimeInput = document.getElementById('startTime');
-            const endTimeInput = document.getElementById('endTime');
+            const startTimeInput = safeGetElementById('startTime');
+            const endTimeInput = safeGetElementById('endTime');
             console.log('🎛️ Поля start/end найдены:', !!startTimeInput, !!endTimeInput);
             
             // Используем значения из первой строки, если есть предложения
@@ -3486,8 +3609,8 @@ async function createMp3TableFromData(sentences) {
         // Синхронизируем глобальные поля в зависимости от выбранного режима
         if (sentences.length > 0) {
             const firstSentence = sentences[0];
-            const globalStartInput = document.getElementById('startTime');
-            const globalEndInput = document.getElementById('endTime');
+            const globalStartInput = safeGetElementById('startTime');
+            const globalEndInput = safeGetElementById('endTime');
             
             // Проверяем выбранный режим
             const dictationMode = document.querySelector('input[name="waveMode"][value="dictation"]');
@@ -3622,11 +3745,12 @@ function initDictationGenerator() {
     }
 
 
-    setupButtons();
+    // setupButtons(); // Удалено - функция больше не нужна
     // initializeUser(); // Инициализируем пользователя (JWT версия)
     // setupAuthHandlers(); // ДОБАВИТЬ - настраиваем обработчики аутентификации
     
     setupExitHandlers(); // Настраиваем обработчики выхода
+    setupStartModalHandlers(); // Настраиваем обработчики стартового модального окна
 
 }
 
@@ -3686,5 +3810,1330 @@ function initDictationGenerator() {
     document.addEventListener('touchmove', (e) => dragging && applySplitAt(e.touches[0].clientX), { passive: true });
     document.addEventListener('touchend', onMouseUp);
 })();
+
+// ============================================================================
+// НОВАЯ АРХИТЕКТУРА - СТАРТОВОЕ МОДАЛЬНОЕ ОКНО
+// ============================================================================
+
+/**
+ * Открыть стартовое модальное окно
+ */
+function openStartModal() {
+    const modal = document.getElementById('startModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Сбросить состояние
+        document.getElementById('isDialogCheckbox').checked = false;
+        document.getElementById('translationDelimiter').value = '/*';
+        document.getElementById('startTextInput').value = '';
+        toggleSpeakersTable(false);
+    }
+}
+
+/**
+ * Закрыть стартовое модальное окно
+ */
+function closeStartModal() {
+    const modal = document.getElementById('startModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+/**
+ * Переключить видимость таблицы спикеров
+ */
+function toggleSpeakersTable(show) {
+    const speakersTable = document.getElementById('speakersTable');
+    if (speakersTable) {
+        speakersTable.style.display = show ? 'block' : 'none';
+    }
+}
+
+/**
+ * Добавить спикера
+ */
+function addSpeaker() {
+    const tbody = document.querySelector('#speakersTableContent tbody');
+    if (!tbody) return;
+
+    const speakerCount = tbody.children.length + 1;
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${speakerCount}</td>
+        <td><input type="text" class="speaker-name" value="Спикер ${speakerCount}" placeholder="Имя спикера"></td>
+        <td><button type="button" class="remove-speaker">Удалить</button></td>
+    `;
+    tbody.appendChild(row);
+}
+
+/**
+ * Удалить спикера
+ */
+function removeSpeaker(button) {
+    const row = button.closest('tr');
+    if (row) {
+        row.remove();
+        // Обновить номера
+        const tbody = document.querySelector('#speakersTableContent tbody');
+        Array.from(tbody.children).forEach((row, index) => {
+            row.cells[0].textContent = index + 1;
+        });
+    }
+}
+
+/**
+ * Получить спикеров из таблицы
+ */
+function getSpeakersFromTable() {
+    const speakers = {};
+    const speakerInputs = document.querySelectorAll('.speaker-name');
+    speakerInputs.forEach((input, index) => {
+        const speakerId = (index + 1).toString();
+        const speakerName = input.value.trim() || `Спикер ${speakerId}`;
+        speakers[speakerId] = speakerName;
+    });
+    return speakers;
+}
+
+/**
+ * Генерация имени аудиофайла
+ */
+function generateAudioFileName(key, language, tipe_audio = 'avto') {
+    return `${key}_${language}_${tipe_audio}.mp3`;
+}
+
+/**
+ * Парсинг текста диктанта
+ */
+async function parseInputText(text, delimiter, isDialog, speakers) {
+    // Удалить пустые строки
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    if (lines.length === 0) {
+        return { original: [], translation: [] };
+    }
+
+    const original = [];
+    const translation = [];
+    
+    // Определить режим перевода (есть ли delimiter во второй строке)
+    const hasTranslation = lines.length > 1 && lines[1].startsWith(delimiter);
+    
+    if (isDialog) {
+        // Парсинг диалога
+        let currentSpeaker = '1';
+        let speakerIndex = 0;
+        const speakerIds = Object.keys(speakers);
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            
+            if (line.startsWith(delimiter)) {
+                // Строка перевода
+                const translationText = line.substring(delimiter.length).trim();
+                if (translationText) {
+                    translation.push({
+                        key: original.length.toString().padStart(3, '0'),
+                        speaker: currentSpeaker,
+                        text: translationText,
+                        audio: '',
+                        shared_audio: '',
+                        start: 0,
+                        end: 0,
+                        chain: false
+                    });
+                }
+            } else {
+                // Строка оригинала
+                let originalText = line;
+                let speakerId = currentSpeaker;
+                
+                // Проверить формат "1: текст"
+                const dialogMatch = line.match(/^(\d+):\s*(.+)$/);
+                if (dialogMatch) {
+                    speakerId = dialogMatch[1];
+                    originalText = dialogMatch[2];
+                } else {
+                    // Чередовать спикеров автоматически
+                    if (speakerIds.length > 1) {
+                        currentSpeaker = speakerIds[speakerIndex % speakerIds.length];
+                        speakerIndex++;
+                    }
+                }
+                
+                const key = original.length.toString().padStart(3, '0');
+                const audioFileName = generateAudioFileName(key, currentDictation.language_original);
+                
+                // Генерировать аудио для оригинала
+                await generateAudioForSentence({
+                    key: key,
+                    speaker: currentSpeaker,
+                    text: originalText,
+                    audio: audioFileName,
+                    shared_audio: '',
+                    start: 0,
+                    end: 0,
+                    chain: false
+                }, currentDictation.language_original);
+                
+                original.push({
+                    key: key,
+                    speaker: currentSpeaker,
+                    text: originalText,
+                    audio: audioFileName,
+                    shared_audio: '',
+                    start: 0,
+                    end: 0,
+                    chain: false
+                });
+            }
+        }
+    } else {
+        // Обычный текст
+        if (hasTranslation) {
+            // Есть перевод
+            for (let i = 0; i < lines.length; i += 2) {
+                const originalText = lines[i];
+                const translationText = lines[i + 1] ? lines[i + 1].substring(delimiter.length).trim() : '';
+                
+                const key = original.length.toString().padStart(3, '0');
+                const originalAudioFileName = generateAudioFileName(key, currentDictation.language_original);
+                
+                // Генерировать аудио для оригинала
+                await generateAudioForSentence({
+                    key: key,
+                    speaker: '1',
+                    text: originalText,
+                    audio: originalAudioFileName,
+                    shared_audio: '',
+                    start: 0,
+                    end: 0,
+                    chain: false
+                }, currentDictation.language_original);
+                
+                original.push({
+                    key: key,
+                    speaker: '1',
+                    text: originalText,
+                    audio: originalAudioFileName,
+                    shared_audio: '',
+                    start: 0,
+                    end: 0,
+                    chain: false
+                });
+                
+                if (translationText) {
+                    const translationAudioFileName = generateAudioFileName(key, currentDictation.language_translation);
+                    
+                    // Генерировать аудио для перевода
+                    await generateAudioForSentence({
+                        key: key,
+                        speaker: '1',
+                        text: translationText,
+                        audio: translationAudioFileName,
+                        shared_audio: '',
+                        start: 0,
+                        end: 0,
+                        chain: false
+                    }, currentDictation.language_translation);
+                    
+                    translation.push({
+                        key: key,
+                        speaker: '1',
+                        text: translationText,
+                        audio: translationAudioFileName,
+                        shared_audio: '',
+                        start: 0,
+                        end: 0,
+                        chain: false
+                    });
+                }
+            }
+        } else {
+            // Только оригинал
+            for (let index = 0; index < lines.length; index++) {
+                const line = lines[index];
+                const key = index.toString().padStart(3, '0');
+                const audioFileName = generateAudioFileName(key, currentDictation.language_original);
+                
+                // Генерировать аудио для оригинала
+                await generateAudioForSentence({
+                    key: key,
+                    speaker: '1',
+                    text: line,
+                    audio: audioFileName,
+                    shared_audio: '',
+                    start: 0,
+                    end: 0,
+                    chain: false
+                }, currentDictation.language_original);
+                
+                original.push({
+                    key: key,
+                    speaker: '1',
+                    text: line,
+                    audio: audioFileName,
+                    shared_audio: '',
+                    start: 0,
+                    end: 0,
+                    chain: false
+                });
+            }
+        }
+    }
+    
+    return { original, translation };
+}
+
+/**
+ * Сформировать диктант из стартового окна
+ */
+async function createDictationFromStart() {
+    const text = document.getElementById('startTextInput').value.trim();
+    const delimiter = document.getElementById('translationDelimiter').value.trim();
+    const isDialog = document.getElementById('isDialogCheckbox').checked;
+    
+    if (!text) {
+        alert('Введите текст диктанта');
+        return;
+    }
+    
+    const speakers = isDialog ? getSpeakersFromTable() : { '1': 'Спикер 1' };
+    
+    // Парсинг текста
+    const parsedData = await parseInputText(text, delimiter, isDialog, speakers);
+    
+    // Обновить глобальные данные
+    currentDictation.is_dialog = isDialog;
+    currentDictation.speakers = speakers;
+    
+    workingData.original = {
+        language: currentDictation.language_original,
+        title: document.getElementById('title').value || 'Диктант',
+        speakers: speakers,
+        sentences: parsedData.original
+    };
+    
+    workingData.translation = {
+        language: currentDictation.language_translation,
+        title: document.getElementById('title_translation').value || 'Перевод',
+        speakers: speakers,
+        sentences: parsedData.translation
+    };
+    
+    // Скрыть поле ввода, показать кнопку "Внести заново"
+    document.getElementById('textInputSection').style.display = 'none';
+    document.getElementById('reenterTextSection').style.display = 'block';
+    
+    // Показать спикеров в шапке если диалог
+    if (isDialog) {
+        showSpeakersInHeader(speakers);
+    }
+    
+    // Создать таблицу
+    createTable();
+    
+    // Закрыть модальное окно
+    closeStartModal();
+}
+
+// Функция generateAudioForAllSentences удалена - аудио генерируется прямо при парсинге текста
+
+/**
+ * Генерировать аудио для одного предложения
+ */
+async function generateAudioForSentence(sentence, language) {
+    if (!sentence.text.trim()) return;
+    
+    // Используем уже готовое имя файла из sentence.audio
+    const filename = sentence.audio;
+    
+    try {
+        const response = await fetch('/generate_audio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                text: sentence.text,
+                language: language,
+                filename: filename,
+                filename_audio: filename,
+                tipe_audio: 'avto',
+                dictation_id: currentDictation.id,
+                safe_email: currentDictation.safe_email
+            })
+        });
+        
+        if (response.ok) {
+            console.log(`✅ Аудио сгенерировано: ${filename}`);
+        } else {
+            const errorText = await response.text();
+            console.error(`❌ Ошибка генерации аудио для ${filename}: ${response.status} ${errorText}`);
+        }
+    } catch (error) {
+        console.error(`❌ Ошибка при генерации аудио:`, error);
+    }
+}
+
+/**
+ * Показать спикеров в шапке
+ */
+function showSpeakersInHeader(speakers) {
+    const speakersDisplay = document.getElementById('speakersDisplay');
+    const speakersList = document.getElementById('speakersList');
+    
+    if (speakersDisplay && speakersList) {
+        speakersDisplay.style.display = 'block';
+        speakersList.innerHTML = '';
+        
+        Object.entries(speakers).forEach(([id, name]) => {
+            const span = document.createElement('span');
+            span.className = 'speaker-badge';
+            span.textContent = `${id}: ${name}`;
+            span.style.backgroundColor = getSpeakerColor(id);
+            speakersList.appendChild(span);
+        });
+    }
+}
+
+/**
+ * Получить цвет для спикера
+ */
+function getSpeakerColor(speakerId) {
+    const colors = ['#ff9999', '#99ff99', '#9999ff', '#ffff99', '#ff99ff', '#99ffff'];
+    const index = parseInt(speakerId) - 1;
+    return colors[index % colors.length];
+}
+
+/**
+ * Настроить обработчики для стартового модального окна
+ */
+function setupStartModalHandlers() {
+    // Чекбокс диалога
+    const isDialogCheckbox = document.getElementById('isDialogCheckbox');
+    if (isDialogCheckbox) {
+        isDialogCheckbox.addEventListener('change', (e) => {
+            toggleSpeakersTable(e.target.checked);
+        });
+    }
+
+    // Кнопка добавления спикера
+    const addSpeakerBtn = document.getElementById('addSpeakerBtn');
+    if (addSpeakerBtn) {
+        addSpeakerBtn.addEventListener('click', addSpeaker);
+    }
+
+    // Обработчики удаления спикеров
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-speaker')) {
+            removeSpeaker(e.target);
+        }
+    });
+
+    // Кнопки модального окна
+    const cancelStartBtn = document.getElementById('cancelStartBtn');
+    if (cancelStartBtn) {
+        cancelStartBtn.addEventListener('click', closeStartModal);
+    }
+
+    const createDictationBtn = document.getElementById('createDictationBtn');
+    if (createDictationBtn) {
+        createDictationBtn.addEventListener('click', createDictationFromStart);
+    }
+
+    // Кнопка "Внести текст заново"
+    const reenterTextBtn = document.getElementById('reenterTextBtn');
+    if (reenterTextBtn) {
+        reenterTextBtn.addEventListener('click', () => {
+            if (confirm('Это удалит все существующие предложения и аудио. Продолжить?')) {
+                // Очистить таблицу
+                // TODO: таблицу надо удалять из другой процедуры, пользователь может захотеть вернуться, а таблицы уже нет
+                const tbody = document.querySelector('#sentences-table tbody');
+                if (tbody) {
+                    tbody.innerHTML = '';
+                }
+                
+                // Скрыть кнопку "Внести заново", показать поле ввода
+                document.getElementById('reenterTextSection').style.display = 'none';
+                document.getElementById('textInputSection').style.display = 'block';
+                
+                // Очистить workingData
+                workingData.original.sentences = [];
+                workingData.translation.sentences = [];
+                
+                // Открыть стартовое модальное окно
+                openStartModal();
+            }
+        });
+    }
+
+    // Кнопка "Сохранить диктант и выйти"
+    const saveAndExitBtn = document.getElementById('saveAndExitBtn');
+    if (saveAndExitBtn) {
+        saveAndExitBtn.addEventListener('click', () => {
+            if (confirm('Сохранить диктант и вернуться на главную страницу?')) {
+                saveDictationAndExit();
+            }
+        });
+    }
+
+    // Закрытие модального окна по клику вне его
+    const startModal = document.getElementById('startModal');
+    if (startModal) {
+        startModal.addEventListener('click', (e) => {
+            if (e.target === startModal) {
+                closeStartModal();
+            }
+        });
+    }
+
+    // Обработчики для модального окна настроек аудио
+    setupAudioSettingsModalHandlers();
+}
+
+/**
+ * Создать таблицу с новой структурой (17 колонок)
+ */
+function createTable() {
+    const tbody = document.querySelector('#sentences-table tbody');
+    if (!tbody) return;
+
+    // Очистить таблицу
+    tbody.innerHTML = '';
+
+    // Показать/скрыть колонку спикера в зависимости от типа диктанта
+    const speakerCol = document.querySelector('.col-speaker');
+    if (speakerCol) {
+        speakerCol.style.display = currentDictation.is_dialog ? 'table-cell' : 'none';
+    }
+
+    // Создать строки для оригинального языка
+    const originalSentences = workingData.original.sentences || [];
+    const translationSentences = workingData.translation.sentences || [];
+
+    // Объединить оригинал и перевод по ключам
+    const allKeys = new Set();
+    originalSentences.forEach(s => allKeys.add(s.key));
+    translationSentences.forEach(s => allKeys.add(s.key));
+
+    Array.from(allKeys).sort().forEach(key => {
+        const originalSentence = originalSentences.find(s => s.key === key);
+        const translationSentence = translationSentences.find(s => s.key === key);
+
+        const row = createTableRow(key, originalSentence, translationSentence);
+        tbody.appendChild(row);
+    });
+    
+    // Пересоздать иконки Lucide после создания таблицы
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/**
+ * Создать строку таблицы
+ */
+function createTableRow(key, originalSentence, translationSentence) {
+    const row = document.createElement('tr');
+    row.dataset.key = key;
+    row.className = 'sentence-row';
+
+    // Колонка 0: №
+    const numberCell = document.createElement('td');
+    numberCell.className = 'col-number';
+    numberCell.textContent = parseInt(key) + 1;
+    row.appendChild(numberCell);
+
+    // Колонка 1: Спикер (если диалог)
+    if (currentDictation.is_dialog) {
+        const speakerCell = document.createElement('td');
+        speakerCell.className = 'col-speaker';
+        
+        const speakerSelect = document.createElement('select');
+        speakerSelect.className = 'speaker-select';
+        
+        Object.entries(currentDictation.speakers).forEach(([id, name]) => {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = name;
+            if (originalSentence && originalSentence.speaker === id) {
+                option.selected = true;
+            }
+            speakerSelect.appendChild(option);
+        });
+        
+        speakerCell.appendChild(speakerSelect);
+        row.appendChild(speakerCell);
+    }
+
+    // Колонка 2: Оригинал
+    const originalCell = document.createElement('td');
+    originalCell.className = 'col-original';
+    const originalInput = document.createElement('div');
+    originalInput.className = 'text-original';
+    originalInput.contentEditable = true;
+    originalInput.textContent = originalSentence ? originalSentence.text : '';
+    originalCell.appendChild(originalInput);
+    row.appendChild(originalCell);
+
+    // Колонка 3: ▶️ Оригинал
+    const playOriginalCell = document.createElement('td');
+    playOriginalCell.className = 'col-play-original';
+    const playOriginalBtn = document.createElement('button');
+    playOriginalBtn.className = 'play-audio';
+    playOriginalBtn.innerHTML = '<i data-lucide="play"></i>';
+    playOriginalBtn.dataset.key = key;
+    playOriginalBtn.dataset.language = 'original';
+    playOriginalBtn.dataset.file = originalSentence?.audio || '';
+    playOriginalCell.appendChild(playOriginalBtn);
+    row.appendChild(playOriginalCell);
+
+    // Колонка 4: ⚙️ Оригинал
+    const settingsOriginalCell = document.createElement('td');
+    settingsOriginalCell.className = 'col-settings-original';
+    const settingsOriginalBtn = document.createElement('button');
+    settingsOriginalBtn.className = 'settings-audio';
+    settingsOriginalBtn.innerHTML = '<i data-lucide="settings"></i>';
+    settingsOriginalBtn.dataset.key = key;
+    settingsOriginalBtn.dataset.language = 'original';
+    settingsOriginalCell.appendChild(settingsOriginalBtn);
+    row.appendChild(settingsOriginalCell);
+
+    // Колонка 5: Перевод
+    const translationCell = document.createElement('td');
+    translationCell.className = 'col-translation';
+    const translationInput = document.createElement('div');
+    translationInput.className = 'text-translation';
+    translationInput.contentEditable = true;
+    translationInput.textContent = translationSentence ? translationSentence.text : '';
+    translationCell.appendChild(translationInput);
+    row.appendChild(translationCell);
+
+    // Колонка 6: ▶️ Перевод
+    const playTranslationCell = document.createElement('td');
+    playTranslationCell.className = 'col-play-translation';
+    const playTranslationBtn = document.createElement('button');
+    playTranslationBtn.className = 'play-audio';
+    playTranslationBtn.innerHTML = '<i data-lucide="play"></i>';
+    playTranslationBtn.dataset.key = key;
+    playTranslationBtn.dataset.language = 'translation';
+    playTranslationBtn.dataset.file = translationSentence?.audio || '';
+    playTranslationCell.appendChild(playTranslationBtn);
+    row.appendChild(playTranslationCell);
+
+    // Колонка 7: ⚙️ Перевод
+    const settingsTranslationCell = document.createElement('td');
+    settingsTranslationCell.className = 'col-settings-translation';
+    const settingsTranslationBtn = document.createElement('button');
+    settingsTranslationBtn.className = 'settings-audio';
+    settingsTranslationBtn.innerHTML = '<i data-lucide="settings"></i>';
+    settingsTranslationBtn.dataset.key = key;
+    settingsTranslationBtn.dataset.language = 'translation';
+    settingsTranslationCell.appendChild(settingsTranslationBtn);
+    row.appendChild(settingsTranslationCell);
+
+    // Колонки 8-16: Режим настройки аудио (скрыты по умолчанию)
+    const audioModeCells = [
+        { class: 'col-generate-tts', content: '<button class="generate-tts"><i data-lucide="volume-2"></i></button>' },
+        { class: 'col-checkbox', content: '<input type="checkbox" class="audio-checkbox">' },
+        { class: 'col-audio-file', content: '<input type="text" class="audio-file-input" placeholder="audio.mp3">' },
+        { class: 'col-start', content: '<input type="number" class="start-input" step="0.01" min="0">' },
+        { class: 'col-end', content: '<input type="number" class="end-input" step="0.01" min="0">' },
+        { class: 'col-chain', content: '<input type="checkbox" class="chain-checkbox">' },
+        { class: 'col-create-audio', content: '<button class="create-audio"><i data-lucide="plus"></i></button>' },
+        { class: 'col-play-audio', content: '<button class="play-audio-settings"><i data-lucide="play"></i></button>' },
+        { class: 'col-apply', content: '<button class="apply-audio">Применить ⤵️</button>' }
+    ];
+
+    audioModeCells.forEach(({ class: className, content }) => {
+        const cell = document.createElement('td');
+        cell.className = className;
+        cell.style.display = 'none';
+        cell.innerHTML = content;
+        
+        // Добавить data-атрибуты
+        if (content.includes('input') || content.includes('button')) {
+            const element = cell.querySelector('input, button');
+            if (element) {
+                element.dataset.key = key;
+            }
+        }
+        
+        row.appendChild(cell);
+    });
+
+    // Заполнить данные из sentences
+    if (originalSentence) {
+        const audioFileInput = row.querySelector('.audio-file-input');
+        const startInput = row.querySelector('.start-input');
+        const endInput = row.querySelector('.end-input');
+        const chainCheckbox = row.querySelector('.chain-checkbox');
+        
+        if (audioFileInput) audioFileInput.value = originalSentence.audio || '';
+        if (startInput) startInput.value = originalSentence.start || 0;
+        if (endInput) endInput.value = originalSentence.end || 0;
+        if (chainCheckbox) chainCheckbox.checked = originalSentence.chain || false;
+    }
+
+    // Добавить обработчики событий
+    setupRowEventHandlers(row, originalSentence, translationSentence);
+
+    return row;
+}
+
+/**
+ * Настроить обработчики событий для строки таблицы
+ */
+function setupRowEventHandlers(row, originalSentence, translationSentence) {
+    const key = row.dataset.key;
+
+    // Обработчик изменения текста оригинала
+    const originalInput = row.querySelector('.text-original');
+    if (originalInput) {
+        originalInput.addEventListener('input', () => {
+            const newText = originalInput.textContent.trim();
+            const sentenceIndex = workingData.original.sentences.findIndex(s => s.key === key);
+            if (sentenceIndex !== -1) {
+                workingData.original.sentences[sentenceIndex].text = newText;
+            }
+        });
+    }
+
+    // Обработчик изменения текста перевода
+    const translationInput = row.querySelector('.text-translation');
+    if (translationInput) {
+        translationInput.addEventListener('input', () => {
+            const newText = translationInput.textContent.trim();
+            const sentenceIndex = workingData.translation.sentences.findIndex(s => s.key === key);
+            if (sentenceIndex !== -1) {
+                workingData.translation.sentences[sentenceIndex].text = newText;
+            }
+        });
+    }
+
+    // Обработчики кнопок настроек аудио
+    const settingsBtns = row.querySelectorAll('.settings-audio');
+    settingsBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const language = btn.dataset.language;
+            toggleAudioSettingsMode(key, language);
+        });
+    });
+
+    // Обработчики кнопок воспроизведения
+    const playBtns = row.querySelectorAll('.play-audio');
+    playBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const language = btn.dataset.language;
+            playAudioForRow(key, language);
+        });
+    });
+
+    // Обработчик изменения спикера
+    const speakerSelect = row.querySelector('.speaker-select');
+    if (speakerSelect) {
+        speakerSelect.addEventListener('change', () => {
+            const newSpeaker = speakerSelect.value;
+            const sentenceIndex = workingData.original.sentences.findIndex(s => s.key === key);
+            if (sentenceIndex !== -1) {
+                workingData.original.sentences[sentenceIndex].speaker = newSpeaker;
+            }
+        });
+    }
+
+    // Обработчики полей start/end для цепочек
+    const startInput = row.querySelector('.start-input');
+    const endInput = row.querySelector('.end-input');
+    
+    if (startInput) {
+        startInput.addEventListener('input', () => {
+            updateChain(key, 'start', startInput.value);
+        });
+    }
+    
+    if (endInput) {
+        endInput.addEventListener('input', () => {
+            updateChain(key, 'end', endInput.value);
+        });
+    }
+}
+
+/**
+ * Переключить режим настройки аудио
+ */
+function toggleAudioSettingsMode(rowKey, language) {
+    // Скрыть колонки текста, показать колонки настроек аудио
+    const table = document.querySelector('#sentences-table');
+    const rows = table.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const cells = row.cells;
+        
+        if (language === 'original') {
+            // Скрыть колонки перевода (5-7), показать настройки (8-16)
+            for (let i = 5; i <= 7; i++) {
+                if (cells[i]) cells[i].style.display = 'none';
+            }
+            for (let i = 8; i <= 16; i++) {
+                if (cells[i]) cells[i].style.display = 'table-cell';
+            }
+        } else {
+            // Скрыть колонки оригинала (2-4), показать настройки (8-16)
+            for (let i = 2; i <= 4; i++) {
+                if (cells[i]) cells[i].style.display = 'none';
+            }
+            for (let i = 8; i <= 16; i++) {
+                if (cells[i]) cells[i].style.display = 'table-cell';
+            }
+        }
+    });
+    
+    currentDictation.current_edit_mode = language;
+    currentDictation.current_row_key = rowKey;
+    
+    // Открыть модальное окно настроек аудио
+    openAudioSettingsModal(rowKey, language);
+}
+
+/**
+ * Открыть модальное окно настроек аудио
+ */
+function openAudioSettingsModal(rowKey, language) {
+    const modal = document.getElementById('audioSettingsModal');
+    if (modal) {
+        modal.style.display = 'block';
+        
+        // Заполнить данные текущей строки
+        const row = document.querySelector(`tr[data-key="${rowKey}"]`);
+        if (row) {
+            const textElement = language === 'original' ? 
+                row.querySelector('.text-original') : 
+                row.querySelector('.text-translation');
+            
+            if (textElement) {
+                document.getElementById('currentSentenceText').textContent = textElement.textContent;
+            }
+            
+            // Заполнить start/end из строки
+            const startInput = row.querySelector('.start-input');
+            const endInput = row.querySelector('.end-input');
+            
+            if (startInput && endInput) {
+                // Заполняем видимые поля
+                document.getElementById('audioStartTime').value = startInput.value;
+                document.getElementById('audioEndTime').value = endInput.value;
+                
+                // Заполняем скрытые поля для совместимости с JavaScript
+                document.getElementById('startTime').value = startInput.value;
+                document.getElementById('endTime').value = endInput.value;
+            }
+        }
+        
+        // Загрузить список аудиофайлов
+        loadAudioFilesList();
+        
+        // Настроить синхронизацию полей времени
+        setupTimeFieldSync();
+    }
+}
+
+/**
+ * Загрузить список аудиофайлов
+ */
+function loadAudioFilesList() {
+    // Заглушка - в реальности будет запрос к серверу
+    const select = document.getElementById('audioFilesSelect');
+    if (select) {
+        select.innerHTML = '<option value="">Выберите файл</option>';
+        // Добавить существующие файлы
+    }
+}
+
+/**
+ * Воспроизвести аудио для строки
+ */
+function playAudioForRow(rowKey, language) {
+    const row = document.querySelector(`tr[data-key="${rowKey}"]`);
+    if (!row) return;
+    
+    // Найти кнопку play для нужного языка
+    const playBtn = row.querySelector(`button.play-audio[data-language="${language}"]`);
+    if (!playBtn) {
+        console.log(`No play button found for row ${rowKey}, language ${language}`);
+        return;
+    }
+    
+    // Проверить, не играет ли уже аудио для этой кнопки
+    if (playBtn.dataset.playing === 'true') {
+        // Остановить воспроизведение
+        stopAudioForButton(playBtn);
+        return;
+    }
+    
+    const audioFile = playBtn.dataset.file;
+    if (!audioFile) {
+        console.log(`No audio file for row ${rowKey}, language ${language}`);
+        return;
+    }
+    
+    // Построить URL для аудиофайла
+    const actualLanguage = language === 'original' ? currentDictation.language_original : currentDictation.language_translation;
+    const audioUrl = `/static/data/temp/${currentDictation.id}/${actualLanguage}/${audioFile}`;
+    console.log(`Playing ${audioUrl} for ${language} row ${rowKey}`);
+    
+    // Получить данные предложения для start/end времени
+    const sentence = getSentenceByKey(rowKey, language);
+    const startTime = sentence?.start || 0;
+    const endTime = sentence?.end || null;
+    
+    // Изменить иконку на "пауза" (две полоски)
+    setButtonToPause(playBtn);
+    
+    // Воспроизвести аудио с callback для завершения
+    playAudioPart(audioUrl, startTime, endTime, () => {
+        // Callback вызывается когда аудио заканчивается
+        setButtonToPlay(playBtn);
+    });
+}
+
+// Вспомогательная функция для получения предложения по ключу
+function getSentenceByKey(key, language) {
+    if (language === 'original') {
+        return workingData.original.sentences.find(s => s.key === key);
+    } else {
+        return workingData.translation.sentences.find(s => s.key === key);
+    }
+}
+
+// Функции для управления состоянием кнопок play/pause
+function setButtonToPause(button) {
+    button.dataset.playing = 'true';
+    button.innerHTML = '<i data-lucide="pause"></i>';
+    // Пересоздать иконки Lucide
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function setButtonToPlay(button) {
+    button.dataset.playing = 'false';
+    button.innerHTML = '<i data-lucide="play"></i>';
+    // Пересоздать иконки Lucide
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function stopAudioForButton(button) {
+    // Остановить текущее аудио (если есть)
+    if (window.currentAudio) {
+        window.currentAudio.pause();
+        window.currentAudio.currentTime = 0;
+        window.currentAudio = null;
+    }
+    
+    // Вернуть кнопку в состояние play
+    setButtonToPlay(button);
+}
+
+/**
+ * Сохранить диктант и выйти
+ */
+async function saveDictationAndExit() {
+    try {
+        // Подготовить данные для сохранения
+        const saveData = {
+            id: currentDictation.id,
+            language_original: currentDictation.language_original,
+            language_translation: currentDictation.language_translation,
+            title: document.getElementById('title').value,
+            level: 'A1', // TODO: получить из интерфейса
+            is_dialog: currentDictation.is_dialog,
+            speakers: currentDictation.speakers,
+            sentences: {
+                [currentDictation.language_original]: workingData.original,
+                [currentDictation.language_translation]: workingData.translation
+            }
+        };
+
+        // Отправить на сервер
+        const response = await fetch('/save_dictation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(saveData)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('Диктант сохранен успешно');
+            
+            // Копируем из temp в dictations
+            try {
+                const copyResponse = await fetch('/copy_dictation_to_final', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        dictation_id: currentDictation.id
+                    })
+                });
+                
+                const copyResult = await copyResponse.json();
+                if (copyResult.success) {
+                    console.log('Диктант скопирован в финальную папку');
+                }
+            } catch (copyError) {
+                console.error('Ошибка копирования в финальную папку:', copyError);
+            }
+            
+            // Перенаправить на главную страницу
+            window.location.href = '/';
+        } else {
+            alert('Ошибка сохранения диктанта: ' + (result.error || 'Неизвестная ошибка'));
+        }
+    } catch (error) {
+        console.error('Ошибка при сохранении диктанта:', error);
+        alert('Ошибка при сохранении диктанта: ' + error.message);
+    }
+}
+
+/**
+ * Настроить обработчики для модального окна настроек аудио
+ */
+function setupAudioSettingsModalHandlers() {
+    // Кнопка отмены
+    const cancelAudioBtn = document.getElementById('cancelAudioBtn');
+    if (cancelAudioBtn) {
+        cancelAudioBtn.addEventListener('click', () => {
+            closeAudioSettingsModal();
+        });
+    }
+
+    // Кнопка применения
+    const applyAudioBtn = document.getElementById('applyAudioBtn');
+    if (applyAudioBtn) {
+        applyAudioBtn.addEventListener('click', () => {
+            applyAudioSettings();
+        });
+    }
+
+    // Кнопка открытия файла
+    const openFileBtn = document.getElementById('openFileBtn');
+    if (openFileBtn) {
+        openFileBtn.addEventListener('click', () => {
+            openAudioFileDialog();
+        });
+    }
+
+    // Кнопка "Аудио в таблицу"
+    const audioToTableBtn = document.getElementById('audioToTableBtn');
+    if (audioToTableBtn) {
+        audioToTableBtn.addEventListener('click', () => {
+            applyAudioToTable();
+        });
+    }
+
+    // Кнопка записи аудио
+    const recordAudioBtn = document.getElementById('recordAudioBtn');
+    if (recordAudioBtn) {
+        recordAudioBtn.addEventListener('click', () => {
+            startAudioRecording();
+        });
+    }
+
+    // Кнопка воспроизведения
+    const audioPlayBtn = document.getElementById('audioPlayBtn');
+    if (audioPlayBtn) {
+        audioPlayBtn.addEventListener('click', () => {
+            toggleAudioPlayback();
+        });
+    }
+
+    // Синхронизация полей start/end с таблицей
+    const audioStartTime = document.getElementById('audioStartTime');
+    const audioEndTime = document.getElementById('audioEndTime');
+    
+    if (audioStartTime) {
+        audioStartTime.addEventListener('input', () => {
+            syncTimeWithTable('start', audioStartTime.value);
+        });
+    }
+    
+    if (audioEndTime) {
+        audioEndTime.addEventListener('input', () => {
+            syncTimeWithTable('end', audioEndTime.value);
+        });
+    }
+
+    // Закрытие модального окна по клику вне его
+    const audioModal = document.getElementById('audioSettingsModal');
+    if (audioModal) {
+        audioModal.addEventListener('click', (e) => {
+            if (e.target === audioModal) {
+                closeAudioSettingsModal();
+            }
+        });
+    }
+}
+
+/**
+ * Закрыть модальное окно настроек аудио
+ */
+function closeAudioSettingsModal() {
+    const modal = document.getElementById('audioSettingsModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    
+    // Сбросить режим настройки
+    currentDictation.current_edit_mode = null;
+    currentDictation.current_row_key = null;
+    
+    // Вернуть видимость колонок к нормальному виду
+    resetTableVisibility();
+}
+
+/**
+ * Сбросить видимость колонок таблицы
+ */
+function resetTableVisibility() {
+    const table = document.querySelector('#sentences-table');
+    const rows = table.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const cells = row.cells;
+        
+        // Показать все основные колонки (0-7)
+        for (let i = 0; i <= 7; i++) {
+            if (cells[i]) cells[i].style.display = 'table-cell';
+        }
+        
+        // Скрыть колонки настроек аудио (8-16)
+        for (let i = 8; i <= 16; i++) {
+            if (cells[i]) cells[i].style.display = 'none';
+        }
+    });
+}
+
+/**
+ * Применить настройки аудио
+ */
+function applyAudioSettings() {
+    const rowKey = currentDictation.current_row_key;
+    if (!rowKey) return;
+    
+    const row = document.querySelector(`tr[data-key="${rowKey}"]`);
+    if (!row) return;
+    
+    const audioFileInput = row.querySelector('.audio-file-input');
+    const startInput = row.querySelector('.start-input');
+    const endInput = row.querySelector('.end-input');
+    const chainCheckbox = row.querySelector('.chain-checkbox');
+    
+    // Получить значения из модального окна
+    const audioStartTime = document.getElementById('audioStartTime');
+    const audioEndTime = document.getElementById('audioEndTime');
+    const audioFilesSelect = document.getElementById('audioFilesSelect');
+    
+    if (audioFilesSelect && audioFilesSelect.value) {
+        if (audioFileInput) audioFileInput.value = audioFilesSelect.value;
+    }
+    
+    if (audioStartTime && startInput) {
+        startInput.value = audioStartTime.value;
+    }
+    
+    if (audioEndTime && endInput) {
+        endInput.value = audioEndTime.value;
+    }
+    
+    // Обновить данные в workingData
+    const language = currentDictation.current_edit_mode;
+    if (language === 'original') {
+        const sentenceIndex = workingData.original.sentences.findIndex(s => s.key === rowKey);
+        if (sentenceIndex !== -1) {
+            const sentence = workingData.original.sentences[sentenceIndex];
+            sentence.audio = audioFileInput ? audioFileInput.value : '';
+            sentence.start = parseFloat(startInput ? startInput.value : 0);
+            sentence.end = parseFloat(endInput ? endInput.value : 0);
+            sentence.chain = chainCheckbox ? chainCheckbox.checked : false;
+        }
+    } else if (language === 'translation') {
+        const sentenceIndex = workingData.translation.sentences.findIndex(s => s.key === rowKey);
+        if (sentenceIndex !== -1) {
+            const sentence = workingData.translation.sentences[sentenceIndex];
+            sentence.audio = audioFileInput ? audioFileInput.value : '';
+            sentence.start = parseFloat(startInput ? startInput.value : 0);
+            sentence.end = parseFloat(endInput ? endInput.value : 0);
+            sentence.chain = chainCheckbox ? chainCheckbox.checked : false;
+        }
+    }
+    
+    // Закрыть модальное окно
+    closeAudioSettingsModal();
+}
+
+/**
+ * Синхронизировать время с таблицей
+ */
+function syncTimeWithTable(field, value) {
+    const rowKey = currentDictation.current_row_key;
+    if (!rowKey) return;
+    
+    const row = document.querySelector(`tr[data-key="${rowKey}"]`);
+    if (!row) return;
+    
+    const input = row.querySelector(`.${field}-input`);
+    if (input) {
+        input.value = value;
+    }
+}
+
+/**
+ * Открыть диалог выбора аудиофайла
+ */
+function openAudioFileDialog() {
+    // Создать временный input для выбора файла
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            uploadAudioFile(file);
+        }
+    };
+    input.click();
+}
+
+/**
+ * Загрузить аудиофайл
+ */
+function uploadAudioFile(file) {
+    // Заглушка - в реальности будет запрос к серверу
+    console.log('Uploading audio file:', file.name);
+    // После загрузки обновить список файлов
+    loadAudioFilesList();
+}
+
+/**
+ * Применить аудио к таблице
+ */
+function applyAudioToTable() {
+    const audioFilesSelect = document.getElementById('audioFilesSelect');
+    if (!audioFilesSelect || !audioFilesSelect.value) {
+        alert('Выберите аудиофайл');
+        return;
+    }
+    
+    // Найти все строки с галочками
+    const checkedRows = document.querySelectorAll('.audio-checkbox:checked');
+    if (checkedRows.length === 0) {
+        alert('Выберите строки для применения аудио');
+        return;
+    }
+    
+    // Разделить аудио на части для выбранных строк
+    autoSplitAudio(audioFilesSelect.value, Array.from(checkedRows).map(row => {
+        const input = row.closest('tr').querySelector('.audio-file-input');
+        return input ? input.dataset.key : null;
+    }).filter(key => key));
+}
+
+/**
+ * Автоматически разделить аудио на части
+ */
+function autoSplitAudio(filename, rowKeys) {
+    // Заглушка - в реальности будет запрос к серверу
+    console.log(`Auto-splitting ${filename} for rows:`, rowKeys);
+}
+
+/**
+ * Начать запись аудио
+ */
+function startAudioRecording() {
+    // Заглушка - в реальности будет запись через микрофон
+    console.log('Starting audio recording...');
+}
+
+/**
+ * Переключить воспроизведение аудио
+ */
+function toggleAudioPlayback() {
+    // Заглушка - в реальности будет воспроизведение
+    console.log('Toggling audio playback...');
+}
+
+/**
+ * Обновить цепочку при изменении start/end
+ */
+function updateChain(rowKey, field, value) {
+    const row = document.querySelector(`tr[data-key="${rowKey}"]`);
+    if (!row) return;
+    
+    const chainCheckbox = row.querySelector('.chain-checkbox');
+    if (!chainCheckbox || !chainCheckbox.checked) return;
+    
+    // Найти соседние строки с включенными цепочками
+    const allRows = Array.from(document.querySelectorAll('#sentences-table tbody tr'));
+    const currentIndex = allRows.indexOf(row);
+    
+    if (field === 'end' && currentIndex < allRows.length - 1) {
+        // Изменяем end текущей строки, обновляем start следующей
+        const nextRow = allRows[currentIndex + 1];
+        const nextChainCheckbox = nextRow.querySelector('.chain-checkbox');
+        
+        if (nextChainCheckbox && nextChainCheckbox.checked) {
+            const nextStartInput = nextRow.querySelector('.start-input');
+            if (nextStartInput) {
+                nextStartInput.value = value;
+                
+                // Обновить данные в workingData
+                const nextRowKey = nextRow.dataset.key;
+                const language = currentDictation.current_edit_mode || 'original';
+                updateSentenceData(nextRowKey, language, 'start', parseFloat(value));
+            }
+        }
+    } else if (field === 'start' && currentIndex > 0) {
+        // Изменяем start текущей строки, обновляем end предыдущей
+        const prevRow = allRows[currentIndex - 1];
+        const prevChainCheckbox = prevRow.querySelector('.chain-checkbox');
+        
+        if (prevChainCheckbox && prevChainCheckbox.checked) {
+            const prevEndInput = prevRow.querySelector('.end-input');
+            if (prevEndInput) {
+                prevEndInput.value = value;
+                
+                // Обновить данные в workingData
+                const prevRowKey = prevRow.dataset.key;
+                const language = currentDictation.current_edit_mode || 'original';
+                updateSentenceData(prevRowKey, language, 'end', parseFloat(value));
+            }
+        }
+    }
+}
+
+/**
+ * Обновить данные предложения в workingData
+ */
+function updateSentenceData(rowKey, language, field, value) {
+    if (language === 'original') {
+        const sentenceIndex = workingData.original.sentences.findIndex(s => s.key === rowKey);
+        if (sentenceIndex !== -1) {
+            workingData.original.sentences[sentenceIndex][field] = value;
+        }
+    } else if (language === 'translation') {
+        const sentenceIndex = workingData.translation.sentences.findIndex(s => s.key === rowKey);
+        if (sentenceIndex !== -1) {
+            workingData.translation.sentences[sentenceIndex][field] = value;
+        }
+    }
+}
 
 

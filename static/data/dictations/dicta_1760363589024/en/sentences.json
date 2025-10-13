@@ -1,0 +1,19 @@
+{
+  "language": "en",
+  "title": "1234",
+  "speakers": {
+    "1": "Спикер 1"
+  },
+  "sentences": [
+    {
+      "key": "000",
+      "speaker": "1",
+      "text": "1234",
+      "audio": "000_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    }
+  ]
+}

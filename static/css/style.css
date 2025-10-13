@@ -349,7 +349,7 @@ h2 {
 
 .text-input {
     width: 100%;
-    min-height: 60px;
+    min-height: 30px;
     border: 0 solid var(--color-focus-border);
     margin: 10px 0;
     border-radius: 8px;

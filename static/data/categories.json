@@ -32,11 +32,24 @@
                 "language_original": "en",
                 "language_translation": "ru",
                 "dictations": [
-                  "dicta_1753521543110",
-                  "dicta_1755925382756",
-                  "dicta_1759848543954",
-                  "dicta_1759850173181",
-                  "dicta_1756997062125"
+                  {
+                    "id": "dicta_1760361199774",
+                    "title": "Anime",
+                    "language_original": "en",
+                    "level": "A1",
+                    "is_dialog": false,
+                    "speakers": {
+                      "1": "Спикер 1"
+                    },
+                    "created_at": "2025-10-13T16:14:16.990569"
+                  },
+                  "dicta_1760361566082",
+                  "dicta_1760362268558",
+                  "dicta_1760362742973",
+                  "dicta_1760363110539",
+                  "dicta_1760363374931",
+                  "dicta_1760363589024",
+                  "dicta_1760364130569"
                 ]
               }
             },
@@ -48,10 +61,7 @@
               "data": {
                 "language_original": "en",
                 "language_translation": "ru",
-                "dictations": [
-                  "dicta_1753286828942",
-                  "dicta_1756997062125"
-                ]
+                "dictations": []
               }
             },
             {
@@ -62,11 +72,7 @@
               "data": {
                 "language_original": "en",
                 "language_translation": "ru",
-                "dictations": [
-                  "dicta_1753036685553",
-                  "dicta_1753035844270",
-                  "dicta_1753036834346"
-                ]
+                "dictations": []
               }
             },
             {
@@ -83,14 +89,7 @@
                   "data": {
                     "language_original": "en",
                     "language_translation": "ru",
-                    "dictations": [
-                      "dicta_1751489832395",
-                      "dicta_1751491028725",
-                      "dicta_1751491101402",
-                      "dicta_1751491214293",
-                      "dicta_1751541215802",
-                      "dicta_1751491301411"
-                    ]
+                    "dictations": []
                   }
                 }
               ]

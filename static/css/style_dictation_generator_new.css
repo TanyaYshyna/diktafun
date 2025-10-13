@@ -1,0 +1,458 @@
+/* ============================================================================
+   НОВАЯ АРХИТЕКТУРА - СТИЛИ
+   ============================================================================ */
+
+/* Стартовое модальное окно */
+.start-modal {
+    max-width: 80vw;
+    width: 80vw;
+    margin: 20px auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.start-modal h2 {
+    margin-top: 0;
+    color: var(--color-button-text-lightgreen);
+}
+
+.start-modal .form-group {
+    margin-bottom: 15px;
+}
+
+.start-modal .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.start-modal input[type="text"],
+.start-modal textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.start-modal textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* Таблица спикеров */
+.speakers-table {
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.speakers-table h3 {
+    margin: 0;
+    padding: 10px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+}
+
+.speakers-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.speakers-table th,
+.speakers-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.speakers-table th {
+    background: #f9f9f9;
+    font-weight: 500;
+}
+
+.speakers-table input[type="text"] {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.speakers-table button {
+    padding: 4px 8px;
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.speakers-table button:hover {
+    background: #ff5252;
+}
+
+#addSpeakerBtn {
+    margin: 10px;
+    padding: 8px 16px;
+    background: var(--color-button-lightgreen);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#addSpeakerBtn:hover {
+    background: var(--color-button-darkgreen);
+}
+
+/* Кнопки модального окна */
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.modal-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.modal-buttons button:first-child {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.modal-buttons button:first-child:hover {
+    background: #e0e0e0;
+}
+
+.modal-buttons button:last-child {
+    background: var(--color-button-lightgreen);
+    color: white;
+}
+
+.modal-buttons button:last-child:hover {
+    background: var(--color-button-darkgreen);
+}
+
+/* Модальное окно настроек аудио - раскрывающееся */
+.audio-settings-modal {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin: 20px 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 10;
+}
+
+.audio-settings-modal h2 {
+    margin-top: 0;
+    color: var(--color-button-text-purple);
+    padding: 15px 20px 0 20px;
+}
+
+.audio-controls {
+    padding: 20px;
+    display: grid;
+    gap: 20px;
+}
+
+.audio-controls .form-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.audio-controls select,
+.audio-controls input[type="number"] {
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.audio-controls button {
+    padding: 6px 12px;
+    background: var(--color-button-purple);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.audio-controls button:hover {
+    background: var(--color-button-darkpurple);
+}
+
+/* Контейнер волны */
+.waveform-container {
+    height: 150px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    background: #f9f9f9;
+}
+
+#audioWaveform {
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 3px;
+}
+
+/* Текущий текст */
+.current-text {
+    padding: 15px;
+    background: #f0f8ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 4px;
+    font-style: italic;
+}
+
+.current-text p {
+    margin: 0;
+    color: #0066cc;
+}
+
+/* Элементы управления воспроизведением */
+.playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.time-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.time-controls label {
+    font-weight: 500;
+    color: #666;
+}
+
+.time-controls input {
+    width: 80px;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    text-align: center;
+}
+
+/* Отображение спикеров в шапке */
+.speakers-display {
+    margin-top: 10px;
+}
+
+.speakers-display label {
+    font-weight: 500;
+    margin-right: 10px;
+}
+
+#speakersList {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.speaker-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Стили для новой таблицы */
+#sentences-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+#sentences-table th,
+#sentences-table td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+    vertical-align: top;
+}
+
+#sentences-table th {
+    background: #f5f5f5;
+    font-weight: 500;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Стили для колонок таблицы */
+.col-number {
+    width: 40px;
+    text-align: center;
+}
+
+.col-speaker {
+    width: 100px;
+}
+
+.col-original,
+.col-translation {
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.col-play-original,
+.col-play-translation,
+.col-settings-original,
+.col-settings-translation {
+    width: 40px;
+    text-align: center;
+}
+
+.col-generate-tts,
+.col-checkbox,
+.col-create-audio,
+.col-play-audio,
+.col-apply {
+    width: 60px;
+    text-align: center;
+}
+
+.col-audio-file {
+    width: 150px;
+}
+
+.col-start,
+.col-end {
+    width: 80px;
+}
+
+.col-chain {
+    width: 50px;
+    text-align: center;
+}
+
+/* Стили для элементов в ячейках */
+.text-original,
+.text-translation {
+    min-height: 40px;
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    outline: none;
+}
+
+.text-original:focus,
+.text-translation:focus {
+    border-color: #007bff;
+    background: #f8f9fa;
+}
+
+.speaker-select {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+button.play-audio,
+button.settings-audio,
+button.generate-tts,
+button.create-audio,
+button.play-audio-settings,
+button.apply-audio {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+button.play-audio {
+    background: #28a745;
+    color: white;
+}
+
+button.settings-audio {
+    background: #6c757d;
+    color: white;
+}
+
+button.generate-tts {
+    background: #17a2b8;
+    color: white;
+}
+
+button.create-audio {
+    background: #fd7e14;
+    color: white;
+}
+
+button.play-audio-settings {
+    background: #28a745;
+    color: white;
+}
+
+button.apply-audio {
+    background: #007bff;
+    color: white;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+input.audio-file-input,
+input.start-input,
+input.end-input {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+input.audio-checkbox,
+input.chain-checkbox {
+    transform: scale(1.2);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .start-modal {
+        width: 95vw;
+        max-width: none;
+    }
+    
+    .audio-controls .form-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .playback-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .time-controls {
+        justify-content: space-between;
+    }
+    
+    #speakersList {
+        justify-content: center;
+    }
+}

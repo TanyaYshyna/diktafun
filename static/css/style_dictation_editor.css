@@ -1,0 +1,541 @@
+/* ------------- Стили для шапки редактора с двумя панелями ------------- */
+.editor-header {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+}
+
+/* Стили для контейнера с заголовком и кнопкой */
+.panel .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.panel .container > div:first-child {
+    flex: 0 0 auto; /* не растягивается, прижимается влево */
+}
+
+.panel .container > button {
+    flex: 0 0 auto; /* не растягивается, прижимается вправо */
+    margin-left: auto;
+}
+
+.editor-header-panel-1 {
+    flex: 0 0 auto; /* фиксированная ширина под ковер */
+}
+
+/* Кнопка загрузки ковера - ширина как у ковера */
+#coverUploadBtn {
+    width: 100%;
+}
+
+.editor-header-panel-2 {
+    flex: 1; /* занимает оставшееся пространство */
+}
+/* ---------------------------------------------------------------------- */
+
+/* ------- Стили для расположения элеменров в строку или столбец -------- */
+.form-group-column {
+    display: flex;
+    flex-direction: column; /* ← вот эта строка */
+    align-items: flex-start; /* чтобы выровнять по левому краю */
+    gap: 0;
+    margin-bottom: 0;
+}
+
+
+.form-group-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Стили для иконок в кнопках */
+button i[data-lucide] {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+#category-path {
+    color: var(--color-button-text-yellow); 
+    font-size: 20px; 
+    margin-top: 5px;    
+}
+#category-path i[data-lucide] {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+/* ------------------------- Стили для флагов языков -------------------*/
+#langPair {
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    border: 1px solid var(--color-button-gray);
+    padding: 8px 3px;
+    margin-bottom: 10px;
+}
+#langPair .flag-combo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#langPair .language-flag {
+    width: 24px;
+    height: 18px;
+    border-radius: 1px;
+    object-fit: cover;
+    border: 1px solid var(--color-button-gray);
+}
+
+#langPair .flag-separator {
+    font-size: 16px;
+    color: var(--color-text-secondary);
+}
+
+
+/* Стили для кнопок воспроизведения аудио в таблице */
+button.audio-btn {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    background: #6c757d;
+    color: var(--color-button-gray);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button.audio-btn:hover {
+    color: var(--color-button-text-gray);
+}
+
+button.audio-btn i[data-lucide] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+}
+
+/* Состояния кнопок проигрывания */
+button.audio-btn.state-ready {
+    background: #6c757d;
+    color: white;
+}
+
+button.audio-btn.state-playing {
+    background: #28a745;
+    color: white;
+}
+
+button.audio-btn.state-creating {
+    background: #fd7e14;
+    color: white;
+}
+
+/* Стили для индикатора загрузки */
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.loading-content {
+    background: var(--color-panel-bg);
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--color-border-light);
+    border-top: 4px solid var(--color-button-yellow);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+.loading-text {
+    color: var(--color-text);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+/* ============================================================================
+   СТАРТОВОЕ МОДАЛЬНОЕ ОКНО
+   ============================================================================ */
+
+/* Overlay для модального окна */
+#startModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* Контейнер модального окна */
+.start-modal {
+    max-width: 80vw;
+    width: 80vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--color-panel-bg);
+    border-radius: 10px;
+    box-shadow: 0 2px 6px var(--color-shadow);
+    padding: 20px;
+    margin: 20px;
+}
+
+.start-modal h2 {
+    margin-top: 0;
+    color: var(--color-text);
+}
+
+.start-modal .form-group {
+    margin-bottom: 0;
+}
+
+.start-modal .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.start-modal input[type="text"],
+.start-modal textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--color-focus-border);
+    border-radius: 10px;
+    box-sizing: border-box;
+    background-color: var(--color-panel-bg);
+    color: var(--color-text);
+}
+
+.start-modal textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* Таблица спикеров */
+.speakers-table {
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.speakers-table h3 {
+    margin: 0;
+    padding: 10px;
+    background: var(--color-hover);
+    border-bottom: 1px solid var(--color-border-light);
+    color: var(--color-text);
+}
+
+.speakers-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.speakers-table th,
+.speakers-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.speakers-table th {
+    background: var(--color-hover);
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.speakers-table input[type="text"] {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid var(--color-focus-border);
+    border-radius: 5px;
+    background-color: var(--color-panel-bg);
+    color: var(--color-text);
+}
+
+/* Кнопки в таблице спикеров */
+.speakers-table button {
+    padding: 4px 8px;
+    background: var(--color-hover);
+    color: var(--color-button-text-gray);
+    border: 1px solid var(--color-button-shadow-gray);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.speakers-table button:hover {
+    background: var(--color-button-gray);
+}
+
+/* Кнопка добавления спикера */
+#addSpeakerBtn {
+    margin-top: 0;
+  width: 60px;
+    margin-left: auto;
+    padding: 8px 12px;
+    background: var(--color-hover);
+    color: var(--color-button-text-gray);
+    border: 1px solid var(--color-border-light);
+    border-radius: 0px 0px 6px 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: block;
+}
+
+#addSpeakerBtn:hover {
+    background: var(--color-button-gray);
+}
+
+/* Кастомный чекбокс с иконками Lucide */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-icon {
+    width: 18px;
+    height: 18px;
+    transition: color 0.2s;
+}
+
+/* Состояние не выбрано */
+#isDialogCheckbox:not(:checked) + .checkbox-icon {
+    color: var(--color-button-gray);
+}
+
+/* Состояние выбрано */
+#isDialogCheckbox:checked + .checkbox-icon {
+    color: var(--color-button-text-lightgreen);
+}
+
+/* Hover эффект */
+.checkbox-label:hover .checkbox-icon {
+    color: var(--color-hover);
+}
+
+/* Группа с символом перевода - выравнивание вправо */
+#translationDelimiter {
+    width: 60px;
+}
+
+/* Контейнер для группы с символом перевода */
+.form-group:has(#translationDelimiter) {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    width: fit-content;
+}
+
+/* Кнопки модального окна */
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Кнопка "Сформировать диктант" - желтая */
+#createDictationBtn {
+    background: var(--color-button-yellow);
+    color: var(--color-button-text-yellow);
+    
+}
+
+/* Кнопка "Отмена" - серая */
+#cancelStartBtn {
+    background: var(--color-button-gray);
+    color: var(--color-button-text-gray);
+}
+
+/* Лейбл "Текст диктанта" - увеличенный отступ сверху */
+label[for="startTextInput"] {
+    margin-top: 20px;
+}
+
+/* Основная таблица предложений */
+#sentences-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: var(--color-panel-bg);
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#sentences-table th,
+#sentences-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+#sentences-table th {
+    background: var(--color-hover);
+    font-weight: 500;
+    color: var(--color-text);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#sentences-table tbody tr:hover {
+    background: var(--color-hover);
+}
+
+/* Колонки таблицы */
+.col-number {
+    width: 50px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.col-speaker {
+    width: 120px;
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.col-original,
+.col-translation {
+    width: 40%;
+}
+
+.col-audio {
+    width: 80px;
+    text-align: center;
+}
+
+/* Текстовые поля в таблице */
+.sentence-text {
+    width: 100%;
+    min-height: 40px;
+    padding: 8px;
+    border: 1px solid var(--color-focus-border);
+    border-radius: 5px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 14px;
+    background: var(--color-panel-bg);
+    color: var(--color-text);
+}
+
+.sentence-text:focus {
+    outline: none;
+    border-color: var(--color-button-blue);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Кнопка воспроизведения аудио */
+.audio-btn {
+    padding: 8px;
+    background: var(--color-button-blue);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.audio-btn:hover {
+    background: var(--color-button-blue-hover);
+}
+
+.audio-btn i {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
+
+/* Спикеры в шапке */
+.speakers-display {
+    margin: 10px 0;
+}
+
+.speaker-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    margin: 2px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .start-modal {
+        width: 95vw;
+        max-width: 95vw;
+        margin: 10px;
+        padding: 15px;
+    }
+    
+    #sentences-table {
+        font-size: 12px;
+    }
+    
+    #sentences-table th,
+    #sentences-table td {
+        padding: 8px;
+    }
+    
+    .col-speaker {
+        width: 100px;
+    }
+}

@@ -131,7 +131,7 @@ function createCardDOM(d) {
     const openUrl = `/dictation/${d.id}/${language_original}/${language_translation}`;
     
     // Для редактирования используем простой URL (категория будет загружена из диктанта)
-    const editUrl = `/dictation_generator/${d.id}/${language_original}/${language_translation}`;
+    const editUrl = `/dictation_editor/${d.id}/${language_original}/${language_translation}`;
 
     // <article class="short-card">
     const card = document.createElement('article');
@@ -718,40 +718,8 @@ function fitFancyTreeHeight() {
 }
 
 
-// function getActiveCategory() {
-//     // 1. Проверяем глобальную переменную
-//     console.log("1. ✅  getActiveCategory() selectedCategory:", selectedCategory);
-//     if (selectedCategory && selectedCategory.data.languages) {
-//         return selectedCategory;
-//     }
 
-//     // 2. Пытаемся получить из дерева
-//     console.log("2. ✅  getActiveCategory() categoriesTree:", categoriesTree);
-//     if (categoriesTree) {
-//         const activeNode = categoriesTree.getActiveNode();
-//         console.log("2. ✅✅  getActiveCategory() activeNode:", activeNode);
-//         if (activeNode && activeNode.data.languages) {
-//             console.log("2. ✅✅✅  getActiveCategory() activeNode:", activeNode);
-//             return activeNode;
-//         }
-//     }
-
-//     // 3. Ищем последний активированный узел в DOM
-//     const activeElement = document.querySelector('.fancytree-active');
-//     console.log("2. ✅  getActiveCategory() activeElement:", activeElement);
-//     if (activeElement) {
-//         const node = $.ui.fancytree.getNode(activeElement);
-//         console.log("2. ✅✅  getActiveCategory() node:", node);
-//         if (node && node.data.languages) {
-//             console.log("2. ✅✅✅  getActiveCategory() node:", node);
-//             return node;
-//         }
-//     }
-
-//     return null;
-// }
-
-function newDictation() {
+async function newDictation() {
     const isAuthenticated = window.UM && window.UM.isAuthenticated && window.UM.isAuthenticated();
 
     if (!isAuthenticated) {
@@ -761,17 +729,7 @@ function newDictation() {
         return;
     }
 
-    // 🔥 ИСПОЛЬЗУЕМ ФУНКЦИЮ-ПОМОЩНИК  selectedCategory
-    // const activeCategory = getActiveCategory();
-    // console.log("✅✅✅✅✅✅✅activeCategory:", activeCategory);
 
-    // if (!activeCategory) {
-    //     alert("Сначала выберите категорию с языковой парой!");
-
-    //     // Визуальная подсказка
-    //     highlightTreeContainer();
-    //     return;
-    // }
     if (!selectedCategory) {
         alert("Сначала выберите категорию с языковой парой!");
 
@@ -780,15 +738,19 @@ function newDictation() {
         return;
     }
 
-    // Сохраняем информацию о категории для передачи при сохранении диктанта
-    selectedCategoryForDictation = {
+    // Сохраняем данные категории в sessionStorage для передачи на страницу создания
+    const categoryData = {
         key: selectedCategory.key,
         title: selectedCategory.title,
-        path: getCategoryPath(selectedCategory)
+        path: getCategoryPath(selectedCategory),
+        language_original: language_original,
+        language_translation: language_translation
     };
     
-    // Переходим к созданию диктанта (категория будет передана через HTTP POST при сохранении)
-    window.location.href = `/dictation_generator/${language_original}/${language_translation}`;
+    sessionStorage.setItem('selectedCategoryForDictation', JSON.stringify(categoryData));
+    
+    // Переходим на страницу создания диктанта
+    window.location.href = '/dictation_editor/new';
 }
 
 // Функция для получения пути к категории в дереве
@@ -829,12 +791,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 initializeUserData().then(() => {
                     console.log('Данные пользователя инициализированы:', window.USER_LANGUAGE_DATA);
 
-
-
                     // Инициализируем компоненты
                     initializeLanguageSelector();
                     initializeLanguageFilter();
                     fitFancyTreeHeight();
+                    
+                    // Восстанавливаем позицию в дереве после возврата с создания диктанта
+                    restoreTreePosition();
                     // setupNewDictationButton();
                     if (!window.USER_LANGUAGE_DATA.isAuthenticated) {
                         showAuthBanner();
@@ -880,5 +843,74 @@ function showAuthBanner() {
         main.insertBefore(banner, main.firstChild);
     } else if (header) {
         header.parentNode.insertBefore(banner, header.nextSibling);
+    }
+}
+
+function restoreTreePosition() {
+    try {
+        // Проверяем, есть ли сохраненная позиция в дереве
+        const savedCategoryData = sessionStorage.getItem('selectedCategoryForDictation');
+        
+        if (savedCategoryData) {
+            const categoryData = JSON.parse(savedCategoryData);
+            console.log('🔄 Восстанавливаем позицию в дереве:', categoryData.title);
+            
+            // Ждем пока дерево загрузится
+            let attempts = 0;
+            const maxAttempts = 50; // 5 секунд максимум
+            
+            const waitForTree = setInterval(() => {
+                attempts++;
+                
+                if (categoriesTree && typeof categoriesTree.getNodeByKey === 'function') {
+                    clearInterval(waitForTree);
+                    
+                    try {
+                        // Ищем узел по ключу категории
+                        const node = categoriesTree.getNodeByKey(categoryData.key);
+                        
+                        if (node) {
+                            // Раскрываем родительские узлы
+                            const parent = node.getParent();
+                            if (parent) {
+                                parent.setExpanded(true);
+                            }
+                            
+                            // Выделяем узел
+                            node.setActive(true);
+                            
+                            // Прокручиваем к узлу
+                            setTimeout(() => {
+                                try {
+                                    const $node = categoriesTree.getNodeByKey(categoryData.key).$div;
+                                    if ($node && $node.length) {
+                                        $node[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }
+                                } catch (scrollError) {
+                                    console.error('❌ Ошибка при прокрутке:', scrollError);
+                                }
+                            }, 100);
+                            
+                            console.log('✅ Позиция в дереве восстановлена');
+                        } else {
+                            console.warn('⚠️ Узел не найден для восстановления:', categoryData.key);
+                        }
+                    } catch (treeError) {
+                        console.error('❌ Ошибка при работе с деревом:', treeError);
+                    }
+                    
+                    // Очищаем sessionStorage после восстановления
+                    setTimeout(() => {
+                        sessionStorage.removeItem('selectedCategoryForDictation');
+                    }, 2000);
+                    
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(waitForTree);
+                    console.warn('⚠️ Дерево не найдено после', maxAttempts, 'попыток');
+                }
+            }, 100);
+        }
+    } catch (error) {
+        console.error('❌ Ошибка при восстановлении позиции в дереве:', error);
     }
 }
