@@ -403,6 +403,43 @@ label[for="startTextInput"] {
     margin-top: 20px;
 }
 
+/* Стили для contenteditable div с раскрашиванием строк */
+.start-text-editor {
+    width: 100%;
+    min-height: 200px;
+    padding: 8px;
+    border: 1px solid var(--color-focus-border);
+    border-radius: 10px;
+    box-sizing: border-box;
+    background-color: var(--color-panel-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    /* font-family: 'Courier New', monospace; */
+    resize: vertical;
+    overflow-y: auto;
+}
+
+.start-text-editor:focus {
+    outline: none;
+    border-color: var(--color-button-blue);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.start-text-editor:empty:before {
+    content: attr(placeholder);
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+/* Стили для строк перевода */
+.start-text-editor .line-translation {
+    background-color: #f5f5dc; /* Бежевый цвет для строк перевода */
+    color: #8b7355; /* Темно-бежевый текст */
+    border-radius: 2px;
+    padding: 1px 2px;
+}
+
 /* Основная таблица предложений */
 #sentences-table {
     width: 100%;

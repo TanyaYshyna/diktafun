@@ -80,6 +80,54 @@
             <button id="reenterTextBtn" class="button-color-yellow">🔄 Внести текст заново</button>
         </div>
 
+        <!-- Раскрывающееся окно настроек аудио -->
+        <div id="audioSettingsModal" class="audio-settings-modal" style="display: none;">
+            <h2>Настройки аудио</h2>
+
+            <div class="audio-controls">
+                <div class="form-group">
+                    <label for="audioFilesSelect">Аудиофайлы:</label>
+                    <select id="audioFilesSelect">
+                        <option value="">Выберите файл</option>
+                    </select>
+                    <button type="button" id="openFileBtn">Открыть файл</button>
+                    <button type="button" id="audioToTableBtn">Аудио в таблицу</button>
+                    <button type="button" id="recordAudioBtn">🎤 Записать</button>
+                </div>
+
+                <div class="waveform-container">
+                    <div id="audioWaveform"></div>
+                </div>
+
+                <div class="current-text">
+                    <p id="currentSentenceText"></p>
+                </div>
+
+                <div class="playback-controls">
+                    <button type="button" id="audioPlayBtn">
+                        <i data-lucide="play"></i>
+                    </button>
+                    <div class="time-controls">
+                        <label for="audioStartTime">Start:</label>
+                        <input type="number" id="audioStartTime" step="0.01" min="0">
+                        <label for="audioEndTime">End:</label>
+                        <input type="number" id="audioEndTime" step="0.01" min="0">
+                    </div>
+
+                    <!-- Дублируем поля с именами startTime и endTime для совместимости с JavaScript -->
+                    <div style="display: none;">
+                        <input type="number" id="startTime" step="0.01" min="0">
+                        <input type="number" id="endTime" step="0.01" min="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" id="cancelAudioBtn">Отмена</button>
+                <button type="button" id="applyAudioBtn">Применить</button>
+            </div>
+        </div>
+
         <!-- Основная таблица предложений -->
         <div class="main-content">
             <table id="sentences-table">
@@ -169,7 +217,7 @@
 
                 <div class="form-group">
                     <label for="startTextInput">Текст диктанта:</label>
-                    <textarea id="startTextInput" rows="10" placeholder="Введите текст диктанта..."></textarea>
+                    <div id="startTextInput" contenteditable="true" class="start-text-editor" rows="10" placeholder="Введите текст диктанта..."></div>
                 </div>
 
 
@@ -177,54 +225,6 @@
                     <button type="button" id="cancelStartBtn">Отмена</button>
                     <button type="button" id="createDictationBtn">Сформировать диктант</button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Раскрывающееся окно настроек аудио -->
-        <div id="audioSettingsModal" class="audio-settings-modal" style="display: none;">
-            <h2>Настройки аудио</h2>
-
-            <div class="audio-controls">
-                <div class="form-group">
-                    <label for="audioFilesSelect">Аудиофайлы:</label>
-                    <select id="audioFilesSelect">
-                        <option value="">Выберите файл</option>
-                    </select>
-                    <button type="button" id="openFileBtn">Открыть файл</button>
-                    <button type="button" id="audioToTableBtn">Аудио в таблицу</button>
-                    <button type="button" id="recordAudioBtn">🎤 Записать</button>
-                </div>
-
-                <div class="waveform-container">
-                    <div id="audioWaveform"></div>
-                </div>
-
-                <div class="current-text">
-                    <p id="currentSentenceText"></p>
-                </div>
-
-                <div class="playback-controls">
-                    <button type="button" id="audioPlayBtn">
-                        <i data-lucide="play"></i>
-                    </button>
-                    <div class="time-controls">
-                        <label for="audioStartTime">Start:</label>
-                        <input type="number" id="audioStartTime" step="0.01" min="0">
-                        <label for="audioEndTime">End:</label>
-                        <input type="number" id="audioEndTime" step="0.01" min="0">
-                    </div>
-
-                    <!-- Дублируем поля с именами startTime и endTime для совместимости с JavaScript -->
-                    <div style="display: none;">
-                        <input type="number" id="startTime" step="0.01" min="0">
-                        <input type="number" id="endTime" step="0.01" min="0">
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-buttons">
-                <button type="button" id="cancelAudioBtn">Отмена</button>
-                <button type="button" id="applyAudioBtn">Применить</button>
             </div>
         </div>
     </div>

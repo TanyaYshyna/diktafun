@@ -1,0 +1,109 @@
+{
+  "language": "en",
+  "title": "I wish",
+  "speakers": {
+    "1": "Спикер 1"
+  },
+  "sentences": [
+    {
+      "key": "000",
+      "speaker": "1",
+      "text": "I wish I were at home now.",
+      "audio": "000_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "001",
+      "speaker": "1",
+      "text": "I wish I had a car.",
+      "audio": "001_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "002",
+      "speaker": "1",
+      "text": "I wish we were on vacation.",
+      "audio": "002_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "003",
+      "speaker": "1",
+      "text": "I wish she knew English better.",
+      "audio": "003_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "004",
+      "speaker": "1",
+      "text": "I wish it were warm today.",
+      "audio": "004_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "005",
+      "speaker": "1",
+      "text": "I wish he were here.",
+      "audio": "005_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "006",
+      "speaker": "1",
+      "text": "I wish I had more time.",
+      "audio": "006_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "007",
+      "speaker": "1",
+      "text": "I wish they were rich.",
+      "audio": "007_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "008",
+      "speaker": "1",
+      "text": "I wish I could help you.",
+      "audio": "008_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "009",
+      "speaker": "1",
+      "text": "I wish we had a dog.",
+      "audio": "009_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    }
+  ]
+}

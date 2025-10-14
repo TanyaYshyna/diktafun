@@ -1,0 +1,129 @@
+{
+  "language": "en",
+  "title": "look...",
+  "speakers": {
+    "1": "Спикер 1"
+  },
+  "sentences": [
+    {
+      "key": "000",
+      "speaker": "1",
+      "text": "She always has to look after her younger brother.",
+      "audio": "000_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "001",
+      "speaker": "1",
+      "text": "Can you look up this word in the dictionary?",
+      "audio": "001_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "002",
+      "speaker": "1",
+      "text": "He quickly looked through the newspaper before leaving.",
+      "audio": "002_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "003",
+      "speaker": "1",
+      "text": "We need to look ahead and make a plan for the future.",
+      "audio": "003_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "004",
+      "speaker": "1",
+      "text": "She likes to look back on her childhood memories.",
+      "audio": "004_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "005",
+      "speaker": "1",
+      "text": "I am looking for my keys, have you seen them?",
+      "audio": "005_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "006",
+      "speaker": "1",
+      "text": "Many people look to their parents for advice.",
+      "audio": "006_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "007",
+      "speaker": "1",
+      "text": "When we arrived in Paris, we looked round the city center.",
+      "audio": "007_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "008",
+      "speaker": "1",
+      "text": "Look out! There’s a car coming.",
+      "audio": "008_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "009",
+      "speaker": "1",
+      "text": "They just stood and looked on while others were fighting.",
+      "audio": "009_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "010",
+      "speaker": "1",
+      "text": "I will look in on my friend tomorrow evening.",
+      "audio": "010_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "011",
+      "speaker": "1",
+      "text": "I really look forward to meeting you again.",
+      "audio": "011_en_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "language": "ru",
+  "title": "смотреть...",
+  "speakers": {
+    "1": "Спикер 1"
+  },
+  "sentences": [
+    {
+      "key": "000",
+      "speaker": "1",
+      "text": "Ей постоянно приходится присматривать за младшим братом.",
+      "audio": "000_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "001",
+      "speaker": "1",
+      "text": "Можешь посмотреть это слово в словаре?",
+      "audio": "001_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "002",
+      "speaker": "1",
+      "text": "Он быстро пролистал газету перед уходом.",
+      "audio": "002_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "003",
+      "speaker": "1",
+      "text": "Нам нужно смотреть вперёд и составить план на будущее.",
+      "audio": "003_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "004",
+      "speaker": "1",
+      "text": "Ей нравится вспоминать своё детство.",
+      "audio": "004_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "005",
+      "speaker": "1",
+      "text": "Я ищу свои ключи, ты их не видел(а)?",
+      "audio": "005_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "006",
+      "speaker": "1",
+      "text": "Многие обращаются к родителям за советом.",
+      "audio": "006_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "007",
+      "speaker": "1",
+      "text": "Когда мы приехали в Париж, мы осмотрели центр города.",
+      "audio": "007_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "008",
+      "speaker": "1",
+      "text": "Осторожно! Едет машина.",
+      "audio": "008_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "009",
+      "speaker": "1",
+      "text": "Они просто стояли и наблюдали, пока другие дрались.",
+      "audio": "009_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "010",
+      "speaker": "1",
+      "text": "Я загляну к другу завтра вечером.",
+      "audio": "010_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "011",
+      "speaker": "1",
+      "text": "Я с нетерпением жду новой встречи с тобой.",
+      "audio": "011_ru_avto.mp3",
+      "shared_audio": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    }
+  ]
+}

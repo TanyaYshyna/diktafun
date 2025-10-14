@@ -736,6 +736,141 @@ function hideLoadingIndicator() {
 }
 
 // ============================================================================
+// ФУНКЦИИ ДЛЯ ПОДСВЕТКИ СИНТАКСИСА В TEXTAREA
+// ============================================================================
+
+/**
+ * Настройка подсветки синтаксиса для contenteditable div
+ * @param {HTMLElement} editor - элемент contenteditable
+ */
+function setupTextareaHighlighting(editor) {
+    let isUpdating = false;
+
+    // Функция обновления подсветки
+    function updateHighlight() {
+        if (isUpdating) return;
+        
+        const text = editor.innerText || editor.textContent;
+        const lines = text.split('\n');
+        const delimiter = document.getElementById('translationDelimiter')?.value || '/*';
+        
+        const highlightedText = lines.map(line => {
+            if (line.trim().startsWith(delimiter)) {
+                return `<span class="line-translation">${escapeHtml(line)}</span>`;
+            }
+            return escapeHtml(line);
+        }).join('\n');
+        
+        // Сохраняем позицию курсора
+        const selection = window.getSelection();
+        const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+        const cursorOffset = range ? getCursorOffset(editor, range) : 0;
+        
+        isUpdating = true;
+        editor.innerHTML = highlightedText;
+        
+        // Восстанавливаем позицию курсора
+        if (cursorOffset !== null) {
+            setCursorAtOffset(editor, cursorOffset);
+        }
+        isUpdating = false;
+    }
+
+    // Обработчики событий
+    editor.addEventListener('input', () => {
+        if (!isUpdating) {
+            setTimeout(updateHighlight, 10);
+        }
+    });
+    
+    editor.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        document.execCommand('insertText', false, text);
+        setTimeout(updateHighlight, 10);
+    });
+
+    // Обработчик изменения разделителя
+    const delimiterInput = document.getElementById('translationDelimiter');
+    if (delimiterInput) {
+        delimiterInput.addEventListener('input', updateHighlight);
+    }
+
+    // Первоначальная подсветка
+    updateHighlight();
+}
+
+/**
+ * Получить позицию курсора относительно начала элемента
+ * @param {HTMLElement} element - элемент
+ * @param {Range} range - диапазон выделения
+ * @returns {number} - позиция курсора
+ */
+function getCursorOffset(element, range) {
+    let offset = 0;
+    const walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+    
+    let node;
+    while (node = walker.nextNode()) {
+        if (node === range.startContainer) {
+            offset += range.startOffset;
+            break;
+        }
+        offset += node.textContent.length;
+    }
+    
+    return offset;
+}
+
+/**
+ * Установить курсор в указанную позицию
+ * @param {HTMLElement} element - элемент
+ * @param {number} offset - позиция курсора
+ */
+function setCursorAtOffset(element, offset) {
+    const range = document.createRange();
+    const selection = window.getSelection();
+    
+    let currentOffset = 0;
+    const walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+    
+    let node;
+    while (node = walker.nextNode()) {
+        const nodeLength = node.textContent.length;
+        if (currentOffset + nodeLength >= offset) {
+            range.setStart(node, offset - currentOffset);
+            range.setEnd(node, offset - currentOffset);
+            break;
+        }
+        currentOffset += nodeLength;
+    }
+    
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+/**
+ * Экранирование HTML символов
+ * @param {string} text - текст для экранирования
+ * @returns {string} - экранированный текст
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ============================================================================
 // ОБРАБОТЧИКИ СТАРТОВОГО МОДАЛЬНОГО ОКНА
 // ============================================================================
 
@@ -747,6 +882,12 @@ function setupStartModalHandlers() {
             toggleSpeakersTable(e.target.checked);
             updateCheckboxIcon(e.target.checked);
         });
+    }
+
+    // Обработчик для раскрашивания строк в textarea
+    const startTextInput = document.getElementById('startTextInput');
+    if (startTextInput) {
+        setupTextareaHighlighting(startTextInput);
     }
 
     // Кнопка добавления спикера
@@ -937,7 +1078,7 @@ function removeSpeaker(button) {
 }
 
 async function createDictationFromStart() {
-    const text = document.getElementById('startTextInput').value.trim();
+    const text = (document.getElementById('startTextInput').innerText || document.getElementById('startTextInput').textContent).trim();
     const delimiter = document.getElementById('translationDelimiter').value.trim();
     const isDialog = document.getElementById('isDialogCheckbox').checked;
 
@@ -990,7 +1131,7 @@ async function createDictationFromStart() {
         // Очистить поле ввода текста в модальном окне
         const startTextInput = document.getElementById('startTextInput');
         if (startTextInput) {
-            startTextInput.value = '';
+            startTextInput.innerHTML = '';
         }
 
         // Закрыть модальное окно
@@ -1257,7 +1398,7 @@ async function parseInputText(text, delimiter, isDialog, speakers) {
         i_next = i + 1; // індекс наступного рядка в тексті, якщо в наступному рядку э /* то перекладати не тереба 
         translation_line = "";
         if (i_next < lines.length) {
-            if (lines[i_next].startsWith('/*')) {
+            if (lines[i_next].startsWith(delimiter)) {
                 // есть перевод, берем его и переводить не надо
                 translation_line = lines[i_next].substring(2).trim(); // удалить /*;
                 i++;
