@@ -1,0 +1,69 @@
+{
+  "language": "en",
+  "title": "Sick",
+  "speakers": {
+    "1": "Спикер 1"
+  },
+  "sentences": [
+    {
+      "audio": "000_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "000",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "My mouth is wet, my throat is dry"
+    },
+    {
+      "audio": "001_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "001",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "I'm going blind in my right eye."
+    },
+    {
+      "audio": "002_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "002",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "My tonsils are as big as rocks,"
+    },
+    {
+      "audio": "003_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "003",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "I've counted sixteen chicken pox"
+    },
+    {
+      "audio": "004_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "004",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "And there's one more—that's seventeen"
+    },
+    {
+      "audio": "005_en_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "005",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "And don't you think my face looks green?"
+    }
+  ]
+}

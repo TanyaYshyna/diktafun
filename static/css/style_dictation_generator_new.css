@@ -316,8 +316,7 @@
 
 .col-play-original,
 .col-play-translation,
-.col-settings-original,
-.col-settings-translation {
+.col-settings-original {
     width: 40px;
     text-align: center;
 }
@@ -326,7 +325,8 @@
 .col-checkbox,
 .col-create-audio,
 .col-play-audio,
-.col-apply {
+.col-apply-avto,
+.col-apply-user {
     width: 60px;
     text-align: center;
 }

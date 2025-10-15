@@ -1,0 +1,69 @@
+{
+  "language": "ru",
+  "title": "Больной",
+  "speakers": {
+    "1": "Спикер 1"
+  },
+  "sentences": [
+    {
+      "audio": "000_ru_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "000",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "Мой рот мокрый, мое горло сухое,"
+    },
+    {
+      "audio": "001_ru_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "001",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "Я ослеп на правый глаз."
+    },
+    {
+      "audio": "002_ru_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "002",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "Мои миндалины такие же большие, как камни,"
+    },
+    {
+      "audio": "003_ru_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "003",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "Я насчитал шестнадцать штук,"
+    },
+    {
+      "audio": "004_ru_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "004",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "И есть еще один - это семнадцать"
+    },
+    {
+      "audio": "005_ru_avto.mp3",
+      "chain": false,
+      "end": 0,
+      "key": "005",
+      "shared_audio": "",
+      "speaker": "1",
+      "start": 0,
+      "text": "И разве ты не думаешь, что мое лицо выглядит зеленым?"
+    }
+  ]
+}

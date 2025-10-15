@@ -4395,7 +4395,7 @@ function createTableRow(key, originalSentence, translationSentence) {
     settingsOriginalCell.className = 'col-settings-original';
     const settingsOriginalBtn = document.createElement('button');
     settingsOriginalBtn.className = 'settings-audio';
-    settingsOriginalBtn.innerHTML = '<i data-lucide="settings"></i>';
+    settingsOriginalBtn.innerHTML = '';
     settingsOriginalBtn.dataset.key = key;
     settingsOriginalBtn.dataset.language = 'original';
     settingsOriginalCell.appendChild(settingsOriginalBtn);
@@ -4425,7 +4425,7 @@ function createTableRow(key, originalSentence, translationSentence) {
 
     // Колонка 7: ⚙️ Перевод
     const settingsTranslationCell = document.createElement('td');
-    settingsTranslationCell.className = 'col-settings-translation';
+    settingsTranslationCell.className = 'col-play-translation';
     const settingsTranslationBtn = document.createElement('button');
     settingsTranslationBtn.className = 'settings-audio';
     settingsTranslationBtn.innerHTML = '<i data-lucide="settings"></i>';

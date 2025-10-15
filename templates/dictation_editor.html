@@ -135,13 +135,34 @@
                     <tr>
                         <th class="col-number">№</th>
                         <th class="col-speaker" style="display: none;">Спикер</th>
-                        <th class="col-original">Оригинал</th>
-                        <th class="col-play-original"></th>
-                        <th class="col-settings-original" title="Развернуть настройки аудио"><i data-lucide="settings"></i></th>
-                        <th class="col-translation">Перевод</th>
-                        <th class="col-play-translation"></th>
-                        <th class="col-settings-translation" title="Развернуть настройки аудио"><i data-lucide="settings"></i></th>
-                        <th class="col-generate-tts" style="display: none;">С-ть</th>
+
+                        <th class="col-original panel-original">Оригинал</th>
+                        <th class="col-play-original panel-original"></th>
+                        <th class="col-settings-original panel-original">
+                            <button id="open_left_panel_original" title="Развернуть настройки аудио">
+                                <i data-lucide="panel-left-open"></i>
+                            </button>
+                        </th>
+                        
+                        <th class="col-translation panel-translation">Перевод</th>
+                        <th class="col-play-translation panel-translation"></th>
+
+                        <th class="col-generate-tts panel-editing">Avto</th>
+                        <th class="col-apply-avto panel-editing" title="Применить">
+                            <i data-lucide="arrow-big-left-dash"></i>
+                        </th>
+
+                        <th class="col-checkbox panel-editing"><i data-lucide="check"></i></th>
+                        <th class="col-audio-file panel-editing">Файл</th>
+                        <th class="col-start panel-editing">Start</th>
+                        <th class="col-end panel-editing">End</th>
+                        <th class="col-chain panel-editing"><i data-lucide="link"></i></th>
+                        <th class="col-play-audio panel-editing">mp3</th>
+                        <th class="col-apply-user panel-editing" title="Применить">
+                            <i data-lucide="arrow-big-left-dash"></i>
+                        </th>
+
+                        <!-- <th class="col-generate-tts" style="display: none;">С-ть</th>
                         <th class="col-checkbox" style="display: none;">✔️</th>
                         <th class="col-audio-file" style="display: none;">Файл</th>
                         <th class="col-start" style="display: none;">Start</th>
@@ -149,7 +170,7 @@
                         <th class="col-chain" style="display: none;">🔗</th>
                         <th class="col-create-audio" style="display: none;">С-ть</th>
                         <th class="col-play-audio" style="display: none;"></th>
-                        <th class="col-apply" style="display: none;" title="Применить"></th>
+                        <th class="col-apply" style="display: none;" title="Применить"></th> -->
                     </tr>
                 </thead>
                 <tbody>
@@ -217,7 +238,8 @@
 
                 <div class="form-group">
                     <label for="startTextInput">Текст диктанта:</label>
-                    <div id="startTextInput" contenteditable="true" class="start-text-editor" rows="10" placeholder="Введите текст диктанта..."></div>
+                    <div id="startTextInput" contenteditable="true" class="start-text-editor" rows="10"
+                        placeholder="Введите текст диктанта..."></div>
                 </div>
 
 
