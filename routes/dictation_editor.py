@@ -612,7 +612,10 @@ def save_dictation_final():
                 "language": lang,
                 "title": lang_data.get("title", ""),  # Берем название из данных языка
                 "speakers": lang_data.get("speakers", {}),
-                "sentences": lang_data.get("sentences", [])
+                "sentences": lang_data.get("sentences", []),
+                "audio_user_shared": lang_data.get("audio_user_shared", ""),
+                "audio_user_shared_start": lang_data.get("audio_user_shared_start", 0),
+                "audio_user_shared_end": lang_data.get("audio_user_shared_end", 0)
             }
 
             with open(os.path.join(lang_dir, "sentences.json"), 'w', encoding='utf-8') as f:
@@ -790,4 +793,269 @@ def add_dictation_to_categories(dictation_id, info_data, category_key=None):
             
     except Exception as e:
         logger.error(f"Ошибка при добавлении диктанта в categories.json: {e}")
-        return False    
+        return False
+
+
+@editor_bp.route('/upload-audio', methods=['POST'])
+# @jwt_required()  # Временно отключаем для тестирования
+def upload_audio_file():
+    """Загрузка аудиофайла для настроек аудио в редакторе"""
+    try:
+        audio = request.files.get('audioFile')
+        language = request.form.get('language', 'en')
+        dictation_id = request.form.get('dictation_id')  # Получаем ID диктанта
+        
+        if not audio:
+            return jsonify({'success': False, 'error': 'Аудиофайл не найден'}), 400
+        
+        # Проверяем что это аудио файл
+        if not audio.filename.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac')):
+            return jsonify({'success': False, 'error': 'Файл должен быть аудиофайлом'}), 400
+        
+        # Получаем текущего пользователя
+        safe_email = get_safe_email_from_token()
+        if not safe_email:
+            return jsonify({'success': False, 'error': 'Пользователь не авторизован'}), 401
+        
+        # Определяем путь к папке диктанта
+        if dictation_id and dictation_id != 'new':
+            # Для существующего диктанта используем папку temp с тем же ID
+            temp_path = os.path.join("static", "data", "temp", dictation_id, language)
+        else:
+            # Для нового диктанта создаем новую папку
+            temp_path = os.path.join("static", "data", "temp", f"dictation_{int(time.time() * 1000)}", language)
+        
+        os.makedirs(temp_path, exist_ok=True)
+        
+        # Сохраняем файл с оригинальным именем
+        filename = audio.filename
+        filepath = os.path.join(temp_path, filename)
+        audio.save(filepath)
+        
+        # Путь для браузера
+        browser_path = f"/static/data/temp/{os.path.basename(os.path.dirname(temp_path))}/{language}/{filename}"
+        
+        logger.info(f"Аудиофайл загружен: {filename} в {filepath}")
+        
+        # Обновляем sentences.json с полем audio_user_shared
+        sentences_json_path = os.path.join(temp_path, 'sentences.json')
+        if os.path.exists(sentences_json_path):
+            try:
+                with open(sentences_json_path, 'r', encoding='utf-8') as f:
+                    sentences_data = json.load(f)
+                
+                # Добавляем поле audio_user_shared после title
+                sentences_data['audio_user_shared'] = filename
+                
+                with open(sentences_json_path, 'w', encoding='utf-8') as f:
+                    json.dump(sentences_data, f, ensure_ascii=False, indent=2)
+                
+                logger.info(f"Обновлен sentences.json с audio_user_shared: {filename}")
+            except Exception as e:
+                logger.error(f"Ошибка при обновлении sentences.json: {e}")
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'filepath': browser_path,
+            'message': 'Файл успешно загружен'
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при загрузке аудиофайла: {e}")
+        return jsonify({'success': False, 'error': f'Ошибка загрузки: {str(e)}'}), 500
+
+
+@editor_bp.route('/delete-audio', methods=['POST'])
+@jwt_required()
+def delete_audio_file():
+    """Удаление аудиофайла"""
+    try:
+        data = request.get_json()
+        filename = data.get('filename')
+        filepath = data.get('filepath')
+        
+        if not filename or not filepath:
+            return jsonify({'success': False, 'error': 'Не указан файл для удаления'}), 400
+        
+        # Получаем физический путь к файлу
+        physical_path = filepath.replace('/static/', 'static/')
+        
+        if os.path.exists(physical_path):
+            os.remove(physical_path)
+            logger.info(f"Аудиофайл удален: {filename}")
+            return jsonify({'success': True, 'message': 'Файл успешно удален'})
+        else:
+            return jsonify({'success': False, 'error': 'Файл не найден'}), 404
+            
+    except Exception as e:
+        logger.error(f"Ошибка при удалении аудиофайла: {e}")
+        return jsonify({'success': False, 'error': f'Ошибка удаления: {str(e)}'}), 500
+
+
+@editor_bp.route('/cut-audio', methods=['POST'])
+# @jwt_required()
+def cut_audio_file():
+    """Обрезание аудиофайла"""
+    try:
+        data = request.get_json()
+        logger.info(f"Получены данные для обрезки аудио: {data}")
+        
+        dictation_id = data.get('dictation_id')
+        filename = data.get('filename')
+        filepath = data.get('filepath')
+        start_time = float(data.get('start_time', 0))  # изменено на snake_case и преобразование в float
+        end_time = float(data.get('end_time', 0))      # изменено на snake_case и преобразование в float
+        language = data.get('language', 'en')
+        
+        if not filename or not filepath:
+            logger.error("Отсутствуют filename или filepath")
+            return jsonify({'success': False, 'error': 'Не указан файл для обрезания'}), 400
+        
+        # Получаем физический путь к файлу
+        physical_path = filepath.replace('/static/', 'static/')
+        logger.info(f"Физический путь к файлу: {physical_path}")
+        
+        if not os.path.exists(physical_path):
+            logger.error(f"Файл не найден: {physical_path}")
+            return jsonify({'success': False, 'error': 'Исходный файл не найден'}), 404
+        
+        # Реализуем логику обрезания аудио с помощью librosa
+        logger.info(f"Обрезание аудио: {filename} с {start_time} по {end_time}")
+       
+        try:
+            # Загружаем аудиофайл
+            y, sr = librosa.load(physical_path, sr=None)
+            logger.info(f"Аудио загружено: {len(y)} samples, sample rate: {sr}")
+            
+            # Вычисляем индексы для обрезки
+            start_sample = int(start_time * sr)
+            end_sample = int(end_time * sr)
+             
+            # Проверяем валидность индексов
+            if start_sample >= end_sample:
+                return jsonify({'success': False, 'error': 'Время начала должно быть меньше времени окончания'}), 400
+            if end_sample > len(y):
+                return jsonify({'success': False, 'error': 'Время окончания превышает длительность аудио'}), 400
+            
+            logger.info(f"Обрезаем с sample {start_sample} по {end_sample}")
+            
+          
+            # Обрезаем аудио
+            y_trimmed = y[start_sample:end_sample]
+            
+            # Перезаписываем существующий файл обрезанной версией
+            sf.write(physical_path, y_trimmed, sr)
+            
+            logger.info(f"Аудиофайл успешно обрезан и перезаписан: {filename}")
+
+            # Обновляем sentences.json с новыми временными метками
+            if dictation_id:
+                sentences_path = os.path.join('static', 'data', 'temp', dictation_id, language, 'sentences.json')
+                if os.path.exists(sentences_path):
+                    with open(sentences_path, 'r', encoding='utf-8') as f:
+                        sentences_data = json.load(f)
+                    
+                    # Обновляем временные метки
+                    sentences_data['audio_user_shared_start'] = 0
+                    sentences_data['audio_user_shared_end'] = end_time - start_time
+                    
+                    with open(sentences_path, 'w', encoding='utf-8') as f:
+                        json.dump(sentences_data, f, ensure_ascii=False, indent=2)
+                    
+                    logger.info(f"Обновлен sentences.json с новыми временными метками")
+            
+        except Exception as e:
+            logger.error(f"Ошибка при обрезании аудио: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': f'Ошибка обрезания аудио: {str(e)}'}), 500            
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'filepath': filepath,
+            'start_time': start_time,
+            'end_time': end_time,
+            'message': 'Аудиофайл успешно обрезан'
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при обрезании аудиофайла: {e}")
+        return jsonify({'success': False, 'error': f'Ошибка обрезания: {str(e)}'}), 500
+
+
+@editor_bp.route('/split-audio', methods=['POST'])
+# @jwt_required()
+def split_audio_file():
+    """Разрезание аудиофайла на предложения"""
+    try:
+        data = request.get_json()
+        filename = data.get('filename')
+        filepath = data.get('filepath')
+        sentences = data.get('sentences', [])
+        dictation_id = data.get('dictation_id')
+        
+        if not filename or not filepath or not sentences:
+            return jsonify({'success': False, 'error': 'Не указаны необходимые параметры'}), 400
+        
+        # Получаем физический путь к файлу
+        physical_path = filepath.replace('/static/', 'static/')
+        
+        if not os.path.exists(physical_path):
+            return jsonify({'success': False, 'error': 'Исходный файл не найден'}), 404
+        
+        logger.info(f"Разрезание аудио: {filename} на {len(sentences)} предложений")
+        
+        try:
+            import librosa
+            import soundfile as sf
+            
+            # Загружаем аудиофайл
+            y, sr = librosa.load(physical_path, sr=None)
+            
+            # Создаем директорию для обрезанных файлов
+            output_dir = os.path.dirname(physical_path)
+            
+            # Разрезаем аудио на предложения
+            for sentence in sentences:
+                key = sentence.get('key')
+                start_time = sentence.get('start_time', 0)
+                end_time = sentence.get('end_time', 0)
+                language = sentence.get('language', 'en')
+                
+                if not key or start_time >= end_time:
+                    continue
+                
+                # Вычисляем индексы для обрезки
+                start_sample = int(start_time * sr)
+                end_sample = int(end_time * sr)
+                
+                # Обрезаем аудио
+                y_segment = y[start_sample:end_sample]
+                
+                # Создаем имя файла для предложения
+                segment_filename = f"{key}_{language}_user.mp3"
+                segment_path = os.path.join(output_dir, segment_filename)
+                
+                # Сохраняем обрезанный файл
+                sf.write(segment_path, y_segment, sr)
+                
+                logger.info(f"Создан файл: {segment_filename} ({start_time:.2f}s - {end_time:.2f}s)")
+            
+            logger.info(f"Аудиофайл успешно разрезан на {len(sentences)} предложений")
+            
+        except ImportError:
+            logger.error("Библиотека librosa не установлена")
+            return jsonify({'success': False, 'error': 'Библиотека для работы с аудио не установлена'}), 500
+        except Exception as e:
+            logger.error(f"Ошибка при разрезании аудио: {e}")
+            return jsonify({'success': False, 'error': f'Ошибка разрезания аудио: {str(e)}'}), 500
+        
+        return jsonify({
+            'success': True,
+            'message': f'Аудиофайл успешно разрезан на {len(sentences)} предложений',
+            'sentences_count': len(sentences)
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при разрезании аудиофайла: {e}")
+        return jsonify({'success': False, 'error': f'Ошибка разрезания: {str(e)}'}), 500    

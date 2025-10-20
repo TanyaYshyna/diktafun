@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/style_dictation_editor.css">
     <link rel="icon" href="data:,"> <!-- Пустая иконка -->
+    
+    <!-- WaveformCanvas -->
+    <script src="{{ url_for('static', filename='js/waveform_canvas.js') }}"></script>
 </head>
 
 <body>
@@ -82,50 +85,95 @@
 
         <!-- Раскрывающееся окно настроек аудио -->
         <div id="audioSettingsModal" class="audio-settings-modal" style="display: none;">
-            <h2>Настройки аудио</h2>
+            <table class="audio-settings-table">
+                <tr>
+                    <td class="radio-cell">
+                        <!-- Радио кнопки -->
+                        <div class="audio-mode-controls">
+                            <label class="radio-label">
+                                <input type="radio" name="audioMode" value="full" checked>
+                                <i data-lucide="aperture" class="radio-icon radio-icon-selected"></i>
+                                <i data-lucide="circle" class="radio-icon radio-icon-unselected" style="display: none;"></i>
+                                <span>Отображать весь файл</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="audioMode" value="sentence">
+                                <i data-lucide="aperture" class="radio-icon radio-icon-selected" style="display: none;"></i>
+                                <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
+                                <span>Текущее предложение</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="audioMode" value="mic">
+                                <i data-lucide="aperture" class="radio-icon radio-icon-selected" style="display: none;"></i>
+                                <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
+                                <span>Запись с микрофона</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="audioMode" value="auto">
+                                <i data-lucide="aperture" class="radio-icon radio-icon-selected" style="display: none;"></i>
+                                <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
+                                <span>Автозаполнение</span>
+                            </label>
+                        </div>
+                    </td>
+                    <td class="controls-cell">
+                        <!-- Панель выбора файла (показывается только для режима "весь файл") -->
+                        <div id="fileSelectionPanel" class="file-selection-panel">
+                            <div class="file-selection-content">
+                                <span id="selectedFileName" class="selected-filename">Выберите файл</span>
+                                <button type="button" id="selectFileBtn" class="file-select-btn" title="Выбрать файл">
+                                    <i data-lucide="more-horizontal"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Текущий текст/файл -->
+                        <div class="current-audio-info">
+                            <p id="currentAudioInfo">Имя файла из текущей строки таблицы файлов</p>
+                        </div>
 
-            <div class="audio-controls">
-                <div class="form-group">
-                    <label for="audioFilesSelect">Аудиофайлы:</label>
-                    <select id="audioFilesSelect">
-                        <option value="">Выберите файл</option>
-                    </select>
-                    <button type="button" id="openFileBtn">Открыть файл</button>
-                    <button type="button" id="audioToTableBtn">Аудио в таблицу</button>
-                    <button type="button" id="recordAudioBtn">🎤 Записать</button>
-                </div>
+                        <!-- Контейнер для волны и управления -->
+                        <div id="waveformAndControls" class="waveform-and-controls">
+                            <!-- Контейнер для волны -->
+                            <div class="waveform-container">
+                                <div id="audioWaveform"></div>
+                            </div>
 
-                <div class="waveform-container">
-                    <div id="audioWaveform"></div>
-                </div>
+                            <!-- Кнопки управления воспроизведением -->
+                            <div class="playback-controls">
+                                <button type="button" id="audioPlayBtn" class="audio-btn" data-field-name="audio_user_shared" data-state="ready-shared" data-language="en" data-original-state="ready-shared">
+                                    <i data-lucide="play"></i>
+                                </button>
+                                <div class="time-controls">
+                                    <label for="audioStartTime">Start:</label>
+                                    <input type="number" id="audioStartTime" step="0.01" min="0">
+                                    <label for="audioEndTime">End:</label>
+                                    <input type="number" id="audioEndTime" step="0.01" min="0">
+                                </div>
+                                <button type="button" id="scissorsBtn" class="button-standard">
+                                    <i data-lucide="scissors"></i>
+                                </button>
+                                <button type="button" id="audioToTableBtn" class="button-standard" title="Разрезать аудио на 1000 кусков">
+                                    <i data-lucide="scissors"></i>
+                                    <span>на 1000 кусков</span>
+                                </button>
+                                <!-- <button type="button" id="applyAudioBtn" class="apply-btn">
+                                    <i data-lucide="check"></i>
+                                    <span id="applyBtnText">Принять это аудио в диктант</span>
+                                </button> -->
+                            </div>
+                        </div>
 
-                <div class="current-text">
-                    <p id="currentSentenceText"></p>
-                </div>
-
-                <div class="playback-controls">
-                    <button type="button" id="audioPlayBtn">
-                        <i data-lucide="play"></i>
-                    </button>
-                    <div class="time-controls">
-                        <label for="audioStartTime">Start:</label>
-                        <input type="number" id="audioStartTime" step="0.01" min="0">
-                        <label for="audioEndTime">End:</label>
-                        <input type="number" id="audioEndTime" step="0.01" min="0">
-                    </div>
-
-                    <!-- Дублируем поля с именами startTime и endTime для совместимости с JavaScript -->
-                    <div style="display: none;">
-                        <input type="number" id="startTime" step="0.01" min="0">
-                        <input type="number" id="endTime" step="0.01" min="0">
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-buttons">
-                <button type="button" id="cancelAudioBtn">Отмена</button>
-                <button type="button" id="applyAudioBtn">Применить</button>
-            </div>
+                        <!-- Скрытые поля для совместимости с JavaScript -->
+                        <div style="display: none;">
+                            <input type="number" id="startTime" step="0.01" min="0">
+                            <input type="number" id="endTime" step="0.01" min="0">
+                        </div>
+                        
+                        <!-- Скрытый input для выбора файлов -->
+                        <input type="file" id="audioFileInput" accept="audio/*" style="display: none;">
+                    </td>
+                </tr>
+            </table>
         </div>
 
         <!-- Основная таблица предложений -->
@@ -147,20 +195,26 @@
                         <th class="col-translation panel-translation">Перевод</th>
                         <th class="col-play-translation panel-translation"></th>
 
-                        <th class="col-generate-tts panel-editing">Avto</th>
-                        <th class="col-apply-avto panel-editing" title="Применить">
+                        <th class="col-generate-tts panel-editing-avto">Avto</th>
+                        <th class="col-apply-avto panel-editing-avto" title="Применить">
                             <i data-lucide="arrow-big-left-dash"></i>
                         </th>
 
-                        <th class="col-checkbox panel-editing"><i data-lucide="check"></i></th>
-                        <th class="col-audio-file panel-editing">Файл</th>
-                        <th class="col-start panel-editing">Start</th>
-                        <th class="col-end panel-editing">End</th>
-                        <th class="col-chain panel-editing"><i data-lucide="link"></i></th>
-                        <th class="col-play-audio panel-editing">mp3</th>
-                        <th class="col-apply-user panel-editing" title="Применить">
+                        <!-- <th class="col-checkbox panel-editing"><i data-lucide="check"></i></th> -->
+                        <!-- <th class="col-audio-file panel-editing">Файл</th> -->
+                        <th class="col-start panel-editing-user">Start</th>
+                        <th class="col-end panel-editing-user">End</th>
+                        <th class="col-chain panel-editing-user"><i data-lucide="link"></i></th>
+                        <th class="col-play-audio panel-editing-user">mp3</th>
+                        <th class="col-apply-user panel-editing-user" title="Применить">
                             <i data-lucide="arrow-big-left-dash"></i>
                         </th>
+
+                        <th class="col-play-audio panel-editing-mic">mp3</th>
+                        <th class="col-apply-mic panel-editing-mic" title="Применить">
+                            <i data-lucide="arrow-big-left-dash"></i>
+                        </th>
+
 
                         <!-- <th class="col-generate-tts" style="display: none;">С-ть</th>
                         <th class="col-checkbox" style="display: none;">✔️</th>

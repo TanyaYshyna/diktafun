@@ -1354,4 +1354,48 @@ def add_dictation_to_categories(dictation_id, info_data):
             logger.warning(f"Не найдена подходящая категория для языка {language_original}")
             
     except Exception as e:
-        logger.error(f"Ошибка при добавлении диктанта в categories.json: {e}")    
+        logger.error(f"Ошибка при добавлении диктанта в categories.json: {e}")
+
+
+@generator_bp.route('/upload_audio_file', methods=['POST'])
+def upload_audio_file():
+    """Загрузка аудио файла в temp папку диктанта"""
+    try:
+        # Получаем данные из запроса
+        audio_file = request.files.get('audio_file')
+        dictation_id = request.form.get('dictation_id')
+        language = request.form.get('language', 'en')
+        
+        if not audio_file or not dictation_id:
+            return jsonify({'error': 'Отсутствуют обязательные параметры'}), 400
+        
+        # Проверяем, что файл является аудио
+        if not audio_file.filename.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a', '.aac')):
+            return jsonify({'error': 'Неподдерживаемый формат аудио файла'}), 400
+        
+        # Создаем путь к temp папке диктанта
+        temp_dir = os.path.join(current_app.static_folder, 'data', 'temp', dictation_id, language)
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # Генерируем уникальное имя файла
+        import time
+        timestamp = int(time.time() * 1000)
+        file_extension = os.path.splitext(audio_file.filename)[1]
+        filename = f"{timestamp}_{language}_shared{file_extension}"
+        
+        # Сохраняем файл
+        file_path = os.path.join(temp_dir, filename)
+        audio_file.save(file_path)
+        
+        logger.info(f"Аудио файл сохранен: {file_path}")
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'path': file_path,
+            'message': 'Файл успешно загружен'
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при загрузке аудио файла: {e}")
+        return jsonify({'error': f'Ошибка при загрузке файла: {str(e)}'}), 500    

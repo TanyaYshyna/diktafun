@@ -48,13 +48,19 @@ let workingData = {
         language: '',
         title: '',
         speakers: {}, // словарь спикеров {"1": "Таня", "2": "Ваня"}
-        sentences: [] // {key, speaker, text, audio, audio_users_shared, start, end, chain}
+        sentences: [], // {key, speaker, text, audio, audio_users_shared, start, end, chain}
+        audio_user_shared: '',
+        audio_user_shared_start: 0,
+        audio_user_shared_end: 0
     },
     translation: {
         language: '',
         title: '',
         speakers: {}, // словарь спикеров {"1": "Таня", "2": "Ваня"}
-        sentences: [] // {key, speaker, text, audio, shared_audio, start, end, chain}
+        sentences: [], // {key, speaker, text, audio, shared_audio, start, end, chain}
+        audio_user_shared: '',
+        audio_user_shared_start: 0,
+        audio_user_shared_end: 0
     }
 };
 
@@ -356,12 +362,18 @@ async function loadExistingDictation(initData) {
 
     // Создаём таблицу с предложениями из загруженных данных
     workingData = {
-        original: original_data || {},
-        translation: translation_data || {}
+        original: original_data,
+        translation: translation_data
     };
+    
+    console.log('📊 Загруженные данные original_data:', original_data);
+    console.log('📊 Загруженные данные translation_data:', translation_data);
 
     // Создаем таблицу
-    createTable();
+    await createTable();
+
+    // Инициализируем волну и информацию о файле, если есть аудио
+    initializeAudioForExistingDictation();
 
     // Инициализируем Lucide иконки
     if (typeof lucide !== 'undefined') {
@@ -412,6 +424,9 @@ function initDictationGenerator() {
     // setupExitHandlers(); // TODO: Реализовать обработчики выхода
     setupStartModalHandlers(); // Настраиваем обработчики стартового модального окна
     setupTitleTranslationHandler(); // Настраиваем автоматический перевод названия
+
+    // Инициализируем иконки радио-кнопок
+    updateRadioButtonIcons('full');
 
 }
 
@@ -491,30 +506,80 @@ let currentAudio = null;
  * @param {Event} event - событие клика
  */
 async function handleAudioPlayback(event) {
+    console.log('🔘🔘1🔘🔘🔘🔘 handleAudioPlayback вызвана');
+    console.log('🔘🔘2🔘🔘🔘🔘 event.target:', event.target);
+
     const button = event.target.closest('button.audio-btn');
-    if (!button) return;
+    console.log('🔘🔘3🔘🔘🔘🔘 Найденная кнопка:', button);
+
+    if (!button) {
+        console.log('❌ Кнопка с классом audio-btn не найдена, выходим');
+        return;
+    }
+    console.log('🔘🔘4🔘🔘🔘🔘 Найденная кнопка:', button);
 
     const language = button.dataset.language; // 'en' или 'ru'
-    const fieldName = button.dataset.fieldName; // 'audio', 'audio_user_shared', 'audio_avto', 'audio_user'
-    const shouldCreate = button.dataset.create === 'true'; // нужно ли создавать файл
+    const fieldName = button.dataset.fieldName; // 'audio', 'audio_avto', 'audio_user', 'audio_mic', 'audio_user_shared'
+    // const shouldCreate = button.dataset.state === 'creating'; // нужно ли создавать файл
+    const state = button.dataset.state;
+    console.log('🔘🔘5🔘🔘🔘🔘 language:', language, 'fieldName:', fieldName, 'state:', state);
 
     // Если уже играет другой файл - останавливаем его
     if (currentAudio && currentPlayingButton) {
         currentAudio.pause();
         currentAudio.currentTime = 0;
-        setButtonState(currentPlayingButton, 'ready');
+        // Восстанавливаем исходное состояние кнопки
+        const originalState = currentPlayingButton.dataset.originalState || 'ready';
+        setButtonState(currentPlayingButton, originalState);
     }
+    console.log('🔘🔘6🔘🔘🔘🔘 currentPlayingButton:', currentPlayingButton);
 
-    try {
-        if (shouldCreate) {
+
+    // try {
+    console.log('🔘🔘7🔘🔘🔘🔘 state:', state);
+    switch (state) {
+        case 'ready':
+            console.log('🔘🔘8🔘🔘🔘🔘 switch:');
+            playExistingAudio(button, language, fieldName);
+            break;
+        case 'ready-shared':
+            console.log('🔘🔘9🔘🔘🔘🔘 switch:');
+            playExistingAudio(button, language, fieldName);
+            break;
+        case 'playing-shared':
+            console.log('🔘🔘10🔘🔘🔘🔘 switch: остановка воспроизведения под волной');
+            stopCurrentPlayback();
+            break;
+        case 'playing':
+            console.log('🔘🔘11🔘🔘🔘🔘 switch:');
+            // может остановить воспроизведение
+            stopCurrentPlayback();
+            break;
+        case 'creating':
+            console.log('🔘🔘12🔘🔘🔘🔘 switch:');
+            // в состоянии "создание"
             await createAndPlayAudio(button, language, fieldName);
-        } else {
-            await playExistingAudio(button, language, fieldName);
-        }
-    } catch (error) {
-        console.error('❌ Ошибка при проигрывании аудио:', error);
-        setButtonState(button, 'ready');
+            break;
+        case 'creating_user':
+            console.log('🔘🔘13🔘🔘🔘🔘 switch:');
+            // в состоянии "создание"
+            await createAndPlayAudio(button, language, fieldName);
+            break;
+        case 'creating_mic':
+            console.log('🔘🔘14🔘🔘🔘🔘 switch:');
+            // в состоянии "создание микрофона" показываем иконку микрофона
+            // TODO: реализовать создание аудио с микрофона
+            break;
     }
+    //     if (shouldCreate) {
+    //     await createAndPlayAudio(button, language, fieldName);
+    // } else {
+    //     await playExistingAudio(button, language, fieldName);
+    // }
+    // } catch (error) {
+    //     console.error('❌ Ошибка при проигрывании аудио:', error);
+    //     setButtonState(button, 'ready');
+    // }
 }
 
 
@@ -559,8 +624,8 @@ async function createAndPlayAudio(button, language, fieldName) {
         sentence[fieldName] = audioFile;
 
         // Меняем кнопку в режим воспроизведения (файл теперь существует)
-        button.dataset.create = 'false';
-        button.title = 'Воспроизвести аудио';
+        button.dataset.state = 'playing';
+        // button.title = 'Воспроизвести аудио';
 
         // Устанавливаем текущую кнопку и проигрываем созданный файл
         currentPlayingButton = button;
@@ -571,17 +636,20 @@ async function createAndPlayAudio(button, language, fieldName) {
 
     } catch (error) {
         console.error('❌ Ошибка при создании аудио:', error);
-        setButtonState(button, 'ready');
+        setButtonState(button, 'creating');
         throw error;
     }
 }
+
 
 /**
  * Проиграть существующий аудио файл
  */
 async function playExistingAudio(button, language, fieldName) {
     // Получаем имя файла из данных предложения
+    console.log('🔍8🔍 button, language, fieldName:', button, language, fieldName);
     const audioFile = getAudioFileName(button, language, fieldName);
+    console.log('🔍9🔍 audioFile:', audioFile);
 
     if (!audioFile) {
         console.warn('⚠️ Аудио файл не найден');
@@ -590,80 +658,201 @@ async function playExistingAudio(button, language, fieldName) {
 
     // Устанавливаем текущую кнопку
     currentPlayingButton = button;
-    setButtonState(button, 'playing');
-    await playAudioFile(audioFile, language);
+
+    // Определяем правильное состояние для кнопки
+    const isSharedButton = button.dataset.state === 'ready-shared' || button.dataset.state === 'playing-shared';
+    const playingState = isSharedButton ? 'playing-shared' : 'playing';
+    setButtonState(button, playingState);
+
+    // Обновляем playhead только для кнопки под волной
+    const shouldUpdatePlayhead = isSharedButton;
+
+    if (isSharedButton && waveformCanvas) {
+        // Для кнопки под волной передаем управление WaveformCanvas
+        const audioElement = audioPlayers[audioFile];
+        if (audioElement) {
+            await waveformCanvas.startPlayback(audioElement);
+        } else {
+            console.warn('⚠️ Аудио элемент не найден для кнопки под волной');
+        }
+    } else {
+        // Для обычных кнопок используем старую логику
+        await playAudioFile(audioFile, language, shouldUpdatePlayhead, 0);
+    }
 }
 
 /**
- * Проиграть аудио файл
+ * Проиграть аудио файл (используем кэшированные плееры)
  */
-async function playAudioFile(audioFile, language) {
-    if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
+async function playAudioFile(audioFile, language, updatePlayhead = false) {
+    console.log('🎵 playAudioFile вызвана:', audioFile, language, 'updatePlayhead:', updatePlayhead);
+    console.log('🎵 Доступные плееры:', Object.keys(audioPlayers));
+
+    // Проверяем, есть ли уже загруженный плеер
+    if (audioPlayers[audioFile]) {
+        console.log('✅ Найден плеер в кэше:', audioFile);
+        const player = audioPlayers[audioFile];
+
+        // Останавливаем текущее воспроизведение
+        if (currentAudio) {
+            currentAudio.pause();
+        }
+
+        currentAudio = player;
+
+        // Передаем контроль воспроизведения в WaveformCanvas (только если нужно)
+        if (updatePlayhead && waveformCanvas) {
+            waveformCanvas.startAudioControl(player);
+        }
+
+        return new Promise((resolve, reject) => {
+            player.onended = () => {
+                // Останавливаем контроль WaveformCanvas
+                if (updatePlayhead && waveformCanvas) {
+                    waveformCanvas.stopAudioControl();
+                }
+                if (currentPlayingButton) {
+                    // Восстанавливаем исходное состояние кнопки
+                    const originalState = currentPlayingButton.dataset.originalState || 'ready';
+                    setButtonState(currentPlayingButton, originalState);
+                    currentPlayingButton = null;
+                }
+                currentAudio = null;
+                resolve();
+            };
+
+            player.onerror = (error) => {
+                console.error('❌ Ошибка воспроизведения аудио:', error);
+                if (currentPlayingButton) {
+                    // Восстанавливаем исходное состояние кнопки
+                    const originalState = currentPlayingButton.dataset.originalState || 'ready';
+                    setButtonState(currentPlayingButton, originalState);
+                    currentPlayingButton = null;
+                }
+                currentAudio = null;
+                reject(error);
+            };
+
+            player.play().catch(reject);
+        });
+    } else {
+        // Если плеера нет, загружаем его
+        console.log('⚠️ Плеер не найден в кэше, загружаем:', audioFile);
+        const audioUrl = `/static/data/temp/${currentDictation.id}/${language}/${audioFile}`;
+        console.log('🎵 URL для загрузки:', audioUrl);
+        const audio = new Audio(audioUrl);
+        audioPlayers[audioFile] = audio;
+
+        return new Promise((resolve, reject) => {
+            audio.onloadeddata = () => {
+                // Останавливаем текущее воспроизведение
+                if (currentAudio) {
+                    currentAudio.pause();
+                }
+
+                currentAudio = audio;
+
+                // Передаем контроль воспроизведения в WaveformCanvas (только если нужно)
+                if (updatePlayhead && waveformCanvas) {
+                    waveformCanvas.startAudioControl(audio);
+                }
+
+                // Очищаем интервал когда воспроизведение заканчивается
+                audio.onended = () => {
+                    // Останавливаем контроль WaveformCanvas
+                    if (updatePlayhead && waveformCanvas) {
+                        waveformCanvas.stopAudioControl();
+                    }
+                    if (currentPlayingButton) {
+                        // Восстанавливаем исходное состояние кнопки
+                        const originalState = currentPlayingButton.dataset.originalState || 'ready';
+                        setButtonState(currentPlayingButton, originalState);
+                        currentPlayingButton = null;
+                    }
+                    currentAudio = null;
+                    resolve();
+                };
+
+                audio.play().catch(reject);
+            };
+
+            audio.onended = () => {
+                if (currentPlayingButton) {
+                    // Восстанавливаем исходное состояние кнопки
+                    const originalState = currentPlayingButton.dataset.originalState || 'ready';
+                    setButtonState(currentPlayingButton, originalState);
+                    currentPlayingButton = null;
+                }
+                currentAudio = null;
+                resolve();
+            };
+
+            audio.onerror = (error) => {
+                console.error('❌ Ошибка загрузки аудио:', error);
+                if (currentPlayingButton) {
+                    // Восстанавливаем исходное состояние кнопки
+                    const originalState = currentPlayingButton.dataset.originalState || 'ready';
+                    setButtonState(currentPlayingButton, originalState);
+                    currentPlayingButton = null;
+                }
+                currentAudio = null;
+                reject(error);
+            };
+        });
     }
-
-    const audioUrl = `/static/data/temp/${currentDictation.id}/${language}/${audioFile}`;
-
-    currentAudio = new Audio(audioUrl);
-
-    return new Promise((resolve, reject) => {
-        currentAudio.onended = () => {
-            if (currentPlayingButton) {
-                // Возвращаем кнопку в состояние "готов" с правильной иконкой
-                setButtonState(currentPlayingButton, 'ready');
-                currentPlayingButton = null;
-            }
-            currentAudio = null;
-            resolve();
-        };
-
-        currentAudio.onerror = (error) => {
-            console.error('❌ Ошибка загрузки аудио:', error);
-            if (currentPlayingButton) {
-                // Возвращаем кнопку в состояние "готов" с правильной иконкой
-                setButtonState(currentPlayingButton, 'ready');
-                currentPlayingButton = null;
-            }
-            currentAudio = null;
-            reject(error);
-        };
-
-        currentAudio.play().catch(reject);
-    });
 }
 
 /**
  * Остановить текущее проигрывание
  */
 async function stopCurrentPlayback() {
+    console.log('🔘 stopCurrentPlayback вызвана');
+
     if (currentAudio) {
+        console.log('🔘 Останавливаем currentAudio');
         currentAudio.pause();
         currentAudio.currentTime = 0;
         currentAudio = null;
     }
 
-    if (currentPlayingButton) {
-        setButtonState(currentPlayingButton, 'ready');
-        currentPlayingButton = null;
+    // Останавливаем контроль WaveformCanvas
+    if (waveformCanvas) {
+        console.log('🔘 Вызываем waveformCanvas.stopAudioControl()');
+        waveformCanvas.stopAudioControl();
     }
 
+    if (currentPlayingButton) {
+        // Восстанавливаем исходное состояние кнопки
+        const originalState = currentPlayingButton.dataset.originalState || 'ready';
+        setButtonState(currentPlayingButton, originalState);
+        currentPlayingButton = null;
+    }
 }
 
 /**
  * Получить предложение для кнопки
  */
 function getSentenceForButton(button) {
-    const row = button.closest('tr');
-    const key = row.dataset.key;
 
     // Определяем язык из данных кнопки
     const language = button.dataset.language;
 
     if (language === currentDictation.language_original) {
-        return workingData.original.sentences.find(s => s.key === key);
+        if (button.dataset.state === 'ready-shared') {
+            return workingData.original;
+        } else {
+            const row = button.closest('tr');
+            const key = row.dataset.key;
+            return workingData.original.sentences.find(s => s.key === key);
+        }
     } else {
-        return workingData.translation.sentences.find(s => s.key === key);
+        if (button.dataset.state === 'ready-shared') {
+            return workingData.translation;
+        } else {
+            const row = button.closest('tr');
+            const key = row.dataset.key;
+            return workingData.translation.sentences.find(s => s.key === key);
+        }
     }
 }
 
@@ -671,35 +860,64 @@ function getSentenceForButton(button) {
  * Получить имя аудио файла
  */
 function getAudioFileName(button, language, fieldName) {
+    console.log('🔍 getAudioFileName вызвана:', fieldName, language);
+
     const sentence = getSentenceForButton(button);
-    return sentence ? sentence[fieldName] : null;
+    console.log('🔍 Найденное предложение:', sentence);
+
+    const fileName = sentence ? sentence[fieldName] : null;
+    console.log('🔍 Имя файла:', fileName);
+
+    return fileName;
 }
 
 /**
  * Установить состояние кнопки
+ * показываем то стостояние, которое передали в функцию или из dataset.state
  */
-function setButtonState(button, state) {
+function setButtonState(button, state = '') {
     // Убираем все состояния
-    button.classList.remove('state-ready', 'state-playing', 'state-creating');
+    // button.classList.remove('state-ready', 'state-playing', 'state-creating');
 
-    // Добавляем новое состояние
-    button.classList.add(`state-${state}`);
-
+    // // Добавляем новое состояние
+    // button.classList.add(`state-${state}`);
+    if (state === '') {
+        state = button.dataset.state;
+    }
 
     let newIcon = '';
     switch (state) {
         case 'ready':
-            // В состоянии "готов" показываем иконку в зависимости от dataset.create
-            newIcon = button.dataset.create === 'true' ? 'hammer' : 'play';
+            // в состоянии "готов" показываем иконку воспроизведения
+            newIcon = 'play';
+            break;
+        case 'ready-shared':
+            // в состоянии "готов-shared" показываем иконку воспроизведения
+            // это состояние для кнопки, которая воспроизводит аудио общего пользователя
+            newIcon = 'play';
             break;
         case 'playing':
+            // в состоянии "воспроизведение" показываем иконку паузы
+            newIcon = 'pause';
+            break;
+        case 'playing-shared':
+            // в состоянии "воспроизведение-shared" показываем иконку паузы
+            // это состояние для кнопки под волной во время воспроизведения
             newIcon = 'pause';
             break;
         case 'creating':
+            // в состоянии "создание" показываем иконку молотка
             newIcon = 'hammer';
+            break;
+        case 'creating_mic':
+            // в состоянии "создание микрофона" показываем иконку микрофона
+            newIcon = 'mic';
             break;
     }
     button.innerHTML = `<i data-lucide="${newIcon}"></i>`;
+
+    // Обновляем состояние кнопки в DOM
+    button.dataset.state = state;
 
     // Перерисовываем иконку Lucide
     lucide.createIcons();
@@ -881,10 +1099,10 @@ function escapeHtml(text) {
  */
 function openAudioSettingsPanel(language, rowKey) {
     console.log('🎵 openAudioSettingsPanel вызвана:', language, rowKey);
-    
+
     const modal = document.getElementById('audioSettingsModal');
     console.log('🔍 Модальное окно найдено:', modal);
-    
+
     if (modal) {
         // Сохраняем текущий режим редактирования
         currentDictation.current_edit_mode = language;
@@ -892,6 +1110,18 @@ function openAudioSettingsPanel(language, rowKey) {
 
         // Показываем панель настроек аудио
         modal.style.display = 'block';
+
+        // Инициализируем режим "отображать весь файл" при открытии
+        const fullRadio = document.querySelector('input[name="audioMode"][value="full"]');
+        if (fullRadio) {
+            fullRadio.checked = true;
+            // Инициируем обработчик изменения режима
+            handleAudioModeChange({ target: fullRadio });
+            console.log('✅ Установлен режим "отображать весь файл" при открытии модального окна');
+        }
+
+        // Обновляем иконки радио-кнопок при открытии
+        updateRadioButtonIcons('full');
 
         console.log('✅ Модальное окно открыто');
         console.log('📋 Стили модального окна:', {
@@ -932,11 +1162,11 @@ function setupColumnToggleHandlers() {
     if (toggleOriginalBtn) {
         toggleOriginalBtn.addEventListener('click', () => {
             console.log('🔘 Кнопка в ШАПКЕ таблицы нажата');
-            
+
             // Определяем текущее состояние таблицы
             const table = document.getElementById('sentences-table');
             console.log('📋 Текущие классы таблицы:', table.className);
-            
+
             if (table.classList.contains('state-original-translation')) {
                 console.log('➡️ Переключаем в состояние original-editing');
                 toggleColumnGroup('original');
@@ -944,7 +1174,7 @@ function setupColumnToggleHandlers() {
                 console.log('➡️ Переключаем в состояние original-translation');
                 toggleColumnGroup('translation');
             }
-            
+
             // Открываем модальное окно редактирования аудио
             console.log('🎵 Открываем модальное окно аудио из шапки');
             openAudioSettingsPanel('original', 'header');
@@ -960,7 +1190,7 @@ function setupColumnToggleHandlers() {
  */
 function toggleColumnGroup(group) {
     console.log('🔄 toggleColumnGroup вызвана с параметром:', group);
-    
+
     const table = document.getElementById('sentences-table');
     if (!table) {
         console.warn('❌ Таблица sentences-table не найдена');
@@ -978,6 +1208,17 @@ function toggleColumnGroup(group) {
         console.log('✅ Добавлен класс state-original-editing');
         // Обновляем иконку кнопки
         updateToggleButtonIcon('open_left_panel_original', 'original');
+
+        // Устанавливаем режим "отображать весь файл" при первом открытии
+        const fullRadio = document.querySelector('input[name="audioMode"][value="full"]');
+        if (fullRadio && !fullRadio.checked) {
+            fullRadio.checked = true;
+            // Инициируем обработчик изменения режима
+            handleAudioModeChange({ target: fullRadio });
+        }
+
+        // Обновляем иконки радио-кнопок
+        updateRadioButtonIcons('full');
     } else if (group === 'translation') {
         // Переключаем в состояние original-translation (оригинал + перевод)
         table.classList.add('state-original-translation');
@@ -987,33 +1228,27 @@ function toggleColumnGroup(group) {
     }
 
     console.log('📋 Классы таблицы после изменения:', table.className);
-    
+
+    // Обновляем видимость колонок в зависимости от текущего режима аудио
+    const currentAudioMode = document.querySelector('input[name="audioMode"]:checked');
+    if (currentAudioMode) {
+        updateTableColumnsVisibility(currentAudioMode.value);
+    }
+
     // Дополнительная проверка CSS
     setTimeout(() => {
-        const testElement = document.querySelector('.panel-editing');
-        if (testElement) {
-            const computedStyle = window.getComputedStyle(testElement);
-            console.log('🔍 Проверка CSS для .panel-editing:', {
-                display: computedStyle.display,
-                visibility: computedStyle.visibility,
-                className: testElement.className
-            });
-        } else {
-            console.warn('⚠️ Элемент .panel-editing не найден');
-        }
-        
-        // Проверяем все элементы с классом panel-editing
-        const allEditingElements = document.querySelectorAll('.panel-editing');
-        console.log('🔍 Найдено элементов .panel-editing:', allEditingElements.length);
-        
+        // Проверяем все элементы с новыми классами редактирования
+        const allEditingElements = document.querySelectorAll('.panel-editing-avto, .panel-editing-user, .panel-editing-mic');
+        console.log('🔍 Найдено элементов редактирования:', allEditingElements.length);
+
         // Проверяем все элементы с классом panel-original
         const allOriginalElements = document.querySelectorAll('.panel-original');
         console.log('🔍 Найдено элементов .panel-original:', allOriginalElements.length);
-        
+
         // Проверяем все элементы с классом panel-translation
         const allTranslationElements = document.querySelectorAll('.panel-translation');
         console.log('🔍 Найдено элементов .panel-translation:', allTranslationElements.length);
-        
+
         // Проверяем CSS для первого элемента .panel-translation
         if (allTranslationElements.length > 0) {
             const firstTranslationElement = allTranslationElements[0];
@@ -1034,12 +1269,12 @@ function toggleColumnGroup(group) {
  */
 function updateToggleButtonIcon(buttonId, state) {
     console.log('🎨 updateToggleButtonIcon вызвана:', buttonId, state);
-    
+
     const button = document.getElementById(buttonId);
-    
+
     if (button) {
         console.log('✅ Кнопка найдена:', button);
-        
+
         if (state === 'original') {
             // В состоянии original-editing показываем иконку "закрыть панель"
             button.innerHTML = `<i data-lucide="panel-left-close"></i>`;
@@ -1086,6 +1321,84 @@ function setupAudioSettingsModalHandlers() {
         });
     }
 
+    // Обработчики радио кнопок для режима аудио
+    const radioButtons = document.querySelectorAll('input[name="audioMode"]');
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', handleAudioModeChange);
+    });
+
+    // Кнопка выбора файла
+    const selectFileBtn = document.getElementById('selectFileBtn');
+    if (selectFileBtn) {
+        selectFileBtn.addEventListener('click', handleSelectFile);
+    }
+
+    // Кнопка перезаписи микрофона
+    const reRecordBtn = document.getElementById('reRecordBtn');
+    if (reRecordBtn) {
+        reRecordBtn.addEventListener('click', handleReRecord);
+    }
+
+    // Инициализация обработчика выбора файлов
+    setupFileInputHandler();
+
+    // Инициализация обработчиков полей под волной
+    setupWaveformFieldsHandlers();
+
+    // Кнопки управления воспроизведением
+    const audioPlayBtn = document.getElementById('audioPlayBtn');
+    if (audioPlayBtn) {
+        // audioPlayBtn.addEventListener('click', handleAudioPlay);
+        audioPlayBtn.addEventListener('click', handleAudioPlayback);
+        console.log('✅ Обработчик добавлен для audioPlayBtn');
+    }
+
+    const audioStartBtn = document.getElementById('audioStartBtn');
+    if (audioStartBtn) {
+        audioStartBtn.addEventListener('click', handleAudioStart);
+    }
+
+    const audioEndBtn = document.getElementById('audioEndBtn');
+    if (audioEndBtn) {
+        audioEndBtn.addEventListener('click', handleAudioEnd);
+    }
+
+    // Кнопка с ножницами
+    const scissorsBtn = document.getElementById('scissorsBtn');
+    if (scissorsBtn) {
+        scissorsBtn.addEventListener('click', () => {
+            // Функция разрезания аудио - берем из существующей функции
+            const start = parseFloat(document.getElementById('audioStartTime').value) || 0;
+            const end = parseFloat(document.getElementById('audioEndTime').value) || 0;
+
+            if (start >= end) {
+                alert('Время начала должно быть меньше времени окончания');
+                return;
+            }
+
+            // Получаем текущий аудиофайл из режима "отображать весь файл"
+            const currentAudioFile = getCurrentAudioFileForScissors();
+            if (!currentAudioFile) {
+                alert('Не выбран аудиофайл для обрезки');
+                return;
+            }
+
+            console.log(`✂️ Обрезаем аудио ${currentAudioFile.filename} с ${start} по ${end}`);
+
+            // Вызываем функцию обрезки аудио
+            trimAudioFile(currentAudioFile, start, end);
+        });
+    }
+
+    // Кнопка "Разрезать аудио на 1000 кусков"
+    const audioToTableBtn = document.getElementById('audioToTableBtn');
+    if (audioToTableBtn) {
+        audioToTableBtn.addEventListener('click', () => {
+            // Функция разрезания аудио на предложения
+            splitAudioIntoSentences();
+        });
+    }
+
     // Закрытие модального окна по клику вне его
     const audioSettingsModal = document.getElementById('audioSettingsModal');
     if (audioSettingsModal) {
@@ -1095,6 +1408,1760 @@ function setupAudioSettingsModalHandlers() {
             }
         });
     }
+}
+
+/**
+ * Обработчик изменения режима аудио (радио кнопки)
+ */
+function handleAudioModeChange(event) {
+    const selectedMode = event.target.value;
+    const waveformContainer = document.querySelector('.waveform-container');
+    const fileSelectionPanel = document.getElementById('fileSelectionPanel');
+    const playbackControls = document.querySelector('.playback-controls');
+    const applyBtn = document.getElementById('applyAudioBtn');
+    const applyBtnText = document.getElementById('applyBtnText');
+    const applyBtnIcon = applyBtn ? applyBtn.querySelector('i') : null;
+
+    console.log('🎵 Изменен режим аудио:', selectedMode);
+
+    if (waveformContainer) {
+        // Удаляем все классы режимов
+        waveformContainer.classList.remove('mode-auto', 'mode-full', 'mode-sentence', 'mode-mic');
+
+        // Добавляем соответствующий класс
+        if (selectedMode === 'auto') {
+            waveformContainer.classList.add('mode-auto');
+        } else if (selectedMode === 'full') {
+            waveformContainer.classList.add('mode-full');
+        } else if (selectedMode === 'sentence') {
+            waveformContainer.classList.add('mode-sentence');
+        } else if (selectedMode === 'mic') {
+            waveformContainer.classList.add('mode-mic');
+        }
+
+        // Показываем/скрываем панель выбора файла
+        const currentAudioInfo = document.querySelector('.current-audio-info');
+
+        if (fileSelectionPanel) {
+            if (selectedMode === 'full') {
+                fileSelectionPanel.style.display = 'block';
+                if (currentAudioInfo) {
+                    currentAudioInfo.style.display = 'none';
+                }
+            } else {
+                fileSelectionPanel.style.display = 'none';
+                if (currentAudioInfo) {
+                    currentAudioInfo.style.display = 'block';
+                }
+            }
+        }
+
+        // Настраиваем кнопку применения в зависимости от режима
+        if (applyBtn && applyBtnText && applyBtnIcon) {
+            if (selectedMode === 'auto') {
+                applyBtnText.textContent = 'Создать';
+                applyBtnIcon.setAttribute('data-lucide', 'wand-2');
+                applyBtn.className = 'apply-btn auto-mode';
+            } else if (selectedMode === 'mic') {
+                applyBtnText.textContent = 'Перезаписать';
+                applyBtnIcon.setAttribute('data-lucide', 'mic');
+                applyBtn.className = 'apply-btn mic-mode';
+            } else {
+                applyBtnText.textContent = 'Принять это аудио в диктант';
+                applyBtnIcon.setAttribute('data-lucide', 'check');
+                applyBtn.className = 'apply-btn';
+            }
+
+            // Обновляем иконку Lucide
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        // Показываем/скрываем кнопки управления в зависимости от режима
+        const waveformAndControls = document.getElementById('waveformAndControls');
+
+        if (waveformAndControls) {
+            if (selectedMode === 'auto') {
+                // Для автозаполнения скрываем весь блок справа
+                waveformAndControls.style.display = 'none';
+            } else {
+                // Для других режимов показываем весь блок справа
+                waveformAndControls.style.display = 'flex';
+            }
+        }
+
+        // TODO: Добавить обработку элементов управления микрофоном когда они будут реализованы
+
+        // Обновляем волну и поля start/end в зависимости от режима
+        updateWaveformAndFieldsForMode(selectedMode);
+
+        // Обновляем информацию о текущем аудио
+        updateCurrentAudioInfo(selectedMode);
+
+        // Обновляем видимость колонок в таблице
+        updateTableColumnsVisibility(selectedMode);
+
+        // Если есть waveformCanvas, обновляем цвета волны
+        if (window.waveformCanvas) {
+            updateWaveformColors(selectedMode);
+        }
+    }
+
+    // Обновляем иконки радио-кнопок
+    updateRadioButtonIcons(selectedMode);
+}
+
+/**
+ * Обновить волну и поля start/end в зависимости от режима
+ */
+function updateWaveformAndFieldsForMode(mode) {
+    console.log('🌊 Обновляем волну и поля для режима:', mode);
+
+    const waveformCanvas = window.waveformCanvas;
+    const startTimeInput = document.getElementById('audioStartTime');
+    const endTimeInput = document.getElementById('audioEndTime');
+
+    if (mode === 'full') {
+        // Режим "Отображать весь файл" - используем данные из audio_user_shared_start/end
+        if (workingData && workingData.original) {
+            const start = workingData.original.audio_user_shared_start || 0;
+            const end = workingData.original.audio_user_shared_end || 0;
+
+            if (startTimeInput && endTimeInput) {
+                startTimeInput.value = start.toFixed(2);
+                endTimeInput.value = end.toFixed(2);
+                console.log('📊 Обновлены поля для режима full:', start.toFixed(2), '-', end.toFixed(2));
+            }
+
+            if (waveformCanvas && end > 0) {
+                waveformCanvas.setRegion(start, end);
+                console.log('🌊 Установлен регион для режима full:', start.toFixed(2), '-', end.toFixed(2));
+            }
+        }
+    } else if (mode === 'sentence') {
+        // Режим "Текущее предложение" - используем данные из текущей выбранной строки
+        const selectedRow = document.querySelector('#sentences-table tbody tr.selected');
+        if (selectedRow) {
+            const key = selectedRow.dataset.key;
+            const sentence = workingData.original.sentences.find(s => s.key === key);
+            if (sentence) {
+                if (startTimeInput && endTimeInput) {
+                    startTimeInput.value = sentence.start.toFixed(2);
+                    endTimeInput.value = sentence.end.toFixed(2);
+                    console.log('📊 Обновлены поля для режима sentence:', sentence.start.toFixed(2), '-', sentence.end.toFixed(2));
+                }
+
+                if (waveformCanvas) {
+                    waveformCanvas.setRegion(sentence.start, sentence.end);
+                    console.log('🌊 Установлен регион для режима sentence:', sentence.start.toFixed(2), '-', sentence.end.toFixed(2));
+                }
+            }
+        }
+    } else if (mode === 'auto' || mode === 'mic') {
+        // Для режимов auto и mic не обновляем поля start/end
+        console.log('📊 Режим', mode, '- поля start/end не обновляются');
+    }
+}
+
+/**
+ * Обновление иконок радио-кнопок в зависимости от выбранного режима
+ */
+function updateRadioButtonIcons(selectedMode) {
+    const radioButtons = document.querySelectorAll('input[name="audioMode"]');
+
+    radioButtons.forEach(radio => {
+        const label = radio.closest('.radio-label');
+        if (!label) return;
+
+        const selectedIcon = label.querySelector('.radio-icon-selected');
+        const unselectedIcon = label.querySelector('.radio-icon-unselected');
+
+        if (selectedIcon && unselectedIcon) {
+            if (radio.checked) {
+                // Показываем aperture иконку для выбранного
+                selectedIcon.style.display = 'inline';
+                unselectedIcon.style.display = 'none';
+            } else {
+                // Показываем circle иконку для невыбранного
+                selectedIcon.style.display = 'none';
+                unselectedIcon.style.display = 'inline';
+            }
+        }
+    });
+}
+
+/**
+ * Обновление информации о текущем аудио в зависимости от режима
+ */
+function updateCurrentAudioInfo(mode) {
+    const currentAudioInfo = document.getElementById('currentAudioInfo');
+    if (!currentAudioInfo) return;
+
+    // Получаем информацию о выбранной строке (если есть)
+    const selectedRow = document.querySelector('#sentences-table tbody tr.selected');
+    const selectedSentence = selectedRow ? workingData.original.sentences.find(s => s.key === selectedRow.dataset.key) : null;
+
+    if (mode === 'auto') {
+        if (selectedSentence) {
+            currentAudioInfo.textContent = `Автозаполнение: ${selectedSentence.text}`;
+        } else {
+            currentAudioInfo.textContent = 'Автозаполнение аудио из перевода';
+        }
+    } else if (mode === 'full') {
+        const selectedFileName = document.getElementById('selectedFileName');
+        if (selectedFileName && selectedFileName.textContent !== 'Выберите файл') {
+            if (selectedSentence) {
+                currentAudioInfo.textContent = `Файл: ${selectedFileName.textContent} | Выбрано: ${selectedSentence.text}`;
+            } else {
+                currentAudioInfo.textContent = `Файл: ${selectedFileName.textContent}`;
+            }
+        } else {
+            currentAudioInfo.textContent = 'Выберите файл для работы';
+        }
+    } else if (mode === 'sentence') {
+        // В режиме sentence показываем текст текущего предложения
+        if (selectedSentence) {
+            currentAudioInfo.textContent = selectedSentence.text || 'Текст не найден';
+        } else {
+            currentAudioInfo.textContent = 'Выберите предложение';
+        }
+    } else if (mode === 'mic') {
+        if (selectedSentence) {
+            currentAudioInfo.textContent = `Запись с микрофона: ${selectedSentence.text}`;
+        } else {
+            currentAudioInfo.textContent = 'Запись с микрофона';
+        }
+    }
+}
+
+/**
+ * Обновление цветов волны в зависимости от режима
+ */
+function updateWaveformColors(mode) {
+    if (!window.waveformCanvas) return;
+
+    // Здесь можно добавить логику для изменения цветов волны
+    // Например, передать новые цвета в WaveformCanvas
+    console.log('🎨 Обновляем цвета волны для режима:', mode);
+
+    // Если у WaveformCanvas есть метод для изменения цветов:
+    // waveformCanvas.updateColors(mode === 'full' ? '#8b5cf6' : '#d4a574');
+}
+
+/**
+ * Обновление видимости колонок в таблице в зависимости от режима аудио
+ */
+function updateTableColumnsVisibility(audioMode) {
+    console.log('🔍 Обновляем видимость колонок для режима:', audioMode);
+
+    const table = document.getElementById('sentences-table');
+    if (!table) return;
+
+    // Определяем, открыта ли боковая панель редактирования
+    const isEditingPanelOpen = table.classList.contains('state-original-editing');
+
+    if (!isEditingPanelOpen) {
+        console.log('📋 Боковая панель закрыта - колонки скрыты');
+        return;
+    }
+
+    console.log('📋 Боковая панель открыта - обновляем видимость колонок');
+
+    // Скрываем все колонки редактирования по умолчанию
+    const allEditingColumns = table.querySelectorAll('.panel-editing-avto, .panel-editing-user, .panel-editing-mic');
+    allEditingColumns.forEach(col => {
+        col.style.display = 'none';
+    });
+
+    // Показываем колонки в зависимости от режима
+    switch (audioMode) {
+        case 'auto':
+            // Показываем только колонки автозаполнения
+            const avtoColumns = table.querySelectorAll('.panel-editing-avto');
+            console.log('🔍 Найдено колонок panel-editing-avto:', avtoColumns.length);
+            avtoColumns.forEach(col => {
+                col.style.display = 'table-cell';
+                console.log('✅ Показана колонка:', col.className);
+            });
+            break;
+
+        case 'full':
+        case 'sentence':
+            // Показываем колонки пользовательского редактирования
+            const userColumns = table.querySelectorAll('.panel-editing-user');
+            console.log('🔍 Найдено колонок panel-editing-user:', userColumns.length);
+            userColumns.forEach(col => {
+                col.style.display = 'table-cell';
+                console.log('✅ Показана колонка:', col.className);
+            });
+            break;
+
+        case 'mic':
+            // Показываем колонки микрофона
+            const micColumns = table.querySelectorAll('.panel-editing-mic');
+            console.log('🔍 Найдено колонок panel-editing-mic:', micColumns.length);
+            micColumns.forEach(col => {
+                col.style.display = 'table-cell';
+                console.log('✅ Показана колонка:', col.className);
+            });
+            break;
+    }
+
+    console.log('✅ Видимость колонок обновлена для режима:', audioMode);
+}
+
+/**
+ * Обработчик выбора файла
+ */
+function handleSelectFile() {
+    console.log('📁 Открываем диалог выбора файла');
+    const fileInput = document.getElementById('audioFileInput');
+    if (fileInput) {
+        fileInput.click();
+    }
+}
+
+/**
+ * Обработчик перезаписи с микрофона
+ */
+function handleReRecord() {
+    console.log('🎤 Начинаем перезапись с микрофона');
+    // TODO: Реализовать запись с микрофона
+    alert('Функция записи с микрофона будет реализована позже');
+}
+
+/**
+ * Инициализация обработчика выбора файла
+ */
+function setupFileInputHandler() {
+    const fileInput = document.getElementById('audioFileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelected);
+    }
+}
+
+/**
+ * Инициализация обработчиков полей под волной
+ */
+function setupWaveformFieldsHandlers() {
+    const startTimeInput = document.getElementById('audioStartTime');
+    const endTimeInput = document.getElementById('audioEndTime');
+
+    if (startTimeInput) {
+        startTimeInput.addEventListener('input', () => {
+            handleFieldChange('waveform', 'start', startTimeInput.value);
+        });
+    }
+
+    if (endTimeInput) {
+        endTimeInput.addEventListener('input', () => {
+            handleFieldChange('waveform', 'end', endTimeInput.value);
+        });
+    }
+}
+
+/**
+ * Обработчик выбора файла
+ */
+function handleFileSelected(event) {
+    const file = event.target.files[0];
+    if (file) {
+        console.log('📁 Выбран файл:', file.name);
+
+        // Обновляем отображение имени файла
+        const selectedFileName = document.getElementById('selectedFileName');
+        if (selectedFileName) {
+            selectedFileName.textContent = file.name;
+        }
+
+        // Обновляем информацию о текущем аудио
+        updateCurrentAudioInfo('full');
+
+        uploadAudioFile(file);
+    }
+}
+
+/**
+ * Загрузить аудиофайл
+ */
+function uploadAudioFile(file) {
+    console.log('📤 Загружаем файл:', file.name);
+
+    // Показываем индикатор загрузки
+    showLoadingOverlay('Загрузка аудиофайла...');
+
+    // Проверяем JWT токен
+    const token = localStorage.getItem('access_token');
+    console.log('🔑 JWT токен:', token ? 'есть' : 'отсутствует');
+    if (token) {
+        console.log('🔑 JWT токен (первые 20 символов):', token.substring(0, 20) + '...');
+        console.log('🔑 JWT токен (последние 20 символов):', '...' + token.substring(token.length - 20));
+        console.log('🔑 JWT токен (полная длина):', token.length);
+
+        // Проверяем структуру JWT токена (должен содержать 3 части, разделенные точками)
+        const parts = token.split('.');
+        console.log('🔑 JWT токен части:', parts.length, 'частей');
+        if (parts.length !== 3) {
+            console.error('❌ JWT токен неправильной структуры! Ожидается 3 части, получено:', parts.length);
+        } else {
+            console.log('✅ JWT токен имеет правильную структуру');
+        }
+    } else {
+        console.error('❌ JWT токен отсутствует в localStorage!');
+    }
+
+    // Создаем FormData для отправки файла
+    const formData = new FormData();
+    formData.append('audioFile', file);
+    formData.append('language', currentDictation.language_original);
+    formData.append('dictation_id', currentDictation.id);
+
+    console.log('📋 FormData содержимое:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value);
+    }
+
+    // Отправляем файл на сервер
+    fetch('/upload-audio', {
+        method: 'POST',
+        // Временно убираем JWT токен для тестирования
+        // headers: {
+        //     'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        // },
+        body: formData
+    })
+        .then(response => {
+            console.log('📡 Ответ сервера:', response.status, response.statusText);
+            console.log('📡 Заголовки ответа:', response.headers);
+
+            // Получаем текст ответа независимо от статуса
+            return response.text().then(text => {
+                console.log('📡 Текст ответа сервера:', text);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}\nОтвет: ${text}`);
+                }
+                return text;
+            });
+        })
+        .then(text => {
+            console.log('📡 Текст ответа:', text);
+            try {
+                return JSON.parse(text); // Пытаемся распарсить как JSON
+            } catch (e) {
+                console.error('❌ Ошибка парсинга JSON:', e);
+                console.error('❌ Текст ответа:', text);
+                throw new Error('Сервер вернул не JSON ответ');
+            }
+        })
+        .then(data => {
+            hideLoadingOverlay();
+            if (data.success) {
+                console.log('✅ Файл успешно загружен:', data.filename);
+                // Файл уже отображается в панели выбора
+                console.log('📁 Файл готов к использованию:', data.filepath);
+
+                // Добавляем в sentencesOriginal под именем "audio_shared"
+                if (!sentences_original.find(s => s.key === 'audio_shared')) {
+                    sentences_original.push({
+                        key: 'audio_shared',
+                        speaker: '',
+                        text: '',
+                        audio: data.filename,
+                        shared_audio: data.filename,
+                        start: 0,
+                        end: 0,
+                        chain: ''
+                    });
+                    console.log('✅ Добавлено в sentencesOriginal под ключом "audio_shared"');
+                }
+
+                // Обновляем глобальную переменную sentences_original с полем audio_user_shared
+                if (sentences_original.length > 0) {
+                    // Находим первый элемент (который содержит метаданные) или создаем его
+                    let metadataElement = sentences_original.find(s => s.key === 'metadata');
+                    if (!metadataElement) {
+                        // Если нет элемента с метаданными, добавляем его в начало
+                        sentences_original.unshift({
+                            key: 'metadata',
+                            audio_user_shared: data.filename
+                        });
+                    } else {
+                        // Обновляем существующий элемент
+                        metadataElement.audio_user_shared = data.filename;
+                    }
+                    console.log('✅ Обновлена глобальная переменная sentences_original с audio_user_shared:', data.filename);
+                }
+
+                // Обновляем workingData.original
+                if (workingData && workingData.original) {
+                    workingData.original.audio_user_shared = data.filename;
+                    workingData.original.audio_user_shared_start = 0;
+                    workingData.original.audio_user_shared_end = 0;
+                    console.log('✅ Обновлен workingData.original с audio_user_shared:', data.filename);
+                }
+
+                // Обновляем workingData.translation
+                if (workingData && workingData.translation) {
+                    workingData.translation.audio_user_shared = data.filename;
+                    workingData.translation.audio_user_shared_start = 0;
+                    workingData.translation.audio_user_shared_end = 0;
+                    console.log('✅ Обновлен workingData.translation с audio_user_shared:', data.filename);
+                }
+
+                // Автоматически сохраняем обновленный sentences.json на сервер
+                saveSentencesJsonToServer();
+
+                // Загружаем файл в плеер для воспроизведения
+                if (data.filename && data.filepath) {
+                    try {
+                        const audio = new Audio(data.filepath);
+                        audioPlayers[data.filename] = audio;
+                        console.log('✅ Загружен плеер для audio_user_shared:', data.filename);
+                    } catch (error) {
+                        console.warn('⚠️ Не удалось загрузить плеер для audio_user_shared:', error);
+                    }
+                }
+
+                // Инициализируем волну с загруженным файлом
+                if (data.filepath) {
+                    // Используем правильный путь из ответа сервера
+                    const audioUrl = data.filepath;
+                    console.log('🎵 Инициализируем волну с URL:', audioUrl);
+                    initWaveform(audioUrl);
+                }
+            } else {
+                console.error('❌ Ошибка загрузки файла:', data.error);
+                alert('Ошибка загрузки файла: ' + data.error);
+            }
+        })
+        .catch(error => {
+            hideLoadingOverlay();
+            console.error('❌ Ошибка загрузки файла:', error);
+            alert('Ошибка загрузки файла');
+        });
+}
+
+
+
+
+/**
+ * Настройка обработчиков для полей ввода в строке
+ */
+function setupInputHandlers(row) {
+    // Поле Start
+    const startInput = row.querySelector('.start-input');
+    if (startInput) {
+        startInput.addEventListener('change', () => {
+            onStartTimeChanged(row);
+        });
+
+        startInput.addEventListener('input', () => {
+            onStartTimeInput(row);
+            // Обновляем цепочку
+            const key = row.dataset.key;
+            if (key) {
+                updateChain(key, 'start', startInput.value);
+            }
+            // Синхронизируем с полями под волной, если это текущая строка
+            handleFieldChange('table', 'start', startInput.value, row);
+        });
+
+        startInput.addEventListener('blur', () => {
+            onStartTimeBlur(row);
+        });
+    }
+
+    // Поле End
+    const endInput = row.querySelector('.end-input');
+    if (endInput) {
+        endInput.addEventListener('change', () => {
+            onEndTimeChanged(row);
+        });
+
+        endInput.addEventListener('input', () => {
+            onEndTimeInput(row);
+            // Обновляем цепочку
+            const key = row.dataset.key;
+            if (key) {
+                updateChain(key, 'end', endInput.value);
+            }
+            // Синхронизируем с полями под волной, если это текущая строка
+            handleFieldChange('table', 'end', endInput.value, row);
+        });
+
+        endInput.addEventListener('blur', () => {
+            onEndTimeBlur(row);
+        });
+    }
+
+    // Обработчик для кнопки цепочки
+    const chainCell = row.querySelector('.col-chain');
+    if (chainCell) {
+        chainCell.addEventListener('click', () => {
+            toggleChain(row);
+        });
+        chainCell.style.cursor = 'pointer';
+    }
+}
+
+/**
+ * Универсальная обработка изменения полей start/end
+ */
+function handleFieldChange(source, field, value, row = null) {
+    console.log('🔄 Обработка изменения поля:', source, field, value);
+
+    // Проверяем, находимся ли мы в режиме "sentence"
+    const audioMode = document.querySelector('input[name="audioMode"]:checked');
+    const currentMode = audioMode ? audioMode.value : 'full';
+
+    if (currentMode !== 'sentence') {
+        console.log('❌ Синхронизация только в режиме "sentence"');
+        return;
+    }
+
+    let targetRow = row;
+    let key = null;
+
+    // Определяем целевую строку в зависимости от источника
+    if (source === 'table' && row) {
+        // Изменение в таблице - используем переданную строку
+        targetRow = row;
+        key = row.dataset.key;
+    } else if (source === 'waveform') {
+        // Изменение под волной - находим текущую выбранную строку
+        targetRow = document.querySelector('#sentences-table tbody tr.selected');
+        if (targetRow) {
+            key = targetRow.dataset.key;
+        }
+    }
+
+    if (!targetRow || !key) {
+        console.log('❌ Нет целевой строки для синхронизации');
+        return;
+    }
+
+    // Обновляем поле в таблице (если источник - волна)
+    if (source === 'waveform') {
+        if (field === 'start') {
+            const startInput = targetRow.querySelector('.start-input');
+            if (startInput) {
+                startInput.value = value;
+                console.log('🔄 Синхронизировано поле start в таблице:', value);
+            }
+        } else if (field === 'end') {
+            const endInput = targetRow.querySelector('.end-input');
+            if (endInput) {
+                endInput.value = value;
+                console.log('🔄 Синхронизировано поле end в таблице:', value);
+            }
+        }
+    }
+
+    // Обновляем поле под волной (если источник - таблица)
+    if (source === 'table') {
+        const startTimeInput = document.getElementById('audioStartTime');
+        const endTimeInput = document.getElementById('audioEndTime');
+
+        if (field === 'start' && startTimeInput) {
+            startTimeInput.value = value;
+            console.log('🔄 Синхронизировано поле start под волной:', value);
+        } else if (field === 'end' && endTimeInput) {
+            endTimeInput.value = value;
+            console.log('🔄 Синхронизировано поле end под волной:', value);
+        }
+    }
+
+    // Обновляем данные в workingData
+    const sentenceIndex = workingData.original.sentences.findIndex(s => s.key === key);
+    if (sentenceIndex !== -1) {
+        workingData.original.sentences[sentenceIndex][field] = parseFloat(value) || 0;
+        console.log('📊 Обновлены данные в workingData:', key, field, value);
+    }
+
+    // Запускаем логику цепочки (chain) для обновления соседних строк
+    updateChain(key, field, value);
+
+    // Обновляем регион в волне
+    const waveformCanvas = window.waveformCanvas;
+    if (waveformCanvas) {
+        const startTimeInput = document.getElementById('audioStartTime');
+        const endTimeInput = document.getElementById('audioEndTime');
+
+        if (startTimeInput && endTimeInput) {
+            const start = parseFloat(startTimeInput.value) || 0;
+            const end = parseFloat(endTimeInput.value) || 0;
+            waveformCanvas.setRegion(start, end);
+            console.log('🌊 Обновлен регион в волне:', start.toFixed(2), '-', end.toFixed(2));
+        }
+    }
+}
+
+/**
+ * Синхронизация полей под волной с полями в таблице (обратная синхронизация)
+ * @deprecated Используйте handleFieldChange('waveform', field, value)
+ */
+function syncWaveformFieldsToTable(field, value) {
+    handleFieldChange('waveform', field, value);
+}
+
+/**
+ * Синхронизировать поля в таблице с полями под волной
+ * @deprecated Используйте handleFieldChange('table', field, value, row)
+ */
+function syncWithWaveformFields(row, field, value) {
+    // Проверяем, является ли эта строка текущей выбранной
+    if (!row.classList.contains('selected')) {
+        return;
+    }
+
+    handleFieldChange('table', field, value, row);
+}
+
+/**
+ * Переключить состояние цепочки для строки
+ */
+function toggleChain(row) {
+    const key = row.dataset.key;
+    if (!key) return;
+
+    // Находим предложение в workingData
+    const sentence = workingData.original.sentences.find(s => s.key === key);
+    if (!sentence) return;
+
+    // Переключаем состояние цепочки
+    sentence.chain = !sentence.chain;
+
+    // Обновляем иконку в ячейке
+    const chainCell = row.querySelector('.col-chain');
+    if (chainCell) {
+        const icon = sentence.chain ? 'link' : 'unlink';
+        chainCell.innerHTML = `<i data-lucide="${icon}"></i>`;
+
+        // Обновляем иконки Lucide
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    console.log(`🔗 Цепочка для ${key}: ${sentence.chain ? 'включена' : 'выключена'}`);
+}
+
+/**
+ * Настройка обработчиков для самой строки
+ */
+function setupRowHandlers(row) {
+    // Клик по строке для выбора
+    row.addEventListener('click', () => {
+        selectSentenceRow(row);
+    });
+
+    // Двойной клик для дополнительных действий
+    row.addEventListener('dblclick', () => {
+        onRowDoubleClick(row);
+    });
+}
+
+/**
+ * Обработчик изменения времени начала
+ */
+function onStartTimeChanged(row) {
+    const startTime = parseFloat(row.querySelector('.start-input').value) || 0;
+    const endTime = parseFloat(row.querySelector('.end-input').value) || 0;
+
+    console.log('⏰ Изменено время начала:', startTime);
+
+    // Валидация: start не должен быть больше end
+    if (startTime >= endTime && endTime > 0) {
+        row.querySelector('.end-input').value = (startTime + 1).toFixed(2);
+        console.log('⚠️ Автоматически скорректировано время окончания');
+    }
+
+    updateAudioFileTimes(row);
+    validateTimeInputs(row);
+}
+
+/**
+ * Обработчик изменения времени окончания
+ */
+function onEndTimeChanged(row) {
+    const startTime = parseFloat(row.querySelector('.start-input').value) || 0;
+    const endTime = parseFloat(row.querySelector('.end-input').value) || 0;
+
+    console.log('⏰ Изменено время окончания:', endTime);
+
+    // Валидация: end не должен быть меньше start
+    if (endTime <= startTime) {
+        row.querySelector('.end-input').value = (startTime + 1).toFixed(2);
+        console.log('⚠️ Автоматически скорректировано время окончания');
+    }
+
+    updateAudioFileTimes(row);
+    validateTimeInputs(row);
+}
+
+/**
+ * Обработчик ввода времени начала (в реальном времени)
+ */
+function onStartTimeInput(row) {
+    // Здесь можно добавить валидацию в реальном времени
+    // Например, подсветка невалидных значений
+}
+
+/**
+ * Обработчик ввода времени окончания (в реальном времени)
+ */
+function onEndTimeInput(row) {
+    // Здесь можно добавить валидацию в реальном времени
+}
+
+/**
+ * Обработчик потери фокуса времени начала
+ */
+function onStartTimeBlur(row) {
+    const input = row.querySelector('.start-input');
+    const value = parseFloat(input.value) || 0;
+    input.value = value.toFixed(2); // Форматируем до 2 знаков
+}
+
+/**
+ * Обработчик потери фокуса времени окончания
+ */
+function onEndTimeBlur(row) {
+    const input = row.querySelector('.end-input');
+    const value = parseFloat(input.value) || 0;
+    input.value = value.toFixed(2); // Форматируем до 2 знаков
+}
+
+
+/**
+ * Обработчик двойного клика по строке
+ */
+function onRowDoubleClick(row) {
+    console.log('🖱️ Двойной клик по строке:', row.dataset.filename);
+
+    // Можно добавить дополнительные действия, например:
+    // - Открыть диалог редактирования
+    // - Воспроизвести аудио
+    // - Показать детали файла
+}
+
+/**
+ * Валидация полей времени
+ */
+function validateTimeInputs(row) {
+    const startInput = row.querySelector('.start-input');
+    const endInput = row.querySelector('.end-input');
+    const startTime = parseFloat(startInput.value) || 0;
+    const endTime = parseFloat(endInput.value) || 0;
+
+    // Сбрасываем предыдущие стили валидации
+    startInput.classList.remove('invalid');
+    endInput.classList.remove('invalid');
+
+    // Проверяем валидность
+    if (startTime < 0) {
+        startInput.classList.add('invalid');
+    }
+
+    if (endTime <= startTime) {
+        endInput.classList.add('invalid');
+    }
+}
+
+/**
+ * Выбрать аудиофайл для работы
+ */
+function selectAudioFile(row) {
+    const filename = row.dataset.filename;
+    const filepath = row.dataset.filepath;
+
+    console.log('🎵 Выбран файл для работы:', filename);
+
+    // Выделяем строку
+    document.querySelectorAll('#audioFilesTable tbody tr').forEach(r => {
+        r.classList.remove('selected');
+    });
+    row.classList.add('selected');
+
+    // Загружаем волну для этого файла
+    loadWaveformForFile(filepath);
+
+    // Обновляем информацию о текущем аудио
+    updateCurrentAudioInfoForFile(filename);
+}
+
+/**
+ * Разрезать аудио на предложения
+ */
+function splitAudioIntoSeentences(row) {
+    const filename = row.dataset.filename;
+    const filepath = row.dataset.filepath;
+    const startTime = parseFloat(row.querySelector('.start-input').value) || 0;
+    const endTime = parseFloat(row.querySelector('.end-input').value) || 0;
+
+    console.log('✂️ Разрезаем аудио на предложения:', filename, startTime, '-', endTime);
+
+    // Показываем индикатор загрузки
+    showLoadingOverlay('Разрезание аудио на предложения...');
+
+    // Отправляем запрос на сервер
+    fetch('/split-audio', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+            // ,
+            // 'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({
+            filename: filename,
+            filepath: filepath,
+            startTime: startTime,
+            endTime: endTime,
+            language: currentDictation.language_original
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            hideLoadingOverlay();
+            if (data.success) {
+                console.log('✅ Аудио успешно разрезано на предложения');
+                // Здесь можно добавить логику обновления таблицы предложений
+            } else {
+                console.error('❌ Ошибка разрезания аудио:', data.error);
+                alert('Ошибка разрезания аудио: ' + data.error);
+            }
+        })
+        .catch(error => {
+            hideLoadingOverlay();
+            console.error('❌ Ошибка разрезания аудио:', error);
+            alert('Ошибка разрезания аудио');
+        });
+}
+
+/**
+ * Обрезать аудиофайл
+ */
+function cutAudioFile(row) {
+    const filename = row.dataset.filename;
+    const filepath = row.dataset.filepath;
+    const startTime = parseFloat(row.querySelector('.start-input').value) || 0;
+    const endTime = parseFloat(row.querySelector('.end-input').value) || 0;
+
+    console.log('✂️ Обрезаем аудиофайл:', filename, startTime, '-', endTime);
+
+    // Показываем индикатор загрузки
+    showLoadingOverlay('Обрезание аудиофайла...');
+
+    // Отправляем запрос на сервер
+    fetch('/cut-audio', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({
+            filename: filename,
+            filepath: filepath,
+            startTime: startTime,
+            endTime: endTime,
+            language: currentDictation.language_original
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            hideLoadingOverlay();
+            if (data.success) {
+                console.log('✅ Аудиофайл успешно обрезан');
+                // Обновляем имя файла в таблице
+                row.querySelector('.filename-text').textContent = data.newFilename;
+                row.dataset.filename = data.newFilename;
+                row.dataset.filepath = data.newFilepath;
+            } else {
+                console.error('❌ Ошибка обрезания аудио:', data.error);
+                alert('Ошибка обрезания аудио: ' + data.error);
+            }
+        })
+        .catch(error => {
+            hideLoadingOverlay();
+            console.error('❌ Ошибка обрезания аудио:', error);
+            alert('Ошибка обрезания аудио');
+        });
+}
+
+/**
+ * Обновить цепочку при изменении start/end
+ */
+function updateChain(rowKey, field, value) {
+    const row = document.querySelector(`tr[data-key="${rowKey}"]`);
+    if (!row) return;
+
+    // Проверяем состояние цепочки через workingData
+    const sentence = workingData.original.sentences.find(s => s.key === rowKey);
+    if (!sentence || !sentence.chain) return;
+
+    // Найти соседние строки с включенными цепочками
+    const allRows = Array.from(document.querySelectorAll('#sentences-table tbody tr'));
+    const currentIndex = allRows.indexOf(row);
+
+    if (field === 'end' && currentIndex < allRows.length - 1) {
+        // Изменяем end текущей строки, обновляем start следующей
+        const nextRow = allRows[currentIndex + 1];
+        const nextRowKey = nextRow.dataset.key;
+        const nextSentence = workingData.original.sentences.find(s => s.key === nextRowKey);
+
+        if (nextSentence && nextSentence.chain) {
+            const nextStartInput = nextRow.querySelector('.start-input');
+            if (nextStartInput) {
+                nextStartInput.value = value;
+
+                // Обновить данные в workingData
+                const nextRowKey = nextRow.dataset.key;
+                updateSentenceData(nextRowKey, 'original', 'start', parseFloat(value));
+            }
+        }
+    } else if (field === 'start' && currentIndex > 0) {
+        // Изменяем start текущей строки, обновляем end предыдущей
+        const prevRow = allRows[currentIndex - 1];
+        const prevRowKey = prevRow.dataset.key;
+        const prevSentence = workingData.original.sentences.find(s => s.key === prevRowKey);
+
+        if (prevSentence && prevSentence.chain) {
+            const prevEndInput = prevRow.querySelector('.end-input');
+            if (prevEndInput) {
+                prevEndInput.value = value;
+
+                // Обновить данные в workingData
+                const prevRowKey = prevRow.dataset.key;
+                updateSentenceData(prevRowKey, 'original', 'end', parseFloat(value));
+            }
+        }
+    }
+}
+
+/**
+ * Обновить данные предложения в workingData
+ */
+function updateSentenceData(rowKey, language, field, value) {
+    if (language === 'original') {
+        const sentenceIndex = workingData.original.sentences.findIndex(s => s.key === rowKey);
+        if (sentenceIndex !== -1) {
+            workingData.original.sentences[sentenceIndex][field] = value;
+        }
+    } else if (language === 'translation') {
+        const sentenceIndex = workingData.translation.sentences.findIndex(s => s.key === rowKey);
+        if (sentenceIndex !== -1) {
+            workingData.translation.sentences[sentenceIndex][field] = value;
+        }
+    }
+}
+
+/**
+ * Обновить времена аудиофайла
+ */
+function updateAudioFileTimes(row) {
+    const startTime = parseFloat(row.querySelector('.start-input').value) || 0;
+    const endTime = parseFloat(row.querySelector('.end-input').value) || 0;
+
+    console.log('⏰ Обновлены времена файла:', startTime, '-', endTime);
+
+    // Здесь можно добавить логику для обновления волны или других элементов
+}
+
+/**
+ * Загрузить волну для файла
+ */
+async function loadWaveformForFile(filepath) {
+    console.log('🌊 Загружаем волну для файла:', filepath);
+
+    try {
+        // Получаем контейнер волны
+        const waveformContainer = document.getElementById('audioWaveform');
+        if (!waveformContainer) {
+            console.error('❌ Контейнер волны не найден');
+            return;
+        }
+
+        // Получаем существующий WaveformCanvas или создаем новый
+        let waveformCanvas = window.waveformCanvas;
+        if (!waveformCanvas) {
+            console.log('🌊 Создаем новый WaveformCanvas');
+            waveformCanvas = new WaveformCanvas(waveformContainer);
+            window.waveformCanvas = waveformCanvas;
+        }
+
+        // Загружаем аудио
+        await waveformCanvas.loadAudio(filepath);
+
+        // Устанавливаем регион на всю длительность
+        const duration = waveformCanvas.getDuration();
+        waveformCanvas.setRegion(0, duration);
+
+        // Обновляем поля ввода
+        const startTimeInput = document.getElementById('audioStartTime');
+        const endTimeInput = document.getElementById('audioEndTime');
+        if (startTimeInput) startTimeInput.value = '0.00';
+        if (endTimeInput) endTimeInput.value = duration.toFixed(2);
+
+        console.log('✅ Волна успешно загружена для файла:', filepath);
+
+    } catch (error) {
+        console.error('❌ Ошибка загрузки волны:', error);
+    }
+}
+
+/**
+ * Обновить информацию о текущем аудио для файла
+ */
+function updateCurrentAudioInfoForFile(filename) {
+    const currentAudioInfo = document.getElementById('currentAudioInfo');
+    if (currentAudioInfo) {
+        currentAudioInfo.textContent = `Файл: ${filename}`;
+    }
+}
+
+/**
+ * Обработчик записи аудио
+ */
+function handleRecordAudio() {
+    console.log('🎤 Записываем аудио');
+    // Здесь будет логика записи аудио
+}
+
+
+
+
+/**
+ * Получить текущий аудиофайл для обрезки ножницами
+ */
+function getCurrentAudioFileForScissors() {
+    // Проверяем режим "отображать весь файл"
+    const audioMode = document.querySelector('input[name="audioMode"]:checked');
+    if (!audioMode || audioMode.value !== 'full') {
+        console.log('❌ Режим "отображать весь файл" не активен');
+        return null;
+    }
+
+    // Получаем выбранный файл из панели выбора файла
+    const selectedFileName = document.getElementById('selectedFileName');
+    if (!selectedFileName || selectedFileName.textContent === 'Выберите файл') {
+        console.log('❌ Файл не выбран в панели выбора файла');
+        return null;
+    }
+
+    const filename = selectedFileName.textContent;
+
+    // Создаем правильный путь к файлу на сервере
+    const serverFilePath = `/static/data/temp/${currentDictation.id}/${currentDictation.language_original}/${filename}`;
+
+    // Проверяем, есть ли файл в input элементе (для новых загрузок)
+    const fileInput = document.getElementById('audioFileInput');
+    let file = null;
+    
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+        file = fileInput.files[0];
+        console.log('✅ Файл найден в input элементе:', filename);
+    } else {
+        // Файл не в input, но он может быть на сервере (для существующих диктантов)
+        console.log('⚠️ Файл не в input элементе, но может быть на сервере:', filename);
+    }
+
+    console.log('✅ Найден файл для обрезки:', filename, serverFilePath);
+
+    return {
+        filename: filename,
+        filepath: serverFilePath,
+        file: file // может быть null для существующих файлов
+    };
+}
+
+/**
+ * Разрезать аудио на предложения
+ */
+async function splitAudioIntoSentences() {
+    console.log('✂️ Разрезаем аудио на предложения');
+
+    // Получаем текущий аудиофайл
+    const currentAudioFile = getCurrentAudioFileForScissors();
+    if (!currentAudioFile) {
+        alert('Не выбран аудиофайл для разрезания');
+        return;
+    }
+
+    // Получаем все предложения
+    if (!workingData || !workingData.original || !workingData.original.sentences) {
+        alert('Нет предложений для разрезания');
+        return;
+    }
+
+    const sentences = workingData.original.sentences.filter(s => s.key !== 'metadata');
+    if (sentences.length === 0) {
+        alert('Нет предложений для разрезания');
+        return;
+    }
+
+    // Получаем длительность аудио
+    const waveformCanvas = window.waveformCanvas;
+    if (!waveformCanvas) {
+        alert('Волна не загружена');
+        return;
+    }
+
+    const totalDuration = waveformCanvas.getDuration();
+    const segmentDuration = totalDuration / sentences.length;
+
+    console.log(`📊 Разрезаем ${totalDuration.toFixed(2)}с на ${sentences.length} частей по ${segmentDuration.toFixed(2)}с`);
+
+    // Показываем индикатор загрузки
+    showLoadingOverlay('Разрезание аудио на предложения...');
+
+    try {
+        // Обновляем данные предложений
+        for (let i = 0; i < sentences.length; i++) {
+            const sentence = sentences[i];
+            const startTime = Math.round(i * segmentDuration * 100) / 100;
+            const endTime = Math.round((i + 1) * segmentDuration * 100) / 100;
+
+            // Обновляем данные в workingData
+            const sentenceIndex = workingData.original.sentences.findIndex(s => s.key === sentence.key);
+            if (sentenceIndex !== -1) {
+                workingData.original.sentences[sentenceIndex].start = startTime;
+                workingData.original.sentences[sentenceIndex].end = endTime;
+                workingData.original.sentences[sentenceIndex].chain = true; // Включаем цепочку по умолчанию
+                workingData.original.sentences[sentenceIndex].audio_user = `${sentence.key}_${currentDictation.language_original}_user.mp3`;
+            }
+
+            // Обновляем данные в translation, если есть
+            if (workingData.translation && workingData.translation.sentences) {
+                const translationIndex = workingData.translation.sentences.findIndex(s => s.key === sentence.key);
+                if (translationIndex !== -1) {
+                    workingData.translation.sentences[translationIndex].start = startTime;
+                    workingData.translation.sentences[translationIndex].end = endTime;
+                    workingData.translation.sentences[translationIndex].chain = true;
+                    workingData.translation.sentences[translationIndex].audio_user = `${sentence.key}_${currentDictation.language_translation}_user.mp3`;
+                }
+            }
+        }
+
+        // Отправляем запрос на сервер для разрезания аудио
+        const response = await fetch('/split-audio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                filename: currentAudioFile.filename,
+                filepath: currentAudioFile.filepath,
+                sentences: sentences.map(s => ({
+                    key: s.key,
+                    start_time: workingData.original.sentences.find(ws => ws.key === s.key)?.start || 0,
+                    end_time: workingData.original.sentences.find(ws => ws.key === s.key)?.end || 0,
+                    language: currentDictation.language_original
+                })),
+                dictation_id: currentDictation.id
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            console.log('✅ Аудио успешно разрезано на предложения');
+
+            // Обновляем таблицу
+            updateTableWithNewAudio();
+
+            // Автоматически сохраняем обновленный sentences.json на сервер
+            saveSentencesJsonToServer();
+
+            // Переключаем режим на "Текущее предложение"
+            switchToSentenceMode();
+
+            alert(`Аудио успешно разрезано на ${sentences.length} предложений!`);
+        } else {
+            console.error('❌ Ошибка разрезания аудио:', data.error);
+            alert('Ошибка разрезания аудио: ' + data.error);
+        }
+    } catch (error) {
+        console.error('❌ Ошибка разрезания аудио:', error);
+        alert('Ошибка разрезания аудио: ' + error.message);
+    } finally {
+        hideLoadingOverlay();
+    }
+}
+
+/**
+ * Переключить режим на "Текущее предложение" и обновить правую панель
+ */
+function switchToSentenceMode() {
+    console.log('🔄 Переключаем режим на "Текущее предложение"');
+
+    // Переключаем радио кнопку
+    const sentenceRadio = document.querySelector('input[name="audioMode"][value="sentence"]');
+    if (sentenceRadio) {
+        sentenceRadio.checked = true;
+        sentenceRadio.dispatchEvent(new Event('change'));
+        console.log('✅ Переключен режим на "Текущее предложение"');
+    }
+
+    // Обновляем иконки радио-кнопок
+    updateRadioButtonIcons('sentence');
+
+    // Обновляем информацию о текущем аудио
+    updateCurrentAudioInfo('sentence');
+
+    // Загружаем аудио для первого предложения
+    loadAudioForCurrentSentence();
+}
+
+/**
+ * Загрузить аудио для текущего предложения
+ */
+function loadAudioForCurrentSentence() {
+    // Находим первую строку таблицы
+    const firstRow = document.querySelector('#sentences-table tbody tr');
+    if (!firstRow) {
+        console.log('❌ Нет строк в таблице');
+        return;
+    }
+
+    const key = firstRow.dataset.key;
+    if (!key) {
+        console.log('❌ Нет ключа в строке');
+        return;
+    }
+
+    // Получаем данные предложения
+    const sentence = workingData.original.sentences.find(s => s.key === key);
+    if (!sentence) {
+        console.log('❌ Предложение не найдено:', key);
+        return;
+    }
+
+    // В режиме "Текущее предложение" файл уже загружен в волну
+    // нужно только установить регион для текущего предложения
+    console.log('📍 Устанавливаем регион для предложения:', key, sentence.start.toFixed(2), '-', sentence.end.toFixed(2));
+
+    // Устанавливаем регион для текущего предложения
+    const waveformCanvas = window.waveformCanvas;
+    if (waveformCanvas) {
+        waveformCanvas.setRegion(sentence.start, sentence.end);
+        console.log('✅ Установлен регион для предложения:', sentence.start.toFixed(2), '-', sentence.end.toFixed(2));
+    } else {
+        console.log('❌ Волна не загружена');
+    }
+
+    // Обновляем поля start/end из данных предложения
+    const startTimeInput = document.getElementById('audioStartTime');
+    const endTimeInput = document.getElementById('audioEndTime');
+
+    if (startTimeInput && endTimeInput) {
+        startTimeInput.value = sentence.start.toFixed(2);
+        endTimeInput.value = sentence.end.toFixed(2);
+        console.log('✅ Обновлены поля start/end:', sentence.start.toFixed(2), '-', sentence.end.toFixed(2));
+    }
+
+    // Выбираем первую строку как текущую
+    selectSentenceRow(firstRow);
+}
+
+/**
+ * Инициализировать аудио для существующего диктанта
+ */
+function initializeAudioForExistingDictation() {
+    console.log('🎵 Инициализируем аудио для существующего диктанта');
+
+    // Проверяем, есть ли аудиофайл
+    if (!workingData || !workingData.original || !workingData.original.audio_user_shared) {
+        console.log('❌ Нет аудиофайла для инициализации');
+        return;
+    }
+
+    const audioFile = workingData.original.audio_user_shared;
+    const startTime = workingData.original.audio_user_shared_start || 0;
+    const endTime = workingData.original.audio_user_shared_end || 0;
+
+    console.log('📁 Найден аудиофайл:', audioFile, 'время:', startTime, '-', endTime);
+
+    // Обновляем отображение имени файла
+    const selectedFileName = document.getElementById('selectedFileName');
+    if (selectedFileName) {
+        selectedFileName.textContent = audioFile;
+        console.log('✅ Обновлено отображение имени файла:', audioFile);
+    }
+
+    // Загружаем волну
+    const audioPath = `/static/data/temp/${currentDictation.id}/${currentDictation.language_original}/${audioFile}`;
+    loadWaveformForFile(audioPath);
+
+    // Устанавливаем регион, если есть временные метки
+    if (endTime > 0) {
+        setTimeout(() => {
+            const waveformCanvas = window.waveformCanvas;
+            if (waveformCanvas) {
+                waveformCanvas.setRegion(startTime, endTime);
+                console.log('✅ Установлен регион:', startTime, '-', endTime);
+            }
+        }, 500);
+    }
+
+    // Обновляем поля start/end
+    const startTimeInput = document.getElementById('audioStartTime');
+    const endTimeInput = document.getElementById('audioEndTime');
+
+    if (startTimeInput && endTimeInput) {
+        startTimeInput.value = startTime.toFixed(2);
+        endTimeInput.value = endTime.toFixed(2);
+        console.log('✅ Обновлены поля start/end:', startTime.toFixed(2), '-', endTime.toFixed(2));
+    }
+
+    // Обновляем информацию о текущем аудио
+    updateCurrentAudioInfo('full');
+
+    console.log('✅ Инициализация аудио завершена');
+}
+
+/**
+ * Обновить таблицу с новыми аудиофайлами
+ */
+function updateTableWithNewAudio() {
+    console.log('🔄 updateTableWithNewAudio вызвана');
+    console.log('📊 workingData.original.sentences:', workingData.original.sentences);
+    
+    // Находим все строки таблицы
+    const rows = document.querySelectorAll('#sentences-table tbody tr');
+    console.log(`📋 Найдено строк в таблице: ${rows.length}`);
+
+    rows.forEach(row => {
+        const key = row.dataset.key;
+        if (!key) return;
+
+        // Обновляем поля start и end
+        const startInput = row.querySelector('.start-input');
+        const endInput = row.querySelector('.end-input');
+        const chainCell = row.querySelector('.col-chain');
+
+        if (startInput && endInput && chainCell) {
+            const sentence = workingData.original.sentences.find(s => s.key === key);
+            console.log(`🔍 Обновляем строку ${key}:`, sentence);
+            if (sentence) {
+                console.log(`📝 Устанавливаем значения: start=${sentence.start}, end=${sentence.end}, chain=${sentence.chain}`);
+                startInput.value = sentence.start.toFixed(2);
+                endInput.value = sentence.end.toFixed(2);
+                
+                // Обновляем иконку цепочки
+                if (sentence.chain) {
+                    chainCell.innerHTML = '<i data-lucide="link"></i>';
+                } else {
+                    chainCell.innerHTML = '<i data-lucide="unlink"></i>';
+                }
+                
+                // Обновляем иконки Lucide
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+                
+                console.log(`✅ Обновлено: startInput.value=${startInput.value}, endInput.value=${endInput.value}, chain=${sentence.chain}`);
+            } else {
+                console.log(`❌ Предложение не найдено для ключа: ${key}`);
+            }
+        } else {
+            console.log(`❌ Не найдены элементы ввода для строки ${key}:`, {startInput, endInput, chainCell});
+        }
+
+        // Обновляем плеер для аудио
+        const audioFileName = `${key}_${currentDictation.language_original}_user.mp3`;
+        const audioPath = `/static/data/temp/${currentDictation.id}/${currentDictation.language_original}/${audioFileName}`;
+
+        try {
+            const audio = new Audio(audioPath);
+            audioPlayers[audioFileName] = audio;
+            console.log('✅ Загружен плеер для:', audioFileName);
+        } catch (error) {
+            console.warn('⚠️ Не удалось загрузить плеер для:', audioFileName, error);
+        }
+
+        // Добавляем обработчик клика для выбора предложения
+        row.addEventListener('click', () => {
+            selectSentenceRow(row);
+        });
+    });
+}
+
+/**
+ * Выбрать строку в таблице (универсальная функция для всех режимов)
+ */
+function selectSentenceRow(row) {
+    const key = row.dataset.key;
+    if (!key) return;
+
+    console.log('🎯 Выбрано предложение:', key);
+
+    // Убираем выделение с других строк
+    document.querySelectorAll('#sentences-table tbody tr').forEach(r => {
+        r.classList.remove('selected');
+    });
+
+    // Выделяем текущую строку
+    row.classList.add('selected');
+
+    // Получаем данные предложения
+    const sentence = workingData.original.sentences.find(s => s.key === key);
+    if (!sentence) {
+        console.log('❌ Предложение не найдено:', key);
+        return;
+    }
+
+    // Получаем текущий режим аудио
+    const audioMode = document.querySelector('input[name="audioMode"]:checked');
+    const currentMode = audioMode ? audioMode.value : 'full';
+
+    console.log('🎵 Текущий режим:', currentMode);
+
+    // В зависимости от режима выполняем разные действия
+    switch (currentMode) {
+        case 'sentence':
+            // В режиме "Текущее предложение" обновляем регион и поля
+            updateWaveformForSentence(sentence);
+            updateCurrentSentenceInfo(sentence);
+            break;
+        case 'full':
+            // В режиме "Отображать весь файл" только обновляем информацию
+            updateCurrentSentenceInfo(sentence);
+            break;
+        case 'auto':
+            // В режиме "Автозаполнение" только обновляем информацию
+            updateCurrentSentenceInfo(sentence);
+            break;
+        case 'mic':
+            // В режиме "Микрофон" только обновляем информацию
+            updateCurrentSentenceInfo(sentence);
+            break;
+    }
+}
+
+/**
+ * Обновить волну и поля для предложения (только в режиме sentence)
+ */
+function updateWaveformForSentence(sentence) {
+    // Обновляем регион в волне для этого предложения
+    const waveformCanvas = window.waveformCanvas;
+    if (waveformCanvas) {
+        waveformCanvas.setRegion(sentence.start, sentence.end);
+        console.log('📍 Установлен регион для предложения:', sentence.start.toFixed(2), '-', sentence.end.toFixed(2));
+    }
+
+    // Обновляем поля start/end
+    const startTimeInput = document.getElementById('audioStartTime');
+    const endTimeInput = document.getElementById('audioEndTime');
+
+    if (startTimeInput && endTimeInput) {
+        startTimeInput.value = sentence.start.toFixed(2);
+        endTimeInput.value = sentence.end.toFixed(2);
+        console.log('✅ Обновлены поля start/end:', sentence.start.toFixed(2), '-', sentence.end.toFixed(2));
+    }
+}
+
+/**
+ * Обновить информацию о текущем предложении
+ */
+function updateCurrentSentenceInfo(sentence) {
+    const currentAudioInfo = document.getElementById('currentAudioInfo');
+    if (currentAudioInfo) {
+        // Показываем текст предложения вместо статичного текста
+        currentAudioInfo.textContent = sentence.text || 'Текст не найден';
+        console.log('📝 Обновлена информация о предложении:', sentence.text);
+    }
+}
+
+/**
+ * Загрузить аудиофайл на сервер (Promise версия)
+ */
+function uploadAudioFileToServer(file) {
+    return new Promise((resolve, reject) => {
+        console.log('📤 Загружаем файл на сервер:', file.name);
+
+        // Создаем FormData для отправки файла
+        const formData = new FormData();
+        formData.append('audioFile', file);
+        formData.append('language', currentDictation.language_original);
+        formData.append('dictation_id', currentDictation.id);
+
+        // Отправляем файл на сервер
+        fetch('/upload-audio', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Файл успешно загружен на сервер:', data.filename);
+                    resolve({
+                        success: true,
+                        filename: data.filename,
+                        filepath: data.filepath
+                    });
+                } else {
+                    console.error('❌ Ошибка загрузки файла:', data.error);
+                    reject(new Error(data.error));
+                }
+            })
+            .catch(error => {
+                console.error('❌ Ошибка загрузки файла:', error);
+                reject(error);
+            });
+    });
+}
+
+/**
+ * Обрезать аудиофайл ножницами
+ */
+async function trimAudioFile(audioFile, startTime, endTime) {
+    console.log('✂️ Обрезаем аудиофайл:', audioFile.filename, 'с', startTime, 'по', endTime);
+
+    // Показываем индикатор загрузки
+    showLoadingOverlay('Обрезание аудиофайла...');
+
+    try {
+        // Используем правильный путь к файлу на сервере
+        console.log('📤 Обрезаем файл на сервере:', audioFile.filepath);
+
+        // Обрезаем файл на сервере
+        const response = await fetch('/cut-audio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+                // ,
+                // 'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: JSON.stringify({
+                filename: audioFile.filename,
+                filepath: audioFile.filepath,
+                start_time: startTime,
+                end_time: endTime,
+                language: currentDictation.language_original,
+                dictation_id: currentDictation.id  // добавляем ID диктанта
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            console.log('✅ Аудиофайл успешно обрезан:', data.filename);
+
+            // Обновляем значения в workingData
+            if (workingData && workingData.original) {
+                workingData.original.audio_user_shared = data.filename;
+                workingData.original.audio_user_shared_start = 0; // После обрезки начинаем с 0
+                workingData.original.audio_user_shared_end = data.end_time - data.start_time; // Новая длительность
+            }
+            if (workingData && workingData.translation) {
+                workingData.translation.audio_user_shared = data.filename;
+                workingData.translation.audio_user_shared_start = 0;
+                workingData.translation.audio_user_shared_end = data.end_time - data.start_time;
+            }
+
+            // Обновляем поля ввода
+            const startTimeInput = document.getElementById('audioStartTime');
+            const endTimeInput = document.getElementById('audioEndTime');
+            if (startTimeInput) startTimeInput.value = '0.00';
+            if (endTimeInput) endTimeInput.value = (data.end_time - data.start_time).toFixed(2);
+
+            // Перезагружаем волну с обрезанным файлом
+            if (data.filepath) {
+                loadWaveformForFile(data.filepath);
+            }
+
+            // Обновляем информацию о текущем аудио
+            updateCurrentAudioInfoForFile(data.filename);
+
+            // Автоматически сохраняем обновленный sentences.json на сервер
+            saveSentencesJsonToServer();
+
+            alert('Аудиофайл успешно обрезан!');
+        } else {
+            console.error('❌ Ошибка обрезания аудио:', data.error);
+            alert('Ошибка обрезания аудио: ' + data.error);
+        }
+    } catch (error) {
+        console.error('❌ Ошибка обрезания аудио:', error);
+        alert('Ошибка обрезания аудио: ' + error.message);
+    } finally {
+        hideLoadingOverlay();
+    }
+}
+
+/**
+ * Обработчик воспроизведения аудио
+ */
+function handleAudioPlay() {
+    console.log('▶️ Воспроизводим аудио');
+    // Здесь будет логика воспроизведения
+}
+
+/**
+ * Обработчик кнопки Start
+ */
+function handleAudioStart() {
+    console.log('⏰ Устанавливаем время начала');
+
+    const waveformCanvas = window.waveformCanvas;
+    if (!waveformCanvas) {
+        console.log('❌ Волна не загружена');
+        return;
+    }
+
+    // Получаем текущую позицию playhead
+    const currentTime = waveformCanvas.getCurrentTime();
+
+    // Обновляем поле Start
+    const startTimeInput = document.getElementById('audioStartTime');
+    if (startTimeInput) {
+        startTimeInput.value = currentTime.toFixed(2);
+    }
+
+    // Обновляем регион волны
+    const currentRegion = waveformCanvas.getRegion();
+    waveformCanvas.setRegion(currentTime, currentRegion.end);
+
+    console.log('✅ Установлено время начала:', currentTime.toFixed(2));
+}
+
+/**
+ * Обработчик кнопки End
+ */
+function handleAudioEnd() {
+    console.log('⏰ Устанавливаем время окончания');
+
+    const waveformCanvas = window.waveformCanvas;
+    if (!waveformCanvas) {
+        console.log('❌ Волна не загружена');
+        return;
+    }
+
+    // Получаем текущую позицию playhead
+    const currentTime = waveformCanvas.getCurrentTime();
+
+    // Обновляем поле End
+    const endTimeInput = document.getElementById('audioEndTime');
+    if (endTimeInput) {
+        endTimeInput.value = currentTime.toFixed(2);
+    }
+
+    // Обновляем регион волны
+    const currentRegion = waveformCanvas.getRegion();
+    waveformCanvas.setRegion(currentRegion.start, currentTime);
+
+    console.log('✅ Установлено время окончания:', currentTime.toFixed(2));
 }
 
 // ============================================================================
@@ -1120,23 +3187,23 @@ function setupStartModalHandlers() {
     // Обработчики для переключения видимости колонок
     console.log('🔧 Настраиваем обработчики переключения колонок...');
     setupColumnToggleHandlers();
-    
+
     // Инициализируем начальное состояние - показываем оригинал и перевод
     const table = document.getElementById('sentences-table');
     if (table) {
         console.log('🏁 Инициализация начального состояния');
         console.log('📋 Классы таблицы до инициализации:', table.className);
-        
+
         // Проверяем наличие элементов с групповыми классами
         const originalElements = table.querySelectorAll('.panel-original');
         const translationElements = table.querySelectorAll('.panel-translation');
-        const editingElements = table.querySelectorAll('.panel-editing');
-        
+        const editingElements = table.querySelectorAll('.panel-editing-avto, .panel-editing-user, .panel-editing-mic');
+
         console.log('🔍 Найдено элементов при инициализации:');
         console.log('  - .panel-original:', originalElements.length);
         console.log('  - .panel-translation:', translationElements.length);
-        console.log('  - .panel-editing:', editingElements.length);
-        
+        console.log('  - .panel-editing-*:', editingElements.length);
+
         table.classList.add('state-original-translation');
         console.log('📋 Классы таблицы после инициализации:', table.className);
         // Обновляем иконку кнопки для начального состояния
@@ -1384,7 +3451,7 @@ async function createDictationFromStart() {
         }
 
         // Создать таблицу
-        createTable();
+        await createTable();
 
         // Очистить поле ввода текста в модальном окне
         const startTextInput = document.getElementById('startTextInput');
@@ -1407,6 +3474,47 @@ async function createDictationFromStart() {
 // ============================================================================
 // ФУНКЦИИ СОХРАНЕНИЯ И ВЫХОДА
 // ============================================================================
+
+/**
+ * Сохранить sentences.json на сервер
+ */
+async function saveSentencesJsonToServer() {
+    try {
+        if (!workingData || !workingData.original) {
+            console.log('❌ Нет данных для сохранения');
+            return;
+        }
+
+        // Определяем путь к файлу sentences.json
+        const sentencesPath = `static/data/temp/${currentDictation.id}/${currentDictation.language_original}/sentences.json`;
+
+        console.log('💾 Сохраняем sentences.json:', sentencesPath);
+        console.log('💾 Данные для сохранения:', workingData.original);
+
+        // Отправляем данные на сервер
+        const response = await fetch('/save_json', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: JSON.stringify({
+                path: sentencesPath,
+                data: workingData.original
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            console.log('✅ sentences.json успешно сохранен на сервер');
+        } else {
+            console.error('❌ Ошибка сохранения sentences.json:', result.error);
+        }
+    } catch (error) {
+        console.error('❌ Ошибка при сохранении sentences.json:', error);
+    }
+}
 
 async function saveDictationAndExit() {
     try {
@@ -1636,7 +3744,8 @@ async function parseInputText(text, delimiter, isDialog, speakers) {
             audio: audio_originalFileName, //аудио которое будет в диктанте! Итоговое
             audio_avto: audio_originalFileName, // автоперевод
             audio_user: '', // отрезанный кусок
-            audio_user_shared: '', // источник для отрезанного куска
+            audio_mic: '', // запись с микрофона
+            // audio_user_shared: '', // источник для отрезанного куска
             start: 0,
             end: 0,
             chain: false
@@ -1670,7 +3779,8 @@ async function parseInputText(text, delimiter, isDialog, speakers) {
             audio: audio_translationFileName,
             audio_avto: audio_translationFileName, // автоперевод
             audio_user: '', // отрезанный кусок
-            audio_user_shared: '', // источник для отрезанного куска
+            audio_mic: '', // запись с микрофона
+            // audio_user_shared: '', // источник для отрезанного куска
             start: 0,
             end: 0,
             chain: false
@@ -1797,9 +3907,49 @@ function getSpeakerColor(speakerId) {
 }
 
 /**
+ * Предварительная загрузка аудио файлов в плееры
+ */
+async function preloadAudioFiles() {
+    console.log('🎵 Предварительная загрузка аудио файлов...');
+
+    const originalSentences = workingData.original.sentences || [];
+    const translationSentences = workingData.translation.sentences || [];
+
+    // Загружаем аудио для оригинального языка
+    for (const sentence of originalSentences) {
+        if (sentence.audio && !audioPlayers[sentence.audio]) {
+            try {
+                const audioUrl = `/static/data/temp/${currentDictation.id}/${currentDictation.language_original}/${sentence.audio}`;
+                const audio = new Audio(audioUrl);
+                audioPlayers[sentence.audio] = audio;
+                console.log(`✅ Загружен плеер для оригинала: ${sentence.audio}`);
+            } catch (error) {
+                console.warn(`⚠️ Не удалось загрузить аудио оригинала: ${sentence.audio}`, error);
+            }
+        }
+    }
+
+    // Загружаем аудио для языка перевода
+    for (const sentence of translationSentences) {
+        if (sentence.audio && !audioPlayers[sentence.audio]) {
+            try {
+                const audioUrl = `/static/data/temp/${currentDictation.id}/${currentDictation.language_translation}/${sentence.audio}`;
+                const audio = new Audio(audioUrl);
+                audioPlayers[sentence.audio] = audio;
+                console.log(`✅ Загружен плеер для перевода: ${sentence.audio}`);
+            } catch (error) {
+                console.warn(`⚠️ Не удалось загрузить аудио перевода: ${sentence.audio}`, error);
+            }
+        }
+    }
+
+    console.log(`🎵 Предварительная загрузка завершена. Загружено плееров: ${Object.keys(audioPlayers).length}`);
+}
+
+/**
  * Создать таблицу предложений
  */
-function createTable() {
+async function createTable() {
     const tbody = document.querySelector('#sentences-table tbody');
     if (!tbody) return;
 
@@ -1829,10 +3979,22 @@ function createTable() {
         tbody.appendChild(row);
     });
 
+    // Предварительно загружаем аудио файлы в плееры
+    await preloadAudioFiles();
+
     // Пересоздать иконки Lucide после создания таблицы
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
+
+    // Автоматически выбираем первую строку при создании таблицы
+    setTimeout(() => {
+        const firstRow = document.querySelector('#sentences-table tbody tr:first-child');
+        if (firstRow) {
+            selectSentenceRow(firstRow);
+            console.log('✅ Автоматически выбрана первая строка при создании таблицы');
+        }
+    }, 100); // Небольшая задержка для завершения всех операций
 }
 
 /**
@@ -1846,6 +4008,7 @@ function createTableRow(key, originalSentence, translationSentence) {
     // Колонка 0: №
     const numberCell = document.createElement('td');
     numberCell.className = 'col-number';
+    numberCell.dataset.col_id = 'col-number';
     numberCell.textContent = parseInt(key) + 1;
     row.appendChild(numberCell);
 
@@ -1853,6 +4016,7 @@ function createTableRow(key, originalSentence, translationSentence) {
     if (currentDictation.is_dialog) {
         const speakerCell = document.createElement('td');
         speakerCell.className = 'col-speaker';
+        speakerCell.dataset.col_id = 'col-speaker';
         if (originalSentence && originalSentence.speaker) {
             const speakerName = currentDictation.speakers[originalSentence.speaker] || originalSentence.speaker;
             speakerCell.textContent = speakerName;
@@ -1864,6 +4028,7 @@ function createTableRow(key, originalSentence, translationSentence) {
     // Колонка 2: Оригинальный текст
     const originalCell = document.createElement('td');
     originalCell.className = 'col-original panel-original';
+    originalCell.dataset.col_id = 'col-or-text';
     if (originalSentence) {
         const textarea = document.createElement('textarea');
         textarea.value = originalSentence.text || '';
@@ -1883,7 +4048,8 @@ function createTableRow(key, originalSentence, translationSentence) {
             if (audioBtn) {
                 audioBtn.dataset.create = 'true';
                 audioBtn.title = 'Создать аудио оригинала';
-                setButtonState(audioBtn, 'ready');
+                audioBtn.dataset.state = 'creating';
+                setButtonState(audioBtn);
             }
         });
 
@@ -1894,15 +4060,18 @@ function createTableRow(key, originalSentence, translationSentence) {
     // Колонка 3: Аудио Оригінал
     const audioCellOriginal = document.createElement('td');
     audioCellOriginal.className = 'col-audio panel-original';
+    audioCellOriginal.dataset.col_id = 'col-or-audio';
     // Единая кнопка для оригинала
     const audioBtnOriginal = document.createElement('button');
-    audioBtnOriginal.className = 'audio-btn state-ready';
+    audioBtnOriginal.className = 'audio-btn audio-btn-table state-ready';
     audioBtnOriginal.innerHTML = '<i data-lucide="play"></i>';
     audioBtnOriginal.dataset.language = currentDictation.language_original;
     audioBtnOriginal.dataset.fieldName = 'audio';
-    audioBtnOriginal.dataset.create === 'folse';
+    // audioBtnOriginal.dataset.create = 'folse';
     state = (!originalSentence || !originalSentence.audio) ? 'creating' : 'ready';
-    setButtonState(audioBtnOriginal, state);
+    audioBtnOriginal.dataset.state = state;
+    audioBtnOriginal.dataset.originalState = state; // Сохраняем исходное состояние один раз
+    setButtonState(audioBtnOriginal);
     audioBtnOriginal.title = (!originalSentence || !originalSentence.audio) ? 'Создать аудио оригинала' : 'Воспроизвести аудио оригинала';
     audioBtnOriginal.addEventListener('click', handleAudioPlayback);
     audioCellOriginal.appendChild(audioBtnOriginal);
@@ -1911,6 +4080,7 @@ function createTableRow(key, originalSentence, translationSentence) {
     // Колонка 4: Развернуть настройку аудио
     const audioSettingsCell = document.createElement('td');
     audioSettingsCell.className = 'col-audio-settings panel-original';
+    audioSettingsCell.dataset.col_id = 'col-or-open-settings';
     audioSettingsCell.style.backgroundColor = 'var(--color-hover)';
     audioSettingsCell.style.padding = '0';
     // Всегда создаем кнопку, даже если аудио нет
@@ -1928,11 +4098,11 @@ function createTableRow(key, originalSentence, translationSentence) {
         console.log('🔘 Кнопка в строке таблицы нажата для строки:', key);
         e.preventDefault();
         e.stopPropagation();
-        
+
         // Определяем текущее состояние таблицы и переключаем его
         const table = document.getElementById('sentences-table');
         console.log('📋 Текущие классы таблицы (из строки):', table.className);
-        
+
         if (table.classList.contains('state-original-translation')) {
             console.log('➡️ Переключаем в состояние original-editing (из строки)');
             toggleColumnGroup('original');
@@ -1940,7 +4110,7 @@ function createTableRow(key, originalSentence, translationSentence) {
             console.log('➡️ Переключаем в состояние original-translation (из строки)');
             toggleColumnGroup('translation');
         }
-        
+
         // Открываем модальное окно редактирования аудио
         console.log('🎵 Открываем модальное окно аудио для строки:', key);
         openAudioSettingsPanel('original', key);
@@ -1951,6 +4121,7 @@ function createTableRow(key, originalSentence, translationSentence) {
     // Колонка 5: Перевод
     const translationCell = document.createElement('td');
     translationCell.className = 'col-translation panel-translation';
+    translationCell.dataset.col_id = 'col-tr-text';
     if (translationSentence) {
         const textarea = document.createElement('textarea');
         textarea.value = translationSentence.text || '';
@@ -1981,79 +4152,89 @@ function createTableRow(key, originalSentence, translationSentence) {
     // Колонка 6: Аудио перекладу
     const audioCell = document.createElement('td');
     audioCell.className = 'col-audio panel-translation';
+    audioCell.dataset.col_id = 'col-tr-audio';
     // Единая кнопка для перевода
     const audioBtnTranslation = document.createElement('button');
-    audioBtnTranslation.className = 'audio-btn state-ready';
+    audioBtnTranslation.className = 'audio-btn audio-btn-table state-ready';
     audioBtnTranslation.innerHTML = '<i data-lucide="play"></i>';
     audioBtnTranslation.dataset.language = currentDictation.language_translation;
     audioBtnTranslation.dataset.fieldName = 'audio';
-    audioBtnTranslation.dataset.create === 'folse';
+    // audioBtnTranslation.dataset.create = 'folse';
     state = (!translationSentence || !translationSentence.audio) ? 'creating' : 'ready';
-    setButtonState(audioBtnTranslation, state);
+    audioBtnTranslation.dataset.state = state;
+    audioBtnTranslation.dataset.originalState = state; // Сохраняем исходное состояние один раз
+    setButtonState(audioBtnTranslation);
     audioBtnTranslation.title = (!translationSentence || !translationSentence.audio) ? 'Создать аудио перевода' : 'Воспроизвести аудио перевода';
     audioBtnTranslation.addEventListener('click', handleAudioPlayback);
     audioCell.appendChild(audioBtnTranslation);
     row.appendChild(audioCell);
 
- 
+
     // Боковые колонки (правая панель)
-    // Колонка Б1: Аудио автоперевода (генерировать TTS)
+    // Колонка AVTO1: Аудио автоперевода (генерировать TTS)
     const generateTtsCell = document.createElement('td');
-    generateTtsCell.className = 'col-generate-tts panel-editing';
+    generateTtsCell.className = 'col-generate-tts panel-editing-avto';
+    generateTtsCell.dataset.col_id = 'col-or-avto-play';
     // generateTtsCell.style.display = 'none'; // По умолчанию скрыта
     // кнпка генерации/проигрывания аудио автоперевода
     const audioBtnOriginalAvto = document.createElement('button');
-    audioBtnOriginalAvto.className = 'audio-btn state-ready';
+    audioBtnOriginalAvto.className = 'audio-btn audio-btn-table state-ready';
     audioBtnOriginalAvto.innerHTML = '<i data-lucide="play"></i>';
     audioBtnOriginalAvto.dataset.language = currentDictation.language_original;
     audioBtnOriginalAvto.dataset.fieldName = 'audio_avto';
-    audioBtnOriginalAvto.dataset.create === 'folse';
+    // audioBtnOriginalAvto.dataset.create === 'folse';
     state = (!originalSentence || !originalSentence.audio_avto) ? 'creating' : 'ready';
-    setButtonState(audioBtnOriginalAvto, state);
+    audioBtnOriginalAvto.dataset.state = state;
+    audioBtnOriginalAvto.dataset.originalState = state; // Сохраняем исходное состояние один раз
+    setButtonState(audioBtnOriginalAvto);
     audioBtnOriginalAvto.title = 'Воспроизвести аудио оригинала';
     audioBtnOriginalAvto.addEventListener('click', handleAudioPlayback);
     generateTtsCell.appendChild(audioBtnOriginalAvto);
     row.appendChild(generateTtsCell);
 
-    // Колонка  Б2: Применить audio_avto
+    // Колонка  AVTO2: Применить audio_avto
     const applyCellAvto = document.createElement('td');
-    applyCellAvto.className = 'col-apply-avto panel-editing';
+    applyCellAvto.className = 'col-apply-avto panel-editing-avto';
+    applyCellAvto.dataset.col_id = 'col-or-avto-apply';
     // applyCellAvto.style.display = 'none'; // По умолчанию скрыта
     applyCellAvto.innerHTML = '<i data-lucide="arrow-big-left-dash"></i>';
     applyCellAvto.title = 'Применить автоперевод';
     row.appendChild(applyCellAvto);
 
-    // Колонка Б3: ✔️ (чекбокс)
-    const checkboxCell = document.createElement('td');
-    checkboxCell.className = 'col-checkbox panel-editing';
-    // checkboxCell.style.display = 'none'; // По умолчанию скрыта
-    checkboxCell.innerHTML = '<i data-lucide="check"></i>';
-    row.appendChild(checkboxCell);
-
-    // Колонка Б4: Файл
-    const audioFileCell = document.createElement('td');
-    audioFileCell.className = 'col-audio-file panel-editing';
-    // audioFileCell.style.display = 'none'; // По умолчанию скрыта
-    audioFileCell.textContent = originalSentence.audio_user_shared;
-    row.appendChild(audioFileCell);
-
-    // Колонка Б5: Start
+    // Колонка USER1: Start
     const startCell = document.createElement('td');
-    startCell.className = 'col-start panel-editing';
+    startCell.className = 'col-start panel-editing-user';
+    startCell.dataset.col_id = 'col-or-user-start';
     // startCell.style.display = 'none'; // По умолчанию скрыта
-    startCell.textContent = originalSentence.start;
+
+    const startInput = document.createElement('input');
+    startInput.type = 'number';
+    startInput.className = 'start-input';
+    startInput.step = '0.01';
+    startInput.min = '0';
+    startInput.value = originalSentence.start ? originalSentence.start.toFixed(2) : '0.00';
+    startCell.appendChild(startInput);
     row.appendChild(startCell);
 
-    // Колонка Б6: End
+    // Колонка USER2: End
     const endCell = document.createElement('td');
-    endCell.className = 'col-end panel-editing';
+    endCell.className = 'col-end panel-editing-user';
+    endCell.dataset.col_id = 'col-or-user-end';
     // endCell.style.display = 'none'; // По умолчанию скрыта
-    endCell.textContent = originalSentence.end;
+
+    const endInput = document.createElement('input');
+    endInput.type = 'number';
+    endInput.className = 'end-input';
+    endInput.step = '0.01';
+    endInput.min = '0';
+    endInput.value = originalSentence.end ? originalSentence.end.toFixed(2) : '0.00';
+    endCell.appendChild(endInput);
     row.appendChild(endCell);
 
-    // Колонка Б7: 🔗 (цепочка)
+    // Колонка USER3: 🔗 (цепочка)
     const chainCell = document.createElement('td');
-    chainCell.className = 'col-chain panel-editing';
+    chainCell.className = 'col-chain panel-editing-user';
+    chainCell.dataset.col_id = 'col-or-user-chain';
     // chainCell.style.display = 'none'; // По умолчанию скрыта
     chainCell.innerHTML = originalSentence.chain ? '<i data-lucide="link"></i>' : '<i data-lucide="unlink"></i>';
     row.appendChild(chainCell);
@@ -2065,31 +4246,73 @@ function createTableRow(key, originalSentence, translationSentence) {
     // createAudioCell.textContent = 'С-ть';
     // row.appendChild(createAudioCell);
 
-    // Колонка Б8: Воспроизвести аудио
+    // Колонка USER4: Воспроизвести аудио
     const playAudioUserCell = document.createElement('td');
-    playAudioUserCell.className = 'col-play-audio panel-editing';
+    playAudioUserCell.className = 'col-play-audio panel-editing-user';
+    playAudioUserCell.dataset.col_id = 'col-or-user-play';
     // playAudioCell.style.display = 'none'; // По умолчанию скрыта
     // кнопка генерации/проигрывания аудио автоперевода
     const audioBtnOriginalUser = document.createElement('button');
-    audioBtnOriginalUser.className = 'audio-btn state-ready';
+    audioBtnOriginalUser.className = 'audio-btn audio-btn-table state-ready';
     audioBtnOriginalUser.innerHTML = '<i data-lucide="play"></i>';
     audioBtnOriginalUser.dataset.language = currentDictation.language_original;
     audioBtnOriginalUser.dataset.fieldName = 'audio_user';
-    audioBtnOriginalUser.dataset.create === 'folse';
+    // audioBtnOriginalUser.dataset.create = 'folse';
     state = (!originalSentence || !originalSentence.audio_user) ? 'creating' : 'ready';
-    setButtonState(audioBtnOriginalUser, state);
+    audioBtnOriginalUser.dataset.state = state;
+    audioBtnOriginalUser.dataset.originalState = state; // Сохраняем исходное состояние один раз
+    setButtonState(audioBtnOriginalUser);
     audioBtnOriginalUser.title = 'Воспроизвести аудио оригинала';
     audioBtnOriginalUser.addEventListener('click', handleAudioPlayback);
     playAudioUserCell.appendChild(audioBtnOriginalUser);
     row.appendChild(playAudioUserCell);
 
-    // Колонка  Б9: Применить audio_user
+    // Колонка  USER5: Применить audio_user
     const applyCellUser = document.createElement('td');
-    applyCellUser.className = 'col-apply-user panel-editing';
+    applyCellUser.className = 'col-apply-user panel-editing-user';
+    applyCellUser.dataset.col_id = 'col-or-user-apply';
     // applyCellUser.style.display = 'none'; // По умолчанию скрыта
     applyCellUser.innerHTML = '<i data-lucide="arrow-big-left-dash"></i>';
-    applyCellUser.title = 'Применить автоперевод';
+    applyCellUser.title = 'Применить запись пользователя';
     row.appendChild(applyCellUser);
+
+
+    // панель микрофона
+    // Колонка MIC1: Аудио автоперевода (генерировать TTS)
+    const generateAudioMicCell = document.createElement('td');
+    generateAudioMicCell.className = 'col-generate-tts panel-editing-mic';
+    generateAudioMicCell.dataset.col_id = 'col-or-mic-play';
+    // generateTtsCell.style.display = 'none'; // По умолчанию скрыта
+    // кнпка генерации/проигрывания аудио записи с микрофона
+    const audioBtnAudioMic = document.createElement('button');
+    audioBtnAudioMic.className = 'audio-btn audio-btn-table state-ready';
+    audioBtnAudioMic.innerHTML = '<i data-lucide="play"></i>';
+    audioBtnAudioMic.dataset.language = currentDictation.language_original;
+    audioBtnAudioMic.dataset.fieldName = 'audio_mic';
+    // audioBtnAudioMic.dataset.create = 'folse';
+    state = (!originalSentence || !originalSentence.audio_mic) ? 'creating_mic' : 'ready';
+    audioBtnAudioMic.dataset.state = state;
+    audioBtnAudioMic.dataset.originalState = state; // Сохраняем исходное состояние один раз
+    setButtonState(audioBtnAudioMic);
+    audioBtnAudioMic.title = 'Воспроизвести аудио записи с микрофона';
+    audioBtnAudioMic.addEventListener('click', handleAudioPlayback);
+    generateAudioMicCell.appendChild(audioBtnAudioMic);
+    row.appendChild(generateAudioMicCell);
+
+    // Колонка  MIC3: Применить audio_avto
+    const applyCellMic = document.createElement('td');
+    applyCellMic.className = 'col-apply-avto panel-editing-mic';
+    applyCellMic.dataset.col_id = 'col-or-mic-apply';
+    // applyCellMic.style.display = 'none'; // По умолчанию скрыта
+    applyCellMic.innerHTML = '<i data-lucide="arrow-big-left-dash"></i>';
+    applyCellMic.title = 'Применить запись с микрофона';
+    row.appendChild(applyCellMic);
+
+    // Настраиваем обработчики для полей ввода
+    setupInputHandlers(row);
+
+    // Настраиваем обработчики для строки
+    setupRowHandlers(row);
 
     return row;
 }
@@ -2200,3 +4423,140 @@ function updateTitlesInWorkingData() {
 // ============================================================================
 // НОВАЯ АРХИТЕКТУРА - СТАРТОВОЕ МОДАЛЬНОЕ ОКНО
 // ===========================================================================
+
+/**
+ * Инициализация волны аудио
+ */
+async function initWaveform(audioUrl) {
+    if (audioUrl) lastAudioUrl = audioUrl;
+
+    // Проверяем, что контейнер видим
+    const waveformContainer = document.getElementById('audioWaveform');
+    if (!waveformContainer) {
+        console.warn('Контейнер audioWaveform не найден');
+        return;
+    }
+
+    // Проверяем, что контейнер имеет размеры
+    if (waveformContainer.offsetWidth === 0 || waveformContainer.offsetHeight === 0) {
+        console.warn('Контейнер audioWaveform не видим, принудительно устанавливаем размеры');
+        // Принудительно устанавливаем размеры
+        waveformContainer.style.width = '100%';
+        waveformContainer.style.height = '100px';
+        waveformContainer.style.minHeight = '100px';
+
+        // Если размеры все еще 0, откладываем инициализацию
+        if (waveformContainer.offsetWidth === 0 || waveformContainer.offsetHeight === 0) {
+            console.warn('Не удалось установить размеры, откладываем инициализацию');
+            return;
+        }
+    }
+
+    console.log('🎵 Инициализируем WaveformCanvas с URL:', audioUrl);
+
+    // Проверяем, что WaveformCanvas загружен
+    if (typeof WaveformCanvas === 'undefined') {
+        console.error('❌ WaveformCanvas не загружен!');
+        return;
+    }
+
+    if (waveformCanvas) {
+        waveformCanvas.destroy();
+    }
+
+    try {
+        // Создаем новый экземпляр WaveformCanvas
+        // Класс сам определяет цвета из CSS переменных
+        waveformCanvas = new WaveformCanvas(waveformContainer);
+
+        // Добавляем обработчик окончания воспроизведения
+        waveformCanvas.onPlaybackEnd(() => {
+            console.log('🎯 WaveformCanvas: Воспроизведение завершено');
+            if (currentPlayingButton) {
+                const originalState = currentPlayingButton.dataset.originalState || 'ready';
+                setButtonState(currentPlayingButton, originalState);
+                currentPlayingButton = null;
+            }
+            currentAudio = null;
+        });
+
+        // Проверяем, есть ли уже загруженное аудио для этого файла
+        const audioFileName = audioUrl.split('/').pop();
+        let audioElement = null;
+
+        // Ищем в audioPlayers по имени файла
+        for (const [key, audio] of Object.entries(audioPlayers)) {
+            if (audio.src && audio.src.includes(audioFileName)) {
+                audioElement = audio;
+                console.log('🎵 Найдено уже загруженное аудио для волны:', key);
+                break;
+            }
+        }
+
+        // Если нашли загруженное аудио, используем его
+        if (audioElement) {
+            await waveformCanvas.loadAudioFromElement(audioElement);
+        } else {
+            // Иначе загружаем по URL
+            await waveformCanvas.loadAudio(audioUrl);
+        }
+
+        console.log('🎉 WaveformCanvas инициализирован!');
+
+        // Получаем длительность аудио
+        const duration = waveformCanvas.getDuration();
+        console.log('⏱️ Длительность аудио:', duration);
+
+        // Создаем регион по умолчанию на всю длительность аудио
+        const roundedDuration = Math.floor(duration * 100) / 100;
+        console.log('🎯 Создаем регион по умолчанию: 0 -', roundedDuration);
+
+        waveformCanvas.setRegion(0, roundedDuration);
+
+        // Обновляем поля в DOM
+        const startTimeInput = document.getElementById('audioStartTime');
+        const endTimeInput = document.getElementById('audioEndTime');
+        if (startTimeInput) startTimeInput.value = '0.00';
+        if (endTimeInput) endTimeInput.value = roundedDuration.toFixed(2);
+        console.log('✅ Поля обновлены по умолчанию: 0.00 -', roundedDuration.toFixed(2));
+
+        // Настраиваем callback для обновления региона
+        waveformCanvas.onRegionUpdate((region) => {
+            const startTimeInput = document.getElementById('audioStartTime');
+            const endTimeInput = document.getElementById('audioEndTime');
+            if (startTimeInput) startTimeInput.value = region.start.toFixed(2);
+            if (endTimeInput) endTimeInput.value = region.end.toFixed(2);
+
+            // Обновляем значения в workingData
+            if (workingData && workingData.original) {
+                workingData.original.audio_user_shared_start = region.start;
+                workingData.original.audio_user_shared_end = region.end;
+            }
+            if (workingData && workingData.translation) {
+                workingData.translation.audio_user_shared_start = region.start;
+                workingData.translation.audio_user_shared_end = region.end;
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Ошибка инициализации WaveformCanvas:', error);
+    }
+}
+
+/**
+ * Показать индикатор загрузки
+ */
+function showLoadingOverlay(message = 'Загрузка...') {
+    console.log('⏳ Показываем индикатор загрузки:', message);
+    // Простая заглушка - можно заменить на реальный индикатор загрузки
+    // Например, показать модальное окно или спиннер
+}
+
+/**
+ * Скрыть индикатор загрузки
+ */
+function hideLoadingOverlay() {
+    console.log('✅ Скрываем индикатор загрузки');
+    // Простая заглушка - можно заменить на реальный индикатор загрузки
+    // Например, скрыть модальное окно или спиннер
+}

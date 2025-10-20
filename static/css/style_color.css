@@ -78,4 +78,24 @@
   --color-grey-hover: #bdbdbd;               /* hover для разделителя */
   --color-grey: #e0e0e0;                     /* серый фон и разделители */
   --color-focus-border: #b0c4d8;             /* рамка текстового поля */
+
+  /* ========== ЦВЕТА ДЛЯ НАСТРОЕК АУДИО ========== */
+  
+  /* Фиолетовая группа - режим "весь файл" */
+  --color-audio-purple-primary: #c9b3fc;     /* основной фиолетовый */
+  --color-audio-purple-secondary: #9885b8;   /* темный фиолетовый */
+  --color-audio-purple-light: rgba(201, 179, 252, 0.1);   /* светлый фиолетовый фон */
+  --color-audio-purple-medium: rgba(201, 179, 252, 0.2);  /* средний фиолетовый */
+  
+  /* Бежевая группа - режим "предложение" */
+  --color-audio-beige-primary: #d4a574;      /* основной бежевый */
+  --color-audio-beige-secondary: #c49660;    /* темный бежевый */
+  --color-audio-beige-light: rgba(212, 165, 116, 0.1);   /* светлый бежевый фон */
+  --color-audio-beige-medium: rgba(212, 165, 116, 0.2);  /* средний бежевый */
+  
+  /* Оранжевая группа - режим "микрофон" */
+  --color-audio-orange-primary: #f59e0b;     /* основной оранжевый */
+  --color-audio-orange-secondary: #d97706;   /* темный оранжевый */
+  --color-audio-orange-light: rgba(245, 158, 11, 0.1);   /* светлый оранжевый фон */
+  --color-audio-orange-medium: rgba(245, 158, 11, 0.2);  /* средний оранжевый */
 }
