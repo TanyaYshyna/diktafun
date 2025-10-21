@@ -70,6 +70,8 @@ class WaveformCanvas {
         this.currentAudio = null;
         this.playheadInterval = null;
         this.timeUpdateHandler = null;
+        this.pauseHandler = null;
+        this.endedHandler = null;
 
         // Объединяем пользовательские опции
         Object.assign(this.config, options);
@@ -136,7 +138,7 @@ class WaveformCanvas {
 
         // Если размеры контейнера равны 0, устанавливаем минимальные размеры
         if (this.width === 0 || this.height === 0) {
-            console.warn('WaveformCanvas: Контейнер имеет нулевые размеры, устанавливаем минимальные');
+            // console.warn('WaveformCanvas: Контейнер имеет нулевые размеры, устанавливаем минимальные');
             this.width = Math.max(this.width, 800);
             this.height = Math.max(this.height, 90);
         }
@@ -254,13 +256,13 @@ class WaveformCanvas {
      * Установить время начала и конца региона
      */
     setRegion(start, end) {
-        console.log('🎯 WaveformCanvas: setRegion вызван с параметрами:', start, '-', end);
-        console.trace('🎯 WaveformCanvas: Стек вызовов setRegion:');
+        // console.log('🎯 WaveformCanvas: setRegion вызван с параметрами:', start, '-', end);
+        // console.trace('🎯 WaveformCanvas: Стек вызовов setRegion:');
 
         this.region.start = Math.max(0, Math.min(start, this.duration));
         this.region.end = Math.max(this.region.start, Math.min(end, this.duration));
 
-        console.log('🎯 WaveformCanvas: Установлен регион', this.region.start, '-', this.region.end);
+        // console.log('🎯 WaveformCanvas: Установлен регион', this.region.start, '-', this.region.end);
 
         this.render();
 
@@ -282,10 +284,14 @@ class WaveformCanvas {
     updateRegion({ start, end }) {
         if (start !== undefined) this.region.start = Math.max(0, Math.min(start, this.duration));
         if (end !== undefined) this.region.end = Math.max(this.region.start, Math.min(end, this.duration));
+        console.log('🔧 WaveformCanvas: updateRegion вызван, новый регион:', this.region.start.toFixed(2), '-', this.region.end.toFixed(2));
         this.render();
 
         if (this.callbacks.onRegionUpdate) {
+            console.log('🔧 WaveformCanvas: Вызываем callback onRegionUpdate');
             this.callbacks.onRegionUpdate(this.region);
+        } else {
+            console.warn('⚠️ WaveformCanvas: Callback onRegionUpdate не установлен!');
         }
     }
 
@@ -295,11 +301,12 @@ class WaveformCanvas {
     setCurrentTime(time) {
         this.currentTime = Math.max(0, Math.min(time, this.duration));
         this.playheadPosition = this.currentTime;
+        // console.log('🎯 WaveformCanvas: setCurrentTime установлено:', this.currentTime);
 
         // Синхронизируем позицию аудио с красной полоской только если аудио НЕ играет
         if (this.currentAudio && this.currentAudio.paused) {
             this.currentAudio.currentTime = this.currentTime;
-            console.log('🎯 WaveformCanvas: Синхронизирована позиция аудио с красной полоской:', this.currentTime);
+            // console.log('🎯 WaveformCanvas: Синхронизирована позиция аудио с красной полоской:', this.currentTime);
         }
 
         this.render();
@@ -312,6 +319,7 @@ class WaveformCanvas {
         if (audioElement && this.duration > 0) {
             const currentTime = audioElement.currentTime || 0;
             this.playheadPosition = currentTime;
+            this.currentTime = currentTime; // Синхронизируем currentTime тоже!
             this.render();
         }
     }
@@ -356,29 +364,67 @@ class WaveformCanvas {
      */
     async startPlayback(audioElement) {
         console.log('🎯 WaveformCanvas: Запуск воспроизведения');
+        if (!audioElement) {
+            console.warn('WaveformCanvas: audioElement is null in startPlayback');
+            return;
+        }
+
+        // Проверяем, что аудио загружено
+        if (!audioElement.src) {
+            console.warn('WaveformCanvas: audioElement.src is empty');
+            return;
+        }
+
+        // Ждем загрузки аудио если нужно
+        if (audioElement.readyState < 2) { // HAVE_CURRENT_DATA
+            console.log('🎯 WaveformCanvas: Ждем загрузки аудио...');
+            await new Promise((resolve, reject) => {
+                audioElement.onloadeddata = resolve;
+                audioElement.onerror = reject;
+                // Таймаут на случай если загрузка зависнет
+                setTimeout(() => reject(new Error('Timeout loading audio')), 5000);
+            });
+        }
+
+        // Если регион невалидный / не установлен – растягиваем до всей длительности
+        console.log('🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯 WaveformCanvas: Регион:', this.region);
+        if (!this.region || this.region.end <= this.region.start) {
+            if (this.region.end < this.region.start) {
+                console.log('🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯 WaveformCanvas: Регион не установлен МЕНЯЕМ МЕСТАМИ');
+                const st = this.region.start;
+                this.region.start = this.region.end;
+                this.region.end = st
+            } else if (this.region.end = this.region.start) {
+                console.log('🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯 WaveformCanvas: Регион не установлен ИГРАЕМ ВСЕ АУДИО');
+                this.region.start = 0;
+                this.region.end = this.duration || audioElement.duration || 0;
+            }
+        }
 
         // Определяем время начала воспроизведения
         let startTime = this.currentTime;
+        console.log('🎯🎯🎯 WaveformCanvas: Playhead за границами региона, перепрыгиваем на:', startTime);
 
         // Если playhead за границами региона - перепрыгиваем на начало региона
         if (this.currentTime < this.region.start || this.currentTime > this.region.end) {
             startTime = this.region.start;
             this.setCurrentTime(startTime);
-            console.log('🎯 WaveformCanvas: Playhead за границами региона, перепрыгиваем на:', startTime);
+            console.log('🎯🎯🎯🎯🎯 WaveformCanvas: Playhead за границами региона, перепрыгиваем на:', startTime);
         }
 
         // Устанавливаем время начала для аудио
-        if (audioElement) {
-            audioElement.currentTime = startTime;
-        }
+        audioElement.currentTime = Math.max(0, startTime || 0);
 
         // Начинаем контроль воспроизведения
         this.startAudioControl(audioElement);
 
         // Запускаем воспроизведение
         try {
+            console.log('🎯 WaveformCanvas: Запускаем воспроизведение с позиции:', startTime);
+            console.log('🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯 WaveformCanvas: Регион:', this.region);
+            console.log('🎯 WaveformCanvas: audioElement.duration:', audioElement.duration);
             await audioElement.play();
-            console.log('🎯 WaveformCanvas: Воспроизведение запущено с позиции:', startTime);
+            console.log('🎯 WaveformCanvas: Воспроизведение запущено успешно!');
         } catch (error) {
             console.error('❌ WaveformCanvas: Ошибка запуска воспроизведения:', error);
             throw error;
@@ -397,21 +443,33 @@ class WaveformCanvas {
 
 
     startAudioControl(audioElement) {
+        console.log('🎯 WaveformCanvas: startAudioControl вызван');
         this.currentAudio = audioElement;
         this.isPlaying = true;
+
+        // Уведомляем глобальный аудио менеджер о текущем плеере
+        if (window.AudioManager) {
+            console.log('🎯 WaveformCanvas: Уведомляем AudioManager');
+            window.AudioManager.setCurrent(audioElement);
+        }
 
         // Очищаем предыдущие обработчики
         // this.stopAudioControl();
 
-        // Обновляем playhead каждые 100мс (только для визуализации)
-        this.playheadInterval = setInterval(() => {
+        // Обновление playhead через rAF для более плавной анимации
+        const tick = () => {
+            if (!this.isPlaying || !this.currentAudio) return;
             this.updatePlayheadFromAudio(audioElement);
-        }, 100);
+            this.playheadInterval = requestAnimationFrame(tick);
+        };
+        this.playheadInterval = requestAnimationFrame(tick);
 
         // Добавляем обработчик timeupdate для более точного контроля
+        const EPS = 0.0005; // небольшой допуск на сравнение времени
         this.timeUpdateHandler = () => {
-            if (audioElement.currentTime >= this.region.end) {
+            if (audioElement.currentTime + EPS >= this.region.end) {
                 console.log('🎯 WaveformCanvas timeupdate: Достигнут конец региона, останавливаем воспроизведение');
+                console.log('🎯 WaveformCanvas: Вызываем audioElement.pause()');
                 audioElement.pause();
                 audioElement.currentTime = this.region.start; // Аудио прыгает в начало региона
                 this.setCurrentTime(this.region.start); // Возвращаем playhead в начало региона
@@ -419,6 +477,7 @@ class WaveformCanvas {
 
                 // Вызываем callback окончания воспроизведения
                 if (this.callbacks.onPlaybackEnd) {
+                    console.log('🎯 WaveformCanvas: Вызываем callback onPlaybackEnd');
                     this.callbacks.onPlaybackEnd();
                 }
 
@@ -435,20 +494,31 @@ class WaveformCanvas {
             this.stopAudioControl();
         };
         audioElement.addEventListener('pause', this.pauseHandler);
+
+        // Добавляем обработчик для события ended (когда аудио заканчивается естественным образом)
+        this.endedHandler = () => {
+            console.log('🎯 WaveformCanvas: Аудио закончилось естественным образом');
+            this.isPlaying = false;
+            this.stopAudioControl();
+            
+            // НЕ вызываем callback onPlaybackEnd - это делает плеер в playAudioFile
+            // Плеер сам управляет состоянием кнопки через свой onended
+        };
+        audioElement.addEventListener('ended', this.endedHandler);
     }
 
     /**
      * Остановить управление воспроизведением аудио
      */
     stopAudioControl() {
-        console.log('🎯 WaveformCanvas: stopAudioControl вызван');
+        // console.log('🎯 WaveformCanvas: stopAudioControl вызван');
 
         // Сохраняем текущую позицию аудио перед остановкой
         let currentAudioTime = 0;
         if (this.currentAudio) {
             currentAudioTime = this.currentAudio.currentTime;
             this.currentAudio.pause();
-            console.log('🎯 WaveformCanvas: Аудио остановлено на позиции:', currentAudioTime);
+            // console.log('🎯 WaveformCanvas: Аудио остановлено на позиции:', currentAudioTime);
         }
 
         // Обновляем позицию playhead на текущую позицию аудио
@@ -464,11 +534,15 @@ class WaveformCanvas {
         //     console.log('🎯 WaveformCanvas: Аудио остановлено');
         // }
 
-        // Очищаем интервал обновления playhead
+        // Очищаем обновление playhead
         if (this.playheadInterval) {
-            clearInterval(this.playheadInterval);
+            if (typeof cancelAnimationFrame !== 'undefined') {
+                cancelAnimationFrame(this.playheadInterval);
+            } else {
+                clearInterval(this.playheadInterval);
+            }
             this.playheadInterval = null;
-            console.log('🎯 WaveformCanvas: playheadInterval очищен');
+            // console.log('🎯 WaveformCanvas: playhead update loop очищен');
         }
 
         // Удаляем обработчики событий
@@ -476,18 +550,23 @@ class WaveformCanvas {
             if (this.timeUpdateHandler) {
                 this.currentAudio.removeEventListener('timeupdate', this.timeUpdateHandler);
                 this.timeUpdateHandler = null;
-                console.log('🎯 WaveformCanvas: timeUpdateHandler удален');
+                // console.log('🎯 WaveformCanvas: timeUpdateHandler удален');
             }
             if (this.pauseHandler) {
                 this.currentAudio.removeEventListener('pause', this.pauseHandler);
                 this.pauseHandler = null;
-                console.log('🎯 WaveformCanvas: pauseHandler удален');
+                // console.log('🎯 WaveformCanvas: pauseHandler удален');
+            }
+            if (this.endedHandler) {
+                this.currentAudio.removeEventListener('ended', this.endedHandler);
+                this.endedHandler = null;
+                // console.log('🎯 WaveformCanvas: endedHandler удален');
             }
         }
 
         this.currentAudio = null;
         this.isPlaying = false;
-        console.log('🎯 WaveformCanvas: stopAudioControl завершен');
+        // console.log('🎯 WaveformCanvas: stopAudioControl завершен');
     }
 
     /**
@@ -498,14 +577,14 @@ class WaveformCanvas {
             // Проверяем, не выходим ли мы за границы региона
             if (time < this.region.start) {
                 time = this.region.start;
-                console.log('🎯 WaveformCanvas: Клик за началом региона, перепрыгиваем на начало');
+                // console.log('🎯 WaveformCanvas: Клик за началом региона, перепрыгиваем на начало');
             } else if (time > this.region.end) {
                 time = this.region.end;
-                console.log('🎯 WaveformCanvas: Клик за концом региона, перепрыгиваем на конец');
+                // console.log('🎯 WaveformCanvas: Клик за концом региона, перепрыгиваем на конец');
             }
 
             this.currentAudio.currentTime = time;
-            console.log('🎯 WaveformCanvas: Обновлена позиция аудио на:', time);
+            // console.log('🎯 WaveformCanvas: Обновлена позиция аудио на:', time);
         }
     }
 
@@ -780,8 +859,8 @@ class WaveformCanvas {
      */
     handleClick(x) {
         const time = this.timeFromX(x);
-        console.log('🎯 WaveformCanvas: Клик по координате X:', x, 'время:', time);
-        console.log('🎯 WaveformCanvas: Текущая позиция красной полоски:', this.currentTime);
+        // console.log('🎯 WaveformCanvas: Клик по координате X:', x, 'время:', time);
+        // console.log('🎯 WaveformCanvas: Текущая позиция красной полоски:', this.currentTime);
 
         // Определяем куда должна перепрыгнуть красная полоска
         let targetTime = time;
@@ -789,16 +868,16 @@ class WaveformCanvas {
         // Если клик в пределах региона - перепрыгиваем туда
         if (time >= this.region.start && time <= this.region.end) {
             targetTime = time;
-            console.log('🎯 WaveformCanvas: Клик внутри региона, перепрыгиваем на:', targetTime);
+            // console.log('🎯 WaveformCanvas: Клик внутри региона, перепрыгиваем на:', targetTime);
         } else {
             // Если клик за пределами региона - перепрыгиваем на начало региона
             targetTime = this.region.start;
-            console.log('🎯 WaveformCanvas: Клик за пределами региона, перепрыгиваем на начало:', targetTime);
+            // console.log('🎯 WaveformCanvas: Клик за пределами региона, перепрыгиваем на начало:', targetTime);
         }
 
         // Устанавливаем позицию playhead
         this.setCurrentTime(targetTime);
-        console.log('🎯 WaveformCanvas: После setCurrentTime красная полоска на:', this.currentTime);
+        // console.log('🎯 WaveformCanvas: После setCurrentTime красная полоска на:', this.currentTime);
 
         // Обновляем позицию аудио если оно играет
         this.updateAudioPosition(targetTime);

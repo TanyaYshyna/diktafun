@@ -32,10 +32,6 @@
                 "language_original": "en",
                 "language_translation": "ru",
                 "dictations": [
-                  "dicta_1760416058795",
-                  "dicta_1760416564861",
-                  "dicta_1760417792154",
-                  "dicta_1760852395129"
                 ]
               }
             },
@@ -47,7 +43,9 @@
               "data": {
                 "language_original": "en",
                 "language_translation": "ru",
-                "dictations": []
+                "dictations": [
+                  "dicta_1760946618800"
+                ]
               }
             },
             {
@@ -58,11 +56,7 @@
               "data": {
                 "language_original": "en",
                 "language_translation": "ru",
-                "dictations": [
-                  "dicta_1760371345246",
-                  "dicta_1760371434339",
-                  "dicta_1760371571360"
-                ]
+                "dictations": []
               }
             },
             {

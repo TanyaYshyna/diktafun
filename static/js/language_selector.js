@@ -295,12 +295,12 @@ createLearningList() {
             return;
         }
 
-        console.log('🎨 Рендер LanguageSelector в режиме:', this.options.mode);
-        console.log('📦 Данные:', {
-            native: this.options.nativeLanguage,
-            learning: this.options.currentLearning,
-            learningList: this.options.learningLanguages
-        });
+        // console.log('🎨 Рендер LanguageSelector в режиме:', this.options.mode);
+        // console.log('📦 Данные:', {
+        //     native: this.options.nativeLanguage,
+        //     learning: this.options.currentLearning,
+        //     learningList: this.options.learningLanguages
+        // });
 
         let html = '';
         switch (this.options.mode) {
@@ -332,7 +332,7 @@ createLearningList() {
                 html = this.createNativeSelector();
         }
 
-        console.log('📝 HTML сгенерирован, длина:', html.length);
+        // console.log('📝', html.length);
         this.options.container.innerHTML = html;
 
         this.bindEvents();

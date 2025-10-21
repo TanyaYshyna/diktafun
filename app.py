@@ -1,4 +1,3 @@
-
 import os
 from flask import Flask, send_from_directory
 from flask_jwt_extended import JWTManager
@@ -25,14 +24,12 @@ app.config['AUDIO_BASE_DIR'] = 'static/data/temp'
 # Регистрируем blueprint'ы
 from routes.index import index_bp
 from routes.dictation_editor import editor_bp
-from routes.dictation_generator import generator_bp
 from routes.dictation import dictation_bp
 from routes.user_routes import user_bp
 
 
 app.register_blueprint(index_bp)
 app.register_blueprint(editor_bp)
-app.register_blueprint(generator_bp)
 app.register_blueprint(dictation_bp)
 app.register_blueprint(user_bp)
 

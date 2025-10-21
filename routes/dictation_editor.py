@@ -36,7 +36,88 @@ logger = logging.getLogger(__name__)
 
 editor_bp = Blueprint('dictation_editor', __name__)
 
+# ==============================================================
+# транслятор
+translator = Translator()
 
+@editor_bp.route('/translate', methods=['POST'])
+def translate_text():
+    data = request.json
+    text = data['text']
+    lang_original = data.get('language_original', 'en')  # По умолчанию автоопределение
+    lang_translation = data.get('language_translation', 'ru')
+    try:
+        translation = translator.translate(text, src=lang_original, dest=lang_translation).text
+        return jsonify({"translation": translation})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@editor_bp.route('/generate_audio', methods=['POST'])
+def generate_audio():
+    data = request.json
+    logging.info("Начало генерации аудио")
+
+    try:
+        dictation_id = data.get('dictation_id')
+        safe_email = data.get('safe_email')  # получаем из запроса
+        if not safe_email:
+            logging.error("Отсутствует safe_email")
+            return jsonify({"success": False, "error": "Отсутствует safe_email"}), 400
+        if not dictation_id:
+            return jsonify({"success": False, "error": "Отсутствует ID диктанта"}), 400
+
+        text = data.get('text')
+        tipe_audio  = data.get('tipe_audio') or 'avto'
+        filename_audio  = data.get('filename_audio')
+        lang = data.get('language')
+
+        # Создаем базовую директорию для хранения аудио
+        # base_dir = current_app.config.get('AUDIO_BASE_DIR', 'static/data/temp')
+        base_dir = 'static/data/temp'
+        # сохраняем прямо в папку языка без дополнительной подпапки
+        audio_dir = os.path.join(base_dir, dictation_id, lang)
+        
+        # Проверяем и создаем директории
+        try:
+            os.makedirs(audio_dir, exist_ok=True)
+            logging.info(f"Директория для аудио создана: {audio_dir}")
+        except OSError as e:
+            logging.error(f"Ошибка создания директории: {e}")
+            return jsonify({"success": False, "error": f"Ошибка создания директории: {e}"}), 500
+
+        # Генерируем имя файла
+        filepath = os.path.join(audio_dir, filename_audio)
+        
+        # Генерируем аудио с обработкой ошибок
+        try:
+            tts = gTTS(text=text, lang=lang)
+            tts.save(filepath)
+            logging.info(f"Аудиофайл успешно сохранен: {filepath}")
+            
+            # Формируем URL для доступа к файлу
+            # Возвращаем относительный URL до сгенерированного файла
+            audio_url = f"/static/data/temp/{dictation_id}/{lang}/{filename_audio}"
+
+            return jsonify({
+                "success": True,
+                "audio_url": audio_url
+            })
+        except Exception as e:
+            logging.error(f"Ошибка генерации аудио: {e}")
+            return jsonify({
+                "success": False,
+                "error": f"Ошибка генерации аудио: {e}"
+            }), 500
+
+    except Exception as e:
+        logging.error(f"Неожиданная ошибка в generate_audio: {e}")
+        return jsonify({
+            "success": False,
+            "error": f"Внутренняя ошибка сервера: {e}"
+        }), 500
+
+# ==============================================================
+# Генерирует ID в формате dicta_ + timestamp (как в старых диктантах)
 def generate_dictation_id():
     # Генерирует ID в формате dicta_ + timestamp (как в старых диктантах)
     timestamp = int(time.time() * 1000)
@@ -278,27 +359,6 @@ def split_audio_into_parts():
         return jsonify({'error': str(e)}), 500
 
 
-@editor_bp.route('/save_json', methods=['POST'])
-def save_json():
-
-    data = request.get_json()
-    file_path = data.get('path')
-    content = data.get('data')
-
-    if not file_path or not content:
-        return jsonify({"success": False, "error": "Missing path or data"}), 400
-
-    # Убедись, что путь безопасный
-    if ".." in file_path or file_path.startswith("/"):
-        return jsonify({"success": False, "error": "Invalid path"}), 400
-
-    try:
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(content, f, ensure_ascii=False, indent=2)
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
     
 
 
@@ -513,14 +573,7 @@ def copy_dictation_to_temp():
             temp_lang_path = os.path.join(temp_dictation_path, lang)
             os.makedirs(temp_lang_path, exist_ok=True)
             
-            # Копируем sentences.json
-            source_sentences_path = os.path.join(source_dictation_path, lang, 'sentences.json')
-            temp_sentences_path = os.path.join(temp_lang_path, 'sentences.json')
-            
-            if os.path.exists(source_sentences_path):
-                shutil.copy2(source_sentences_path, temp_sentences_path)
-            else:
-                logger.warning(f"⚠️ Файл {source_sentences_path} не найден")
+            # sentences.json НЕ копируем - данные будут в памяти клиента
             
             # Копируем аудио файлы напрямую из папки языка
             source_lang_path = os.path.join(source_dictation_path, lang)
@@ -837,23 +890,6 @@ def upload_audio_file():
         
         logger.info(f"Аудиофайл загружен: {filename} в {filepath}")
         
-        # Обновляем sentences.json с полем audio_user_shared
-        sentences_json_path = os.path.join(temp_path, 'sentences.json')
-        if os.path.exists(sentences_json_path):
-            try:
-                with open(sentences_json_path, 'r', encoding='utf-8') as f:
-                    sentences_data = json.load(f)
-                
-                # Добавляем поле audio_user_shared после title
-                sentences_data['audio_user_shared'] = filename
-                
-                with open(sentences_json_path, 'w', encoding='utf-8') as f:
-                    json.dump(sentences_data, f, ensure_ascii=False, indent=2)
-                
-                logger.info(f"Обновлен sentences.json с audio_user_shared: {filename}")
-            except Exception as e:
-                logger.error(f"Ошибка при обновлении sentences.json: {e}")
-        
         return jsonify({
             'success': True,
             'filename': filename,
@@ -948,22 +984,6 @@ def cut_audio_file():
             sf.write(physical_path, y_trimmed, sr)
             
             logger.info(f"Аудиофайл успешно обрезан и перезаписан: {filename}")
-
-            # Обновляем sentences.json с новыми временными метками
-            if dictation_id:
-                sentences_path = os.path.join('static', 'data', 'temp', dictation_id, language, 'sentences.json')
-                if os.path.exists(sentences_path):
-                    with open(sentences_path, 'r', encoding='utf-8') as f:
-                        sentences_data = json.load(f)
-                    
-                    # Обновляем временные метки
-                    sentences_data['audio_user_shared_start'] = 0
-                    sentences_data['audio_user_shared_end'] = end_time - start_time
-                    
-                    with open(sentences_path, 'w', encoding='utf-8') as f:
-                        json.dump(sentences_data, f, ensure_ascii=False, indent=2)
-                    
-                    logger.info(f"Обновлен sentences.json с новыми временными метками")
             
         except Exception as e:
             logger.error(f"Ошибка при обрезании аудио: {e}", exc_info=True)

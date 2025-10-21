@@ -16,7 +16,7 @@
 <body>
     <div class="topbar">
         <!-- <img src="/static/icons/logo.svg" class="logo"> -->
-        <img src="/static/icons/logo.svg" class="logo" onclick="window.location.href='/'">
+        <img src="/static/icons/logo.svg" class="logo" onclick="handleLogoClick()">
         <div class="user-section" id="user-section">
             <!-- Заполнится JavaScript -->
             <a href="/user/profile" class="username">
@@ -33,10 +33,17 @@
             <div>
                 <h2 id="dictation-id">Новый диктант: </h2>
             </div>
-            <button id="saveAndExitBtn" class="button-color-yellow" title="Сохранить диктант и выйти">
-                <i data-lucide="save"></i>
-                <i data-lucide="log-out"></i>
-            </button>
+            <div class="button-group">
+                <button id="saveBtn" class="button-color-green" title="Сохранить диктант">
+                    <i data-lucide="save"></i>
+                    <span>Сохранить</span>
+                </button>
+                <button id="saveAndExitBtn" class="button-color-yellow" title="Сохранить диктант и выйти">
+                    <i data-lucide="save"></i>
+                    <i data-lucide="log-out"></i>
+                    <span>Сохранить и выйти</span>
+                </button>
+            </div>
         </div>
         <div class="form-group-line">
             <div id="langPair" data-original="{{ original_language }}" data-translation="{{ translation_language }}">
@@ -178,6 +185,38 @@
 
         <!-- Основная таблица предложений -->
         <div class="main-content">
+            <!-- Группа кнопок управления таблицей -->
+            <div class="table-controls">
+                <!-- Кнопка перезаполнения таблицы (слева) -->
+                <button id="refillTableBtn" class="table-control-btn refill-btn">
+                    <i data-lucide="refresh-cw"></i>
+                    Перезаполнить таблицу
+                </button>
+                
+                <!-- Группа навигации и управления строками (справа) -->
+                <div class="table-nav-group">
+                    <button id="prevRowBtn" class="table-control-btn nav-btn" title="Предыдущая строка">
+                        <i data-lucide="chevron-left"></i>
+                    </button>
+                    
+                    <div class="current-row-label">
+                        <span id="currentRowNumber">1</span>
+                    </div>
+                    
+                    <button id="nextRowBtn" class="table-control-btn nav-btn" title="Следующая строка">
+                        <i data-lucide="chevron-right"></i>
+                    </button>
+                    
+                    <button id="addRowBtn" class="table-control-btn add-btn" title="Добавить строку">
+                        <i data-lucide="plus"></i>
+                    </button>
+                    
+                    <button id="deleteRowBtn" class="table-control-btn delete-btn" title="Удалить строку">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+            </div>
+            
             <table id="sentences-table">
                 <thead>
                     <tr>
@@ -214,17 +253,6 @@
                         <th class="col-apply-mic panel-editing-mic" title="Применить">
                             <i data-lucide="arrow-big-left-dash"></i>
                         </th>
-
-
-                        <!-- <th class="col-generate-tts" style="display: none;">С-ть</th>
-                        <th class="col-checkbox" style="display: none;">✔️</th>
-                        <th class="col-audio-file" style="display: none;">Файл</th>
-                        <th class="col-start" style="display: none;">Start</th>
-                        <th class="col-end" style="display: none;">End</th>
-                        <th class="col-chain" style="display: none;">🔗</th>
-                        <th class="col-create-audio" style="display: none;">С-ть</th>
-                        <th class="col-play-audio" style="display: none;"></th>
-                        <th class="col-apply" style="display: none;" title="Применить"></th> -->
                     </tr>
                 </thead>
                 <tbody>
@@ -377,6 +405,62 @@
             }
         });
     </script>
+
+    <!-- Модальное окно для добавления строки -->
+    <div id="addRowModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить новую строку</h3>
+                <button class="modal-close" onclick="closeAddRowModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Выберите, где добавить новую строку относительно строки <span id="addRowCurrentNumber">12</span>:</p>
+            </div>
+            <div class="modal-footer modal-footer-three">
+                <button class="modal-btn modal-btn-secondary transparent" onclick="closeAddRowModal()">
+                    <i data-lucide="x"></i>
+                    Отмена
+                </button>
+                <button class="modal-btn modal-btn-secondary" onclick="confirmAddRow('above')">
+                    <i data-lucide="arrow-up"></i>
+                    Сверху строки <span id="addRowAboveNumber">12</span>
+                </button>
+                <button class="modal-btn modal-btn-secondary" onclick="confirmAddRow('below')">
+                    <i data-lucide="arrow-down"></i>
+                    Снизу строки <span id="addRowBelowNumber">12</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для удаления строки -->
+    <div id="deleteRowModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Удалить строку</h3>
+                <button class="modal-close" onclick="closeDeleteRowModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить строку <span id="deleteRowNumber">12</span>?</p>
+                <p class="modal-warning">Ключ: <code id="deleteRowKey">001</code></p>
+                <p class="modal-warning">Это действие нельзя отменить!</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" onclick="closeDeleteRowModal()">
+                    <i data-lucide="x"></i>
+                    Отмена
+                </button>
+                <button class="modal-btn modal-btn-danger" onclick="confirmDeleteRow()">
+                    <i data-lucide="trash-2"></i>
+                    Удалить
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
