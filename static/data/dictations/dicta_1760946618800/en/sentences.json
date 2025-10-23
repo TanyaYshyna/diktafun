@@ -1,9 +1,6 @@
 {
   "language": "en",
   "title": "Sick",
-  "audio_user_shared": "audio.mp3",
-  "audio_user_shared_start": 0,
-  "audio_user_shared_end": 100.94,
   "speakers": {
     "1": "Спикер 1"
   },
@@ -392,5 +389,8 @@
       "start": 94.82,
       "text": "G'bye, I'm going out to play!"
     }
-  ]
+  ],
+  "audio_user_shared": "audio.mp3",
+  "audio_user_shared_start": 0,
+  "audio_user_shared_end": 100.94
 }

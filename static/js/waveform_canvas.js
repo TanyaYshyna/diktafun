@@ -962,6 +962,39 @@ class WaveformCanvas {
     }
 
     /**
+     * Показать волну (включить видимость всех элементов)
+     */
+    show() {
+        if (this.container) {
+            this.container.style.visibility = 'visible';
+        }
+        if (this.canvas) {
+            this.canvas.style.visibility = 'visible';
+        }
+        console.log('🌊 WaveformCanvas: показана');
+    }
+
+    /**
+     * Скрыть волну (выключить видимость всех элементов)
+     */
+    hide() {
+        if (this.container) {
+            this.container.style.visibility = 'hidden';
+        }
+        if (this.canvas) {
+            this.canvas.style.visibility = 'hidden';
+        }
+        console.log('🌊 WaveformCanvas: скрыта');
+    }
+
+    /**
+     * Проверить видима ли волна
+     */
+    isVisible() {
+        return this.container && this.container.style.visibility !== 'hidden';
+    }
+
+    /**
      * Уничтожить волну и очистить ресурсы
      */
     destroy() {

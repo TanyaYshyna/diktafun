@@ -857,6 +857,7 @@ def upload_audio_file():
         audio = request.files.get('audioFile')
         language = request.form.get('language', 'en')
         dictation_id = request.form.get('dictation_id')  # Получаем ID диктанта
+        sentence_key = request.form.get('sentenceKey')  # Ключ предложения (для режима микрофона)
         
         if not audio:
             return jsonify({'success': False, 'error': 'Аудиофайл не найден'}), 400
@@ -880,8 +881,9 @@ def upload_audio_file():
         
         os.makedirs(temp_path, exist_ok=True)
         
-        # Сохраняем файл с оригинальным именем
+        # Используем оригинальное имя файла
         filename = audio.filename
+        
         filepath = os.path.join(temp_path, filename)
         audio.save(filepath)
         
@@ -1078,4 +1080,4 @@ def split_audio_file():
         
     except Exception as e:
         logger.error(f"Ошибка при разрезании аудиофайла: {e}")
-        return jsonify({'success': False, 'error': f'Ошибка разрезания: {str(e)}'}), 500    
+        return jsonify({'success': False, 'error': f'Ошибка разрезания: {str(e)}'}), 500

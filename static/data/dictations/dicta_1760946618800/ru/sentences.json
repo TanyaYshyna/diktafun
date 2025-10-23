@@ -1,9 +1,6 @@
 {
   "language": "ru",
   "title": "Больной",
-  "audio_user_shared": "",
-  "audio_user_shared_start": 0,
-  "audio_user_shared_end": 0,
   "speakers": {
     "1": "Спикер 1"
   },
@@ -392,5 +389,8 @@
       "start": 94.82,
       "text": "Пока, я ухожу играть!"
     }
-  ]
+  ],
+  "audio_user_shared": "",
+  "audio_user_shared_start": 0,
+  "audio_user_shared_end": 0
 }

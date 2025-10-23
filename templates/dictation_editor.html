@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/style_dictation_editor.css">
     <link rel="icon" href="data:,"> <!-- Пустая иконка -->
-    
+
     <!-- WaveformCanvas -->
     <script src="{{ url_for('static', filename='js/waveform_canvas.js') }}"></script>
 </head>
@@ -100,46 +100,56 @@
                             <label class="radio-label">
                                 <input type="radio" name="audioMode" value="full" checked>
                                 <i data-lucide="aperture" class="radio-icon radio-icon-selected"></i>
-                                <i data-lucide="circle" class="radio-icon radio-icon-unselected" style="display: none;"></i>
+                                <i data-lucide="circle" class="radio-icon radio-icon-unselected"
+                                    style="display: none;"></i>
                                 <span>Отображать весь файл</span>
                             </label>
                             <label class="radio-label">
                                 <input type="radio" name="audioMode" value="sentence">
-                                <i data-lucide="aperture" class="radio-icon radio-icon-selected" style="display: none;"></i>
+                                <i data-lucide="aperture" class="radio-icon radio-icon-selected"
+                                    style="display: none;"></i>
                                 <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
                                 <span>Текущее предложение</span>
                             </label>
                             <label class="radio-label">
                                 <input type="radio" name="audioMode" value="mic">
-                                <i data-lucide="aperture" class="radio-icon radio-icon-selected" style="display: none;"></i>
+                                <i data-lucide="aperture" class="radio-icon radio-icon-selected"
+                                    style="display: none;"></i>
                                 <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
                                 <span>Запись с микрофона</span>
                             </label>
                             <label class="radio-label">
                                 <input type="radio" name="audioMode" value="auto">
-                                <i data-lucide="aperture" class="radio-icon radio-icon-selected" style="display: none;"></i>
+                                <i data-lucide="aperture" class="radio-icon radio-icon-selected"
+                                    style="display: none;"></i>
                                 <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
                                 <span>Автозаполнение</span>
                             </label>
                         </div>
                     </td>
                     <td class="controls-cell">
-                        <!-- Панель выбора файла (показывается только для режима "весь файл") -->
-                        <div id="fileSelectionPanel" class="file-selection-panel">
+                        <!-- Контейнер для волны и управления -->
+                        <div id="waveformAndControls" class="waveform-and-controls">
+                            <!-- Информация о текущем предложении (для режима микрофона) -->
                             <div class="file-selection-content">
-                                <span id="selectedFileName" class="selected-filename">Выберите файл</span>
+                                <div class="file-selection-header">
+                                    <span id="currentAudioInfo">Аудио для волны: не выбрано</span>
+                                    <button type="button" id="selectFileBtn" class="file-select-btn"
+                                        title="Выбрать файл">...
+                                        <!-- <i data-lucide="more-horizontal"></i> -->
+                                    </button>
+                                </div>
+                                <div class="file-selection-body">
+                                    <span id="currentSentenceInfo">Строка таблицы: не выбрана</span>
+                                </div>
+                            </div>
+                            <!-- <div class="file-selection-content">
+                                <span id="currentAudioInfo">Аудио для волны: не выбрано</span>
+                                <span id="currentSentenceText">Строка таблицы: не выбрана</span>
                                 <button type="button" id="selectFileBtn" class="file-select-btn" title="Выбрать файл">
                                     <i data-lucide="more-horizontal"></i>
                                 </button>
-                            </div>
-                        </div>
-                        <!-- Текущий текст/файл -->
-                        <div class="current-audio-info">
-                            <p id="currentAudioInfo">Имя файла из текущей строки таблицы файлов</p>
-                        </div>
-
-                        <!-- Контейнер для волны и управления -->
-                        <div id="waveformAndControls" class="waveform-and-controls">
+                            </div> -->
                             <!-- Контейнер для волны -->
                             <div class="waveform-container">
                                 <div id="audioWaveform"></div>
@@ -147,26 +157,26 @@
 
                             <!-- Кнопки управления воспроизведением -->
                             <div class="playback-controls">
-                                <button type="button" id="audioPlayBtn" class="audio-btn" data-field-name="audio_user_shared" data-state="ready-shared" data-language="en" data-original-state="ready-shared">
+                                <button type="button" id="audioPlayBtn" class="audio-btn"
+                                    data-field-name="audio_user_shared" data-state="ready-shared" data-language="en"
+                                    data-original-state="ready-shared">
                                     <i data-lucide="play"></i>
                                 </button>
                                 <div class="time-controls">
-                                    <label for="audioStartTime">Start:</label>
+                                    <label for="audioStartTimeName">Start:</label>
                                     <input type="number" id="audioStartTime" step="0.01" min="0">
-                                    <label for="audioEndTime">End:</label>
+                                    <label for="audioEndTimeName">End:</label>
                                     <input type="number" id="audioEndTime" step="0.01" min="0">
                                 </div>
                                 <button type="button" id="scissorsBtn" class="button-standard">
                                     <i data-lucide="scissors"></i>
                                 </button>
-                                <button type="button" id="audioToTableBtn" class="button-standard" title="Разрезать аудио на 1000 кусков">
+                                <!-- <button type="button" id="audioToTableBtn" class="button-standard" -->
+                                <button type="button" id="audioTableActionBtn" class="button-standard"
+                                    title="Разрезать аудио на 1000 кусков">
                                     <i data-lucide="scissors"></i>
                                     <span>на 1000 кусков</span>
                                 </button>
-                                <!-- <button type="button" id="applyAudioBtn" class="apply-btn">
-                                    <i data-lucide="check"></i>
-                                    <span id="applyBtnText">Принять это аудио в диктант</span>
-                                </button> -->
                             </div>
                         </div>
 
@@ -175,7 +185,7 @@
                             <input type="number" id="startTime" step="0.01" min="0">
                             <input type="number" id="endTime" step="0.01" min="0">
                         </div>
-                        
+
                         <!-- Скрытый input для выбора файлов -->
                         <input type="file" id="audioFileInput" accept="audio/*" style="display: none;">
                     </td>
@@ -192,31 +202,31 @@
                     <i data-lucide="refresh-cw"></i>
                     Перезаполнить таблицу
                 </button>
-                
+
                 <!-- Группа навигации и управления строками (справа) -->
                 <div class="table-nav-group">
                     <button id="prevRowBtn" class="table-control-btn nav-btn" title="Предыдущая строка">
                         <i data-lucide="chevron-left"></i>
                     </button>
-                    
+
                     <div class="current-row-label">
                         <span id="currentRowNumber">1</span>
                     </div>
-                    
+
                     <button id="nextRowBtn" class="table-control-btn nav-btn" title="Следующая строка">
                         <i data-lucide="chevron-right"></i>
                     </button>
-                    
+
                     <button id="addRowBtn" class="table-control-btn add-btn" title="Добавить строку">
                         <i data-lucide="plus"></i>
                     </button>
-                    
+
                     <button id="deleteRowBtn" class="table-control-btn delete-btn" title="Удалить строку">
                         <i data-lucide="trash-2"></i>
                     </button>
                 </div>
             </div>
-            
+
             <table id="sentences-table">
                 <thead>
                     <tr>
@@ -230,7 +240,7 @@
                                 <i data-lucide="panel-left-open"></i>
                             </button>
                         </th>
-                        
+
                         <th class="col-translation panel-translation">Перевод</th>
                         <th class="col-play-translation panel-translation"></th>
 

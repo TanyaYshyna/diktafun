@@ -1137,11 +1137,7 @@ label[for="startTextInput"] {
     align-items: center;
 }
 
-.file-selection-content {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+
 
 .selected-filename {
     flex: 1;
@@ -1712,3 +1708,124 @@ label[for="startTextInput"] {
 .end-input:hover {
     border-color: var(--color-audio-purple-medium) !important;
 }
+
+/* Стили для режима микрофона */
+.current-audio-info {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #495057;
+}
+
+.current-audio-info span {
+    font-weight: 500;
+}
+
+.current-sentence-info {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.current-sentence-info .sentence-text {
+    font-size: 14px;
+    color: #495057;
+}
+
+.current-sentence-info strong {
+    color: #212529;
+    margin-right: 8px;
+}
+
+/* Скрытие элементов в режиме микрофона когда нет аудио */
+.mode-mic .waveform-container:not(.has-audio) {
+    display: none;
+}
+
+/* Показ элементов управления в режиме микрофона */
+.mode-mic .playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.mode-mic .playback-controls button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Кнопка микрофона прижата к правому краю */
+.mode-mic .playback-controls {
+    justify-content: space-between;
+}
+
+.mode-mic .playback-controls .button-group-right {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+
+/* -------------------- Выбор файла и строки таблицы --------------` */
+.file-selection-content {
+    display: flex;
+    flex-direction: column;
+    /* gap: 6px;             */
+    padding: 10px 12px;
+    /* border: 1px solid #e9ecef;
+    border-radius: 8px; */
+    /* background: #fff; */
+  }
+  
+  .file-selection-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;           /* отступ между текстом и кнопкой */
+  }
+  
+  #currentAudioInfo {
+    display: block;
+    /* font-weight: 600; */
+    color: #212529;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .file-select-btn {
+    display: inline-flex;
+    /* align-items: center; */
+    /* justify-content: center; */
+    width: 40px; 
+    height: 40px;
+    border-radius: 6px;
+    font-size: 20px;
+    background: var(--color-button-purple);
+    color:var(--color-button-text-purple);
+    transition: color .15s ease-in-out, border-color .15s;
+  }
+  .file-select-btn:hover { 
+    color: #343a40; 
+    /* border-color: #ced4da;  */
+}
+  
+  .file-selection-body {
+    display: block;
+    color: #495057;
+    line-height: 1.4;
+    white-space: normal;         /* многострочно */
+    word-break: break-word;      /* перенос длинных слов */
+  }
+  #currentSentenceInfo { 
+    display: block;
+    font-size: 20px;
+    /* font-weight: 600; */
+ }
