@@ -3675,6 +3675,7 @@ function openStartModal() {
 }
 
 function closeStartModal() {
+    const modal = document.getElementById('startModal');
     if (modal) {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';

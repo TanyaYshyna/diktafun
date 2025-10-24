@@ -1,0 +1,156 @@
+{
+  "language": "ru",
+  "title": "Магия словообразования 1",
+  "speakers": {
+    "1": "Спикер 1"
+  },
+  "sentences": [
+    {
+      "key": "000",
+      "speaker": "1",
+      "text": "Твоя доброта не знает границ.",
+      "audio": "000_ru_avto.mp3",
+      "audio_avto": "000_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "001",
+      "speaker": "1",
+      "text": "Добрые люди делают мир ярче.",
+      "audio": "001_ru_avto.mp3",
+      "audio_avto": "001_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "002",
+      "speaker": "1",
+      "text": "Я нашёл эту информацию в интернете.",
+      "audio": "002_ru_avto.mp3",
+      "audio_avto": "002_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "003",
+      "speaker": "1",
+      "text": "Я всегда информирую своих друзей о хороших новостях.",
+      "audio": "003_ru_avto.mp3",
+      "audio_avto": "003_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "004",
+      "speaker": "1",
+      "text": "Спасибо тебе за приглашение.",
+      "audio": "004_ru_avto.mp3",
+      "audio_avto": "004_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "005",
+      "speaker": "1",
+      "text": "Я приглашу всех на своё весёлое чаепитие.",
+      "audio": "005_ru_avto.mp3",
+      "audio_avto": "005_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "006",
+      "speaker": "1",
+      "text": "Она смотрела презентацию нового телефона по телевизору.",
+      "audio": "006_ru_avto.mp3",
+      "audio_avto": "006_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "007",
+      "speaker": "1",
+      "text": "Я представлю свою идею с шарами и музыкой.",
+      "audio": "007_ru_avto.mp3",
+      "audio_avto": "007_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "008",
+      "speaker": "1",
+      "text": "Мы видели ужасные разрушения из-за наводнения.",
+      "audio": "008_ru_avto.mp3",
+      "audio_avto": "008_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "009",
+      "speaker": "1",
+      "text": "Не разрушай мою башню из бутербродов!",
+      "audio": "009_ru_avto.mp3",
+      "audio_avto": "009_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "010",
+      "speaker": "1",
+      "text": "У них не было другого выбора, кроме как остаться.",
+      "audio": "010_ru_avto.mp3",
+      "audio_avto": "010_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "011",
+      "speaker": "1",
+      "text": "Я не могу выбрать между пиццей и тортом.",
+      "audio": "011_ru_avto.mp3",
+      "audio_avto": "011_ru_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    }
+  ],
+  "audio_user_shared": "",
+  "audio_user_shared_start": 0,
+  "audio_user_shared_end": 0
+}

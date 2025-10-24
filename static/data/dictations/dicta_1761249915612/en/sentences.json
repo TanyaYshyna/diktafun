@@ -1,0 +1,156 @@
+{
+  "language": "en",
+  "title": "Word Formation Magic 1",
+  "speakers": {
+    "1": "Спикер 1"
+  },
+  "sentences": [
+    {
+      "key": "000",
+      "speaker": "1",
+      "text": "Your kindness has no boundaries.",
+      "audio": "000_en_avto.mp3",
+      "audio_avto": "000_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "001",
+      "speaker": "1",
+      "text": "Kind people make the world brighter.",
+      "audio": "001_en_avto.mp3",
+      "audio_avto": "001_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "002",
+      "speaker": "1",
+      "text": "I’ve found this information on the Internet.",
+      "audio": "002_en_avto.mp3",
+      "audio_avto": "002_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "003",
+      "speaker": "1",
+      "text": "I always inform my friends about good news.",
+      "audio": "003_en_avto.mp3",
+      "audio_avto": "003_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "004",
+      "speaker": "1",
+      "text": "Thank you kindly for your invitation.",
+      "audio": "004_en_avto.mp3",
+      "audio_avto": "004_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "005",
+      "speaker": "1",
+      "text": "I will invite everyone to my funny tea party.",
+      "audio": "005_en_avto.mp3",
+      "audio_avto": "005_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "006",
+      "speaker": "1",
+      "text": "She watched the presentation of the new mobile on TV.",
+      "audio": "006_en_avto.mp3",
+      "audio_avto": "006_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "007",
+      "speaker": "1",
+      "text": "I will present my idea with balloons and music.",
+      "audio": "007_en_avto.mp3",
+      "audio_avto": "007_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "008",
+      "speaker": "1",
+      "text": "We saw awful destruction because of the flood.",
+      "audio": "008_en_avto.mp3",
+      "audio_avto": "008_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "009",
+      "speaker": "1",
+      "text": "Don’t destroy my sandwich tower!",
+      "audio": "009_en_avto.mp3",
+      "audio_avto": "009_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "010",
+      "speaker": "1",
+      "text": "They had no other choice but to stay.",
+      "audio": "010_en_avto.mp3",
+      "audio_avto": "010_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    },
+    {
+      "key": "011",
+      "speaker": "1",
+      "text": "I can’t choose between pizza and cake.",
+      "audio": "011_en_avto.mp3",
+      "audio_avto": "011_en_avto.mp3",
+      "audio_user": "",
+      "audio_mic": "",
+      "start": 0,
+      "end": 0,
+      "chain": false
+    }
+  ],
+  "audio_user_shared": "",
+  "audio_user_shared_start": 0,
+  "audio_user_shared_end": 0
+}
