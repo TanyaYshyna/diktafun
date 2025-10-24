@@ -1253,33 +1253,33 @@ function updateStats(circle = null) {
     if (circle === null) {
         // итоги общие по всем кругам 
         // в диктанте
-        setText('count_perfect', number_of_perfect + sum.circle_number_of_perfect);
-        setText('count_corrected', number_of_corrected + sum.circle_number_of_corrected);
-        setText('count_audio', number_of_audio + sum.circle_number_of_audio);
-        setText('count_total', allSentences.length);
+        setText('count-perfect', number_of_perfect + sum.circle_number_of_perfect);
+        setText('count-corrected', number_of_corrected + sum.circle_number_of_corrected);
+        setText('count-audio', number_of_audio + sum.circle_number_of_audio);
+        setText('count-total', allSentences.length);
 
         // в модалке
         setText('modal-count-perfect', number_of_perfect + sum.circle_number_of_perfect);
         setText('modal-count-corrected', number_of_corrected + sum.circle_number_of_corrected);
         setText('modal-count-audio', number_of_audio + sum.circle_number_of_audio);
-        setText('modal-circle-total', allSentences.length);
-        console.log("👀 [1] allSentences", allSentences);
-        console.log("👀 [1] allSentences.length", allSentences.length);
+        setText('modal-count-total', allSentences.length);
+        // console.log("👀 [1] allSentences", allSentences);
+        // console.log("👀 [1] allSentences.length", allSentences.length);
     } else {
         // итоги по текущему кругу
         // в диктанте
-        setText('count_perfect', sum.circle_number_of_perfect);
-        setText('count_corrected', sum.circle_number_of_corrected);
-        setText('count_audio', sum.circle_number_of_audio);
-        setText('count_total', selectedSentences.length);
+        setText('count-perfect', sum.circle_number_of_perfect);
+        setText('count-corrected', sum.circle_number_of_corrected);
+        setText('count-audio', sum.circle_number_of_audio);
+        setText('count-total', selectedSentences.length);
 
         // в модалке
         setText('modal-count-perfect', sum.circle_number_of_perfect);
         setText('modal-count-corrected', sum.circle_number_of_corrected);
         setText('modal-count-audio', sum.circle_number_of_audio);
         setText('modal-count-total', selectedSentences.length);
-        console.log("👀 selectedSentences", selectedSentences);
-        console.log("👀 selectedSentences.length", selectedSentences.length);
+        // console.log("👀 selectedSentences", selectedSentences);
+        // console.log("👀 selectedSentences.length", selectedSentences.length);
         setText('modal-circle-number', circle_number);
 
     }
