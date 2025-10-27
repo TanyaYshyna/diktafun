@@ -53,4 +53,4 @@ def serve_dictation_audio(filename):
 if __name__ == '__main__':    
     users_dir = os.path.join('static', 'data', 'users')
     os.makedirs(users_dir, exist_ok=True)
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=int(os.getenv("FLASK_PORT", 5000)))
