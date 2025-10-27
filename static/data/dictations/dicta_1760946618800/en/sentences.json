@@ -8,7 +8,7 @@
     {
       "audio": "000_en_avto.mp3",
       "audio_avto": "000_en_avto.mp3",
-      "audio_mic": "",
+      "audio_mic": "000_en_mic.mp4",
       "audio_user": "000_en_user.mp3",
       "chain": true,
       "end": 3.06,
@@ -20,7 +20,7 @@
     {
       "audio": "001_en_avto.mp3",
       "audio_avto": "001_en_avto.mp3",
-      "audio_mic": "",
+      "audio_mic": "001_en_mic.mp4",
       "audio_user": "001_en_user.mp3",
       "chain": true,
       "end": 6.12,
@@ -32,7 +32,7 @@
     {
       "audio": "002_en_avto.mp3",
       "audio_avto": "002_en_avto.mp3",
-      "audio_mic": "",
+      "audio_mic": "002_en_mic.mp4",
       "audio_user": "002_en_user.mp3",
       "chain": true,
       "end": 9.18,

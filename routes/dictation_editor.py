@@ -580,7 +580,7 @@ def copy_dictation_to_temp():
             
             if os.path.exists(source_lang_path):
                 for file_name in os.listdir(source_lang_path):
-                    if file_name.lower().endswith(('.mp3', '.wav', '.ogg')):
+                    if file_name.lower().endswith(('.mp3', '.mp4', '.webm', '.wav', '.ogg')):
                         source_file = os.path.join(source_lang_path, file_name)
                         temp_file = os.path.join(temp_lang_path, file_name)
                         shutil.copy2(source_file, temp_file)
@@ -606,9 +606,9 @@ def copy_audio_files_from_temp(dictation_id, language):
         # Создаем папку назначения
         os.makedirs(dictation_path, exist_ok=True)
             
-        # Копируем все .mp3 файлы из temp
+        # Копируем все аудиофайлы из temp (mp3, mp4, webm, ogg, wav)
         for filename in os.listdir(temp_path):
-            if filename.lower().endswith('.mp3'):
+            if filename.lower().endswith(('.mp3', '.mp4', '.webm', '.ogg', '.wav')):
                 source = os.path.join(temp_path, filename)
                 target = os.path.join(dictation_path, filename)
                 shutil.copy2(source, target)
@@ -862,8 +862,8 @@ def upload_audio_file():
         if not audio:
             return jsonify({'success': False, 'error': 'Аудиофайл не найден'}), 400
         
-        # Проверяем что это аудио файл
-        if not audio.filename.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac')):
+        # Проверяем что это аудио файл (добавляем поддержку webm)
+        if not audio.filename.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac', '.webm', '.mp4')):
             return jsonify({'success': False, 'error': 'Файл должен быть аудиофайлом'}), 400
         
         # Получаем текущего пользователя
@@ -901,6 +901,53 @@ def upload_audio_file():
         
     except Exception as e:
         logger.error(f"Ошибка при загрузке аудиофайла: {e}")
+        return jsonify({'success': False, 'error': f'Ошибка загрузки: {str(e)}'}), 500
+
+
+@editor_bp.route('/upload_mic_audio', methods=['POST'])
+# @jwt_required()  # Временно отключаем для тестирования
+def upload_mic_audio():
+    """Загрузка аудио с микрофона для предложения"""
+    try:
+        audio = request.files.get('audio')
+        dictation_id = request.form.get('dictation_id')
+        language = request.form.get('language', 'en')
+        
+        if not audio:
+            return jsonify({'success': False, 'error': 'Аудиофайл не найден'}), 400
+        
+        if not dictation_id:
+            return jsonify({'success': False, 'error': 'ID диктанта не указан'}), 400
+        
+        # Получаем текущего пользователя
+        safe_email = get_safe_email_from_token()
+        if not safe_email:
+            return jsonify({'success': False, 'error': 'Пользователь не авторизован'}), 401
+        
+        # Определяем путь к папке диктанта в temp
+        temp_path = os.path.join("static", "data", "temp", dictation_id, language)
+        os.makedirs(temp_path, exist_ok=True)
+        
+        # Используем оригинальное имя файла
+        filename = audio.filename
+        
+        filepath = os.path.join(temp_path, filename)
+        audio.save(filepath)
+        
+        # Путь для браузера
+        browser_path = f"/static/data/temp/{dictation_id}/{language}/{filename}"
+        
+        logger.info(f"Аудио с микрофона загружено: {filename} в {filepath}")
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'filepath': browser_path,
+            'message': 'Запись с микрофона успешно сохранена'
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при загрузке аудио с микрофона: {e}")
         return jsonify({'success': False, 'error': f'Ошибка загрузки: {str(e)}'}), 500
 
 

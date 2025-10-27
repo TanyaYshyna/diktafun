@@ -804,6 +804,190 @@ label[for="startTextInput"] {
     background: var(--color-error-dark);
 }
 
+/* ========== СТИЛИ МОДАЛЬНОГО ОКНА ЗАПИСИ С МИКРОФОНА ========== */
+.mic-record-modal {
+    max-width: 600px;
+    width: 90%;
+}
+
+.mic-record-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sentence-text-display {
+    background: var(--color-hover);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--color-border-light);
+}
+
+.sentence-text-display label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.sentence-text {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--color-text);
+    min-height: 40px;
+    padding: 8px;
+    background: var(--color-panel-bg);
+    border-radius: 6px;
+    border: 1px solid var(--color-border-light);
+}
+
+.recording-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.recording-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--color-hover);
+    border-radius: 8px;
+    border: 1px solid var(--color-border-light);
+}
+
+.recording-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recording-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-text-secondary);
+    transition: background-color 0.3s ease;
+}
+
+.recording-indicator.recording .recording-dot {
+    background: var(--color-error);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.recording-timer {
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.recording-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.playback-section {
+    background: var(--color-hover);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--color-border-light);
+}
+
+.playback-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.playback-info {
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+}
+
+/* Стили для кнопок записи - фиксированные размеры */
+#startRecordBtn {
+    display: block;
+    background: #007bff !important;
+    color: white !important;
+    border: 1px solid #007bff !important;
+    min-width: 150px;
+    height: 40px;
+}
+
+#startRecordBtn:hover {
+    background: #0056b3 !important;
+    color: white !important;
+}
+
+#stopRecordBtn {
+    display: none;
+    background: #6c757d !important;
+    color: white !important;
+    border: 1px solid #6c757d !important;
+    min-width: 150px;
+    height: 40px;
+}
+
+#stopRecordBtn:hover {
+    background: #545b62 !important;
+    color: white !important;
+}
+
+#playRecordBtn {
+    background: #28a745 !important;
+    color: white !important;
+    border: 1px solid #28a745 !important;
+    min-width: 120px;
+    height: 40px;
+}
+
+#playRecordBtn:hover {
+    background: #1e7e34 !important;
+    color: white !important;
+}
+
+#rerecordBtn {
+    background: #ffc107 !important;
+    color: #212529 !important;
+    border: 1px solid #ffc107 !important;
+    min-width: 120px;
+    height: 40px;
+}
+
+#rerecordBtn:hover {
+    background: #e0a800 !important;
+    color: #212529 !important;
+}
+
+#saveRecordBtn {
+    display: none;
+    background: #007bff !important;
+    color: white !important;
+    border: 1px solid #007bff !important;
+    min-width: 150px;
+    height: 40px;
+}
+
+#saveRecordBtn:hover {
+    background: #0056b3 !important;
+    color: white !important;
+}
+
+#playbackSection {
+    display: none;
+}
+
 /* Основная таблица предложений */
 #sentences-table {
     width: 100%;

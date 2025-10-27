@@ -471,6 +471,73 @@
             </div>
         </div>
     </div>
+
+    <!-- Модальное окно для записи с микрофона -->
+    <div id="micRecordModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content mic-record-modal">
+            <div class="modal-header">
+                <h3>Запись с микрофона</h3>
+                <button class="modal-close" onclick="closeMicRecordModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="mic-record-content">
+                    <div class="sentence-text-display">
+                        <label>Текст для записи:</label>
+                        <div id="micRecordSentenceText" class="sentence-text"></div>
+                    </div>
+                    
+                    <div class="recording-controls">
+                        <div class="recording-status">
+                            <div id="recordingIndicator" class="recording-indicator">
+                                <div class="recording-dot"></div>
+                                <span id="recordingStatusText">Готов к записи</span>
+                            </div>
+                            <div id="recordingTimer" class="recording-timer">00:00</div>
+                        </div>
+                        
+                        <div class="recording-buttons">
+                            <button id="startRecordBtn" class="modal-btn modal-btn-primary">
+                                <i data-lucide="mic"></i>
+                                Начать запись
+                            </button>
+                            <button id="stopRecordBtn" class="modal-btn modal-btn-secondary" style="display: none;">
+                                <i data-lucide="square"></i>
+                                Остановить
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="playbackSection" class="playback-section" style="display: none;">
+                        <div class="playback-controls">
+                            <button id="playRecordBtn" class="modal-btn modal-btn-secondary">
+                                <i data-lucide="play"></i>
+                                Прослушать
+                            </button>
+                            <button id="rerecordBtn" class="modal-btn modal-btn-secondary">
+                                <i data-lucide="rotate-ccw"></i>
+                                Перезаписать
+                            </button>
+                        </div>
+                        <div class="playback-info">
+                            <span id="playbackDuration">Длительность: --:--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary transparent" onclick="closeMicRecordModal()">
+                    <i data-lucide="x"></i>
+                    Отмена
+                </button>
+                <button id="saveRecordBtn" class="modal-btn modal-btn-primary" style="display: none;">
+                    <i data-lucide="save"></i>
+                    Сохранить запись
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

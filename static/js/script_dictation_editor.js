@@ -1297,7 +1297,7 @@ function setupAudioSettingsModalHandlers() {
     }
 
     // Кнопка "Разрезать аудио на 1000 кусков"
-    const audioTableActionBtn = document.getElementById('audioTableActionBtn');
+    // const audioTableActionBtn = document.getElementById('audioTableActionBtn');
     if (audioTableActionBtn) {
         audioTableActionBtn.addEventListener('click', () => {
             const audioMode = document.querySelector('input[name="audioMode"]:checked');
@@ -1670,15 +1670,109 @@ function updateWaveformVisibilityForMicMode() {
     const sentence = workingData.original.sentences.find(s => s.key === key);
 
     if (sentence && sentence.audio_mic) {
-        // Есть записанное аудио - показываем волну
-        // waveformContainer.style.visibility = 'visible';
-        window.waveformCanvas.show();
-        console.log('🎤 Волна показана для записанного аудио:', sentence.audio_mic);
+        // Есть записанное аудио - загружаем и показываем волну
+        // Сначала пробуем загрузить из постоянной папки dictations
+        let audioPath = `/static/data/dictations/${currentDictation.id}/${currentDictation.language_original}/${sentence.audio_mic}`;
+        
+        // Загружаем аудио в волну
+        loadAudioIntoWaveform(audioPath).then(() => {
+            window.waveformCanvas.show();
+            console.log('🎤 Волна загружена для записанного аудио из dictations:', sentence.audio_mic);
+        }).catch(error => {
+            console.warn('⚠️ Файл не найден в dictations, пробуем temp:', error);
+            // Если не найден в dictations, пробуем temp
+            audioPath = `/static/data/temp/${currentDictation.id}/${currentDictation.language_original}/${sentence.audio_mic}`;
+            return loadAudioIntoWaveform(audioPath);
+        }).then(() => {
+            window.waveformCanvas.show();
+            console.log('🎤 Волна загружена для записанного аудио из temp:', sentence.audio_mic);
+        }).catch(error => {
+            console.error('❌ Ошибка загрузки аудио в волну:', error);
+            window.waveformCanvas.hide();
+        });
     } else {
         // Нет записанного аудио - скрываем волну
-        // waveformContainer.style.visibility = 'hidden';
         window.waveformCanvas.hide();
         console.log('🎤 Волна скрыта - нет записанного аудио');
+    }
+}
+
+/**
+ * Обновить информацию о текущем аудио для режима микрофона
+ */
+function updateCurrentAudioInfoForMicMode() {
+    const currentRow = document.querySelector('#sentences-table tbody tr.selected');
+    if (!currentRow) return;
+
+    const key = currentRow.dataset.key;
+    const sentence = workingData.original.sentences.find(s => s.key === key);
+
+    if (!sentence) return;
+
+    // Обновляем информацию о текущем аудио
+    const currentAudioInfoElement = document.getElementById('currentAudioInfo');
+    if (currentAudioInfoElement) {
+        if (sentence.audio_mic) {
+            currentAudioInfoElement.textContent = `Аудио для волны: ${sentence.audio_mic}`;
+        } else {
+            currentAudioInfoElement.textContent = 'Аудио для волны: не выбрано';
+        }
+    }
+
+    // Обновляем отображение волны для режима микрофона
+    updateWaveformVisibilityForMicMode();
+}
+
+/**
+ * Обновить состояние кнопки микрофона в таблице
+ */
+function updateMicButtonState(sentenceKey) {
+    // Находим строку таблицы по ключу
+    const row = document.querySelector(`tr[data-key="${sentenceKey}"]`);
+    if (!row) {
+        console.error('❌ Строка таблицы не найдена для ключа:', sentenceKey);
+        return;
+    }
+    
+    // Находим ячейку с кнопкой микрофона
+    const micCell = row.querySelector('td[data-col_id="col-or-mic-play"]');
+    if (!micCell) {
+        console.error('❌ Ячейка микрофона не найдена для строки:', sentenceKey);
+        return;
+    }
+    
+    // Находим кнопку в ячейке
+    const micButton = micCell.querySelector('.audio-btn');
+    if (!micButton) {
+        console.error('❌ Кнопка микрофона не найдена в ячейке:', sentenceKey);
+        return;
+    }
+    
+    // Обновляем состояние кнопки на 'ready' (показываем треугольник)
+    setButtonState(micButton, 'ready');
+    
+    console.log('✅ Состояние кнопки микрофона обновлено для строки:', sentenceKey);
+}
+
+/**
+ * Загрузить аудио в волну
+ */
+async function loadAudioIntoWaveform(audioPath) {
+    if (!window.waveformCanvas) {
+        throw new Error('WaveformCanvas не инициализирован');
+    }
+    
+    try {
+        await window.waveformCanvas.loadAudio(audioPath);
+        
+        // Устанавливаем регион на всю длительность
+        const duration = window.waveformCanvas.getDuration();
+        window.waveformCanvas.setRegion(0, duration);
+        
+        console.log('✅ Аудио загружено в волну:', audioPath, 'длительность:', duration);
+    } catch (error) {
+        console.error('❌ Ошибка загрузки аудио в волну:', error);
+        throw error;
     }
 }
 
@@ -1793,8 +1887,425 @@ function handleMicRecordMode() {
         return;
     }
 
-    // TODO: Реализовать запись с микрофона
-    alert('Функция записи с микрофона пока не реализована');
+    // Открываем модальное окно записи
+    openMicRecordModal(sentence);
+}
+
+// Глобальные переменные для записи
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordingStartTime = null;
+let recordingTimer = null;
+let currentRecordingSentence = null;
+
+/**
+ * Получить поддерживаемый mimeType для записи (копия с script_dictation.js)
+ */
+function getSupportedMimeType() {
+    const types = [
+        'audio/mp4; codecs="mp4a.40.2"', // AAC (лучший для Safari)
+        'audio/webm; codecs=opus',        // Opus (для Chrome/Firefox)
+        'audio/webm'                      // Fallback
+    ];
+
+    console.log('🔍 Проверяем поддержку типов:');
+    for (const type of types) {
+        const supported = MediaRecorder.isTypeSupported(type);
+        console.log(`  ${type}: ${supported ? '✅' : '❌'}`);
+    }
+
+    const result = types.find(type => MediaRecorder.isTypeSupported(type)) || '';
+    console.log('🎯 Выбранный тип:', result || 'пустая строка');
+    return result;
+}
+
+/**
+ * Открыть модальное окно записи с микрофона
+ */
+function openMicRecordModal(sentence) {
+    currentRecordingSentence = sentence;
+    
+    // Заполняем текст предложения
+    const sentenceTextElement = document.getElementById('micRecordSentenceText');
+    if (sentenceTextElement) {
+        sentenceTextElement.textContent = sentence.text || 'Текст не найден';
+    }
+    
+    // Сбрасываем состояние
+    resetRecordingState();
+    
+    // Показываем модальное окно
+    const modal = document.getElementById('micRecordModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        console.log('✅ Модальное окно показано');
+    } else {
+        console.error('❌ Модальное окно micRecordModal не найдено!');
+    }
+    
+    // Инициализируем обработчики событий
+    setupMicRecordEventHandlers();
+}
+
+/**
+ * Закрыть модальное окно записи с микрофона
+ */
+function closeMicRecordModal() {
+    // Останавливаем запись если она идет
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        stopRecording();
+    }
+    
+    // Очищаем таймер
+    if (recordingTimer) {
+        clearInterval(recordingTimer);
+        recordingTimer = null;
+    }
+    
+    // Скрываем модальное окно
+    const modal = document.getElementById('micRecordModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    
+    // Сбрасываем состояние
+    resetRecordingState();
+    currentRecordingSentence = null;
+}
+
+/**
+ * Сбросить состояние записи
+ */
+function resetRecordingState() {
+    // Сбрасываем элементы интерфейса
+    const startBtn = document.getElementById('startRecordBtn');
+    const stopBtn = document.getElementById('stopRecordBtn');
+    const playbackSection = document.getElementById('playbackSection');
+    const saveBtn = document.getElementById('saveRecordBtn');
+    const recordingIndicator = document.getElementById('recordingIndicator');
+    const recordingStatusText = document.getElementById('recordingStatusText');
+    const recordingTimer = document.getElementById('recordingTimer');
+    
+    console.log('🔄 Сбрасываем состояние записи');
+    
+    if (startBtn) {
+        startBtn.style.display = 'block';
+        console.log('✅ Кнопка "Начать запись" показана');
+    }
+    if (stopBtn) {
+        stopBtn.style.display = 'none';
+        console.log('❌ Кнопка "Остановить" скрыта');
+    }
+    if (playbackSection) {
+        playbackSection.style.display = 'none';
+        console.log('❌ Секция воспроизведения скрыта');
+    }
+    if (saveBtn) {
+        saveBtn.style.display = 'none';
+        console.log('❌ Кнопка "Сохранить" скрыта');
+    }
+    if (recordingIndicator) recordingIndicator.classList.remove('recording');
+    if (recordingStatusText) recordingStatusText.textContent = 'Готов к записи';
+    if (recordingTimer) recordingTimer.textContent = '00:00';
+    
+    // Очищаем данные записи
+    recordedChunks = [];
+    recordingStartTime = null;
+}
+
+/**
+ * Настроить обработчики событий для модального окна записи
+ */
+function setupMicRecordEventHandlers() {
+    const startBtn = document.getElementById('startRecordBtn');
+    const stopBtn = document.getElementById('stopRecordBtn');
+    const playBtn = document.getElementById('playRecordBtn');
+    const rerecordBtn = document.getElementById('rerecordBtn');
+    const saveBtn = document.getElementById('saveRecordBtn');
+    
+    if (startBtn) {
+        startBtn.onclick = startRecording;
+    }
+    
+    if (stopBtn) {
+        stopBtn.onclick = stopRecording;
+    }
+    
+    if (playBtn) {
+        playBtn.onclick = playRecording;
+    }
+    
+    if (rerecordBtn) {
+        rerecordBtn.onclick = () => {
+            resetRecordingState();
+            startRecording();
+        };
+    }
+    
+    if (saveBtn) {
+        saveBtn.onclick = saveRecording;
+    }
+}
+
+/**
+ * Начать запись с микрофона
+ */
+async function startRecording() {
+    try {
+        // Запрашиваем доступ к микрофону с настройками для качественной записи
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                echoCancellation: true,    // Убираем эхо
+                noiseSuppression: true,    // Подавляем шум
+                autoGainControl: true,     // Автоматическая регулировка громкости
+                sampleRate: 44100,        // Высокое качество записи
+                channelCount: 1,           // Моно для экономии места
+                latency: 0.01              // Минимальная задержка
+            } 
+        });
+        
+        // Определяем поддерживаемый mimeType с отладкой
+        const mimeType = getSupportedMimeType();
+        console.log('🎤 Найденный mimeType:', mimeType);
+        
+        // Создаем MediaRecorder точно как на рабочей странице диктанта
+        const options = {
+            mimeType: mimeType
+        };
+        
+        console.log('🎤 Создаем MediaRecorder с options:', options);
+        mediaRecorder = new MediaRecorder(stream, options);
+        
+        recordedChunks = [];
+        
+        // Обработчик данных записи
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+        
+        // Обработчик завершения записи
+        mediaRecorder.onstop = () => {
+            // Останавливаем все треки потока
+            stream.getTracks().forEach(track => track.stop());
+            showPlaybackSection();
+        };
+        
+        // Начинаем запись (без параметров для стабильности)
+        mediaRecorder.start();
+        recordingStartTime = Date.now();
+        
+        // Обновляем интерфейс
+        updateRecordingUI(true);
+        
+        // Запускаем таймер
+        startRecordingTimer();
+        
+        console.log('🎤 Запись начата');
+        
+    } catch (error) {
+        console.error('❌ Ошибка при начале записи:', error);
+        alert('Не удалось получить доступ к микрофону. Проверьте разрешения браузера.');
+    }
+}
+
+/**
+ * Остановить запись
+ */
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        updateRecordingUI(false);
+        stopRecordingTimer();
+        console.log('🎤 Запись остановлена');
+    }
+}
+
+/**
+ * Обновить интерфейс записи
+ */
+function updateRecordingUI(isRecording) {
+    const startBtn = document.getElementById('startRecordBtn');
+    const stopBtn = document.getElementById('stopRecordBtn');
+    const recordingIndicator = document.getElementById('recordingIndicator');
+    const recordingStatusText = document.getElementById('recordingStatusText');
+    
+    if (isRecording) {
+        if (startBtn) startBtn.style.display = 'none';
+        if (stopBtn) stopBtn.style.display = 'block';
+        if (recordingIndicator) recordingIndicator.classList.add('recording');
+        if (recordingStatusText) recordingStatusText.textContent = 'Запись...';
+    } else {
+        if (startBtn) startBtn.style.display = 'block';
+        if (stopBtn) stopBtn.style.display = 'none';
+        if (recordingIndicator) recordingIndicator.classList.remove('recording');
+        if (recordingStatusText) recordingStatusText.textContent = 'Запись завершена';
+    }
+}
+
+/**
+ * Запустить таймер записи
+ */
+function startRecordingTimer() {
+    recordingTimer = setInterval(() => {
+        if (recordingStartTime) {
+            const elapsed = Date.now() - recordingStartTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const timerElement = document.getElementById('recordingTimer');
+            if (timerElement) {
+                timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+    }, 1000);
+}
+
+/**
+ * Остановить таймер записи
+ */
+function stopRecordingTimer() {
+    if (recordingTimer) {
+        clearInterval(recordingTimer);
+        recordingTimer = null;
+    }
+}
+
+/**
+ * Показать секцию воспроизведения
+ */
+function showPlaybackSection() {
+    const playbackSection = document.getElementById('playbackSection');
+    const saveBtn = document.getElementById('saveRecordBtn');
+    
+    if (playbackSection) playbackSection.style.display = 'block';
+    if (saveBtn) saveBtn.style.display = 'block';
+    
+    // Обновляем информацию о длительности
+    updatePlaybackDuration();
+}
+
+/**
+ * Обновить информацию о длительности записи
+ */
+function updatePlaybackDuration() {
+    const durationElement = document.getElementById('playbackDuration');
+    if (durationElement && recordingStartTime) {
+        const elapsed = Date.now() - recordingStartTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        durationElement.textContent = `Длительность: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+}
+
+/**
+ * Воспроизвести записанное аудио
+ */
+function playRecording() {
+    if (recordedChunks.length === 0) {
+        alert('Нет записанного аудио для воспроизведения');
+        return;
+    }
+    
+    // Определяем тип файла на основе используемого mimeType (упрощенная логика как на странице диктанта)
+    const blobType = mediaRecorder.mimeType?.includes('mp4')
+        ? 'audio/mp4'
+        : 'audio/webm';
+    
+    // Создаем blob из записанных данных
+    const blob = new Blob(recordedChunks, { type: blobType });
+    const audioUrl = URL.createObjectURL(blob);
+    
+    // Создаем и воспроизводим аудио элемент
+    const audio = new Audio(audioUrl);
+    audio.play();
+    
+    // Очищаем URL после воспроизведения
+    audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+    };
+    
+    console.log('🎵 Воспроизведение записи, тип:', blobType);
+}
+
+/**
+ * Сохранить запись
+ */
+async function saveRecording() {
+    if (recordedChunks.length === 0) {
+        alert('Нет записанного аудио для сохранения');
+        return;
+    }
+    
+    if (!currentRecordingSentence) {
+        alert('Ошибка: не найдено предложение для сохранения');
+        return;
+    }
+    
+    try {
+        // Определяем тип файла и расширение (используем оригинальный формат браузера)
+        const blobType = mediaRecorder.mimeType?.includes('mp4')
+            ? 'audio/mp4'
+            : 'audio/webm';
+        
+        const fileExtension = mediaRecorder.mimeType?.includes('mp4') ? 'mp4' : 'webm';
+        
+        // Создаем blob из записанных данных
+        const blob = new Blob(recordedChunks, { type: blobType });
+        
+        // Создаем FormData для отправки на сервер
+        const formData = new FormData();
+        formData.append('audio', blob, `${currentRecordingSentence.key}_en_mic.${fileExtension}`);
+        formData.append('dictation_id', currentDictation.id);
+        formData.append('language', currentDictation.language_original);
+        
+        // Показываем индикатор загрузки
+        showLoadingIndicator();
+        
+        // Отправляем на сервер
+        const response = await fetch('/upload_mic_audio', {
+            method: 'POST',
+            body: formData
+        });
+        
+        console.log('📤 Ответ сервера:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        hideLoadingIndicator();
+        
+        if (data.success) {
+            // Обновляем данные предложения
+            currentRecordingSentence.audio_mic = data.filename;
+            
+            // Обновляем состояние кнопки микрофона в таблице
+            updateMicButtonState(currentRecordingSentence.key);
+            
+            // Обновляем отображение
+            updateCurrentAudioInfoForMicMode();
+            
+            // Отмечаем что диктант изменен
+            currentDictation.isSaved = false;
+            
+            // Закрываем модальное окно
+            closeMicRecordModal();
+            
+            console.log('✅ Запись сохранена:', data.filename);
+            alert('Запись успешно сохранена!');
+            
+        } else {
+            console.error('❌ Ошибка при сохранении записи:', data.error);
+            alert('Ошибка при сохранении записи: ' + data.error);
+        }
+        
+    } catch (error) {
+        hideLoadingIndicator();
+        console.error('❌ Ошибка при сохранении записи:', error);
+        alert('Ошибка при сохранении записи: ' + error.message);
+    }
 }
 
 /**
