@@ -193,7 +193,7 @@ let gameHasAlreadyBegun = false;
 
 function logout() {
     localStorage.removeItem('jwt_token');
-    console.log('✅✅✅✅ 4 ✅✅✅✅token',token);
+    console.log('✅✅✅✅ 4 ✅✅✅✅token', token);
     setupGuestMode();
     window.location.href = '/';
 }
@@ -225,7 +225,7 @@ function setupAuthHandlers() {
 async function saveGeneratorData(generatorData) {
     try {
         const token = localStorage.getItem('jwt_token');
-        console.log('✅ 2 ✅✅✅✅✅✅token',this.token);
+        console.log('✅ 2 ✅✅✅✅✅✅token', this.token);
         if (!token) {
             console.log('Пользователь не авторизован, данные не сохранены');
             return;
@@ -251,7 +251,7 @@ async function saveGeneratorData(generatorData) {
 async function loadGeneratorData() {
     try {
         const token = localStorage.getItem('jwt_token');
-        console.log('✅ 3 ✅✅✅✅✅✅token',this.token);
+        console.log('✅ 3 ✅✅✅✅✅✅token', this.token);
         if (!token) return null;
 
         const response = await fetch('/api/generator/load', {
@@ -362,7 +362,7 @@ function setupAuthHandlers() {
 async function saveProgress(progressData) {
     try {
         const token = localStorage.getItem('jwt_token');
-        console.log('✅ 4 ✅✅✅✅✅✅token',this.token);
+        console.log('✅ 4 ✅✅✅✅✅✅token', this.token);
         if (!token) {
             console.log('Пользователь не авторизован, прогресс не сохранен');
             return;
@@ -391,7 +391,7 @@ async function saveProgress(progressData) {
 async function loadProgress() {
     try {
         const token = localStorage.getItem('jwt_token');
-        console.log('✅ 5 ✅✅✅✅✅✅token',this.token);
+        console.log('✅ 5 ✅✅✅✅✅✅token', this.token);
         if (!token) {
             console.log('Пользователь не авторизован, прогресс не загружен');
             return null;
@@ -692,6 +692,8 @@ function initializeAllCheckbox() {
 
         // Обновляем все чекбоксы в таблице
         document.querySelectorAll('#sentences-table .sentence-check').forEach(checkbox => {
+            if (checkbox.dataset.checked === 'star') return;
+            
             const key = checkbox.dataset.key;
 
             if (newState === 'true') {
@@ -803,6 +805,7 @@ function updateTableRowStatus(s) {
         statusIcon.style.cursor = 'not-allowed';
         statusIcon.style.color = 'var(--color-button-gray)';
         statusIcon.innerHTML = '<i data-lucide="circle-star"></i>';
+        statusIcon.dataset.checked = 'star';
     } else {
         statusIcon.style.cursor = 'pointer';
 

@@ -125,7 +125,8 @@ class UserManager {
   setupAuthenticatedUser(userData) {
     const userSection = document.getElementById('user-section');
     if (!userSection) {
-      console.error('❌ user-section не найден в DOM');
+      // Это нормально на страницах, где нет элемента user-section (например, страница профиля)
+      console.log('ℹ️ user-section не найден в DOM - это нормально');
       return;
     }
 
@@ -188,7 +189,8 @@ class UserManager {
   setupGuestMode() {
     const userSection = document.getElementById('user-section');
     if (!userSection) {
-      console.error('❌ user-section не найден в DOM');
+      // Это нормально на страницах, где нет элемента user-section
+      console.log('ℹ️ user-section не найден в DOM - это нормально');
       return;
     }
 
@@ -373,6 +375,60 @@ class UserManager {
       }
     } catch (error) {
       console.error('Ошибка обновления профиля:', error);
+      throw error;
+    }
+  }
+
+  async uploadAvatar(file) {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const response = await fetch('/user/api/avatar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Обновляем userData с новой информацией об аватаре
+        if (this.userData) {
+          this.userData.avatar = {
+            large: result.avatar_urls.large,
+            small: result.avatar_urls.small,
+            uploaded: new Date().toISOString()
+          };
+        }
+        
+        // Также обновляем данные с сервера
+        const userResponse = await fetch('/user/api/me', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${this.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (userResponse.ok) {
+          const updatedUserData = await userResponse.json();
+          // Убираем пароль из данных
+          if ('password' in updatedUserData) {
+            delete updatedUserData.password;
+          }
+          this.userData = updatedUserData;
+        }
+        
+        return result;
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка загрузки аватара');
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки аватара:', error);
       throw error;
     }
   }

@@ -6,7 +6,7 @@ let avatarChanged = false;
 
 // Инициализация при загрузке страницы - ТОЛЬКО ОДИН ОБРАБОТЧИК
 document.addEventListener('DOMContentLoaded', async function () {
-    UM = new UserManager({ apiBase: '/user/api' });
+    UM = new UserManager();
 
     try {
         await UM.init();
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 // Загрузка данных пользователя
 function loadUserData() {
     const userData = UM.userData;
-    console.error('✅✅✅✅✅✅✅✅✅✅ userData:', userData);
+    // console.log('userData:', userData);
     originalData = {
         username: userData.username,
         email: userData.email,
@@ -58,7 +58,7 @@ function initializeLanguageSelector() {
 
     try {
         const languageData = window.LanguageManager.getLanguageData();
-        console.log('🔄 Инициализация LanguageSelector с', Object.keys(languageData).length, 'языками');
+        // console.log('🔄 Инициализация LanguageSelector с', Object.keys(languageData).length, 'языками');
 
         languageSelector = new LanguageSelector({
             container: container,
@@ -68,12 +68,12 @@ function initializeLanguageSelector() {
             currentLearning: originalData.current_learning,
             languageData: languageData,
             onLanguageChange: function (data) {
-                console.log('LanguageSelector: изменения', data);
+                // console.log('LanguageSelector: изменения', data);
                 checkForChanges();
             }
         });
 
-        console.log('✅ LanguageSelector инициализирован');
+        // console.log('✅ LanguageSelector инициализирован');
 
     } catch (error) {
         console.error('❌ Ошибка инициализации LanguageSelector:', error);
@@ -160,11 +160,11 @@ async function uploadAvatar() {
         showSuccess('Загружаем аватар...');
         const response = await UM.uploadAvatar(file);
         
-        console.log('Ответ от сервера при загрузке аватара:', response);
-        console.log('Текущий пользователь после загрузки:', UM.currentUser);
+        // console.log('Ответ от сервера при загрузке аватара:', response);
+        // console.log('Текущий пользователь после загрузки:', UM.userData);
         
         // Обновляем данные из текущего пользователя (где теперь должен быть аватар)
-        originalData.avatar = UM.currentUser.avatar || {};
+        originalData.avatar = UM.userData.avatar || {};
         updateAvatarDisplay(originalData.avatar);
         
         avatarChanged = false;
@@ -185,7 +185,7 @@ function updateAvatarDisplay(avatar) {
     const avatarLarge = document.getElementById('avatarLarge');
     const avatarSmall = document.getElementById('avatarSmall');
 
-    console.log('Обновление аватара:', avatar); // Для отладки
+    // console.log('Обновление аватара:', avatar);
 
     if (avatar && (avatar.large || avatar.original)) {
         // Используем large, medium или original в зависимости от того, что есть
@@ -200,7 +200,7 @@ function updateAvatarDisplay(avatar) {
         avatarLarge.src = largeUrlWithTimestamp;
         avatarSmall.src = smallUrlWithTimestamp;
         
-        console.log('Установлены URL аватаров:', { large: largeUrlWithTimestamp, small: smallUrlWithTimestamp });
+        // console.log('Установлены URL аватаров:', { large: largeUrlWithTimestamp, small: smallUrlWithTimestamp });
     } else {
         // Заглушка для аватара по умолчанию
         const defaultLarge = '/static/icons/default-avatar-large.svg';
@@ -209,7 +209,7 @@ function updateAvatarDisplay(avatar) {
         avatarLarge.src = defaultLarge;
         avatarSmall.src = defaultSmall;
         
-        console.log('Установлены аватары по умолчанию');
+        // console.log('Установлены аватары по умолчанию');
     }
 }
 

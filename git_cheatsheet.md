@@ -64,3 +64,8 @@ git pull
 
 Сделай сейчас дамп всех установленных библиотек — пригодится в будущем:
 pip freeze > requirements.txt
+
+
+получить из гита
+git fetch --all
+git reset --hard origin/main
