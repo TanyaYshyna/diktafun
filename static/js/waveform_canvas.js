@@ -192,11 +192,17 @@ class WaveformCanvas {
             const arrayBuffer = await response.arrayBuffer();
             this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
 
-            this.duration = this.audioBuffer.duration;
+            const rawDurationEl = this.audioBuffer.duration || 0;
+            this.duration = Math.floor(rawDurationEl * 100) / 100; // отсечение до сотых
             console.log('✅ WaveformCanvas: Аудио загружено из элемента, длительность:', this.duration);
 
             // Инициализируем регион на всю длительность
             this.region.end = this.duration;
+
+            // Сбрасываем playhead в начало региона при загрузке нового источника
+            if (typeof this.setCurrentTime === 'function') {
+                this.setCurrentTime(this.region.start || 0);
+            }
 
             // Отрисовываем волну
             this.render();
@@ -225,11 +231,17 @@ class WaveformCanvas {
             const arrayBuffer = await response.arrayBuffer();
             this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
 
-            this.duration = this.audioBuffer.duration;
+            const rawDuration = this.audioBuffer.duration || 0;
+            this.duration = Math.floor(rawDuration * 100) / 100; // отсечение до сотых
             console.log('✅ WaveformCanvas: Audio loaded, duration:', this.duration);
 
             // Инициализируем регион на всю длительность
             this.region.end = this.duration;
+
+            // Сбрасываем playhead в начало региона при загрузке нового источника
+            if (typeof this.setCurrentTime === 'function') {
+                this.setCurrentTime(this.region.start || 0);
+            }
 
             // Отрисовываем волну
             this.render();
@@ -500,7 +512,7 @@ class WaveformCanvas {
             console.log('🎯 WaveformCanvas: Аудио закончилось естественным образом');
             this.isPlaying = false;
             this.stopAudioControl();
-            
+
             // НЕ вызываем callback onPlaybackEnd - это делает плеер в playAudioFile
             // Плеер сам управляет состоянием кнопки через свой onended
         };
@@ -774,6 +786,22 @@ class WaveformCanvas {
         this.ctx.closePath();
         this.ctx.fill();
     }
+
+    /**
+    * Обновление позиции курсора на основе текущего времени аудио
+    */
+    updatePlayheadFromAudio(audioElement) {
+        if (!audioElement || !this.audioBuffer) return;
+
+        // Обновляем логическое время и позицию (в секундах), а не пиксели
+        const currentTime = audioElement.currentTime || 0;
+        this.currentTime = currentTime;
+        this.playheadPosition = currentTime;
+
+        // Перерисовываем волну с новым положением курсора
+        this.render();
+    }
+
 
     /**
      * Обработчики событий мыши

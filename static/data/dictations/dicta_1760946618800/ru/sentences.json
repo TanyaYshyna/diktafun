@@ -1,9 +1,6 @@
 {
   "language": "ru",
   "title": "Больной",
-  "speakers": {
-    "1": "Спикер 1"
-  },
   "sentences": [
     {
       "audio": "000_ru_avto.mp3",
@@ -392,5 +389,5 @@
   ],
   "audio_user_shared": "",
   "audio_user_shared_start": 0,
-  "audio_user_shared_end": 0
+  "audio_user_shared_end": 100.72
 }

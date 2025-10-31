@@ -29,60 +29,31 @@
     </div>
 
     <div class="panel">
-        <div class="container">
+        <div class="header-container">
+            <div id="langPair" data-original="{{ original_language }}" data-translation="{{ translation_language }}">
+                <!-- Флаги будут добавлены через language_selector.js -->
+            </div>
             <div>
-                <h2 id="dictation-id">Новый диктант: </h2>
+                <h2 id="dictation-name">Новый диктант: </h2>
             </div>
             <div class="button-group">
-                <button id="saveBtn" class="button-color-green" title="Сохранить диктант">
+                <button id="saveBtn" class="button-color-yellow" title="Сохранить диктант">
                     <i data-lucide="save"></i>
-                    <span>Сохранить</span>
+                    <!-- <span>Сохранить</span> -->
                 </button>
                 <button id="saveAndExitBtn" class="button-color-yellow" title="Сохранить диктант и выйти">
                     <i data-lucide="save"></i>
                     <i data-lucide="log-out"></i>
-                    <span>Сохранить и выйти</span>
+                    <!-- <span>Сохранить и выйти</span> -->
                 </button>
             </div>
         </div>
-        <div class="form-group-line">
+        <!-- <div class="form-group-line">
             <div id="langPair" data-original="{{ original_language }}" data-translation="{{ translation_language }}">
-                <!-- Флаги будут добавлены через language_selector.js -->
             </div>
             <div id="category-path"></div>
-        </div>
+        </div> -->
         <!-- Шапка редактора с двумя панелями -->
-        <div class="editor-header">
-            <div class="editor-header-panel-1">
-                <div class="cover-section">
-                    <div class="cover-display">
-                        <img id="coverImage" src="/static/data/covers/cover_{{ original_language }}.webp" alt="Cover" />
-                    </div>
-                    <div class="cover-upload">
-                        <input type="file" id="coverFile" accept="image/*" style="display: none;">
-                        <button id="coverUploadBtn" class="button-color-yellow">
-                            <i data-lucide="download"></i>
-                            Загрузить
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="editor-header-panel-2">
-                <div class="form-group-line">
-                    <label style="color: var(--color-button-text-lightgreen);">{{ original_language }}:</label>
-                    <input class="text-input" type="text" id="title" required>
-                </div>
-                <div class="form-group-line">
-                    <label style="color: var(--color-button-text-yellow);">{{ translation_language }}:</label>
-                    <input class="text-input" type="text" id="title_translation" required>
-                </div>
-                <!-- Спикеры (отображаются только для диалогов) -->
-                <div id="speakersDisplay" class="speakers-display" style="display: none;">
-                    <label>Спикеры:</label>
-                    <div id="speakersList"></div>
-                </div>
-            </div>
-        </div>
 
 
         <!-- Кнопка "Внести текст заново" (появляется после создания диктанта) -->
@@ -90,108 +61,245 @@
             <button id="reenterTextBtn" class="button-color-yellow">🔄 Внести текст заново</button>
         </div>
 
-        <!-- Раскрывающееся окно настроек аудио -->
-        <div id="audioSettingsModal" class="audio-settings-modal" style="display: none;">
-            <table class="audio-settings-table">
-                <tr>
-                    <td class="radio-cell">
-                        <!-- Радио кнопки -->
-                        <div class="audio-mode-controls">
-                            <label class="radio-label">
-                                <input type="radio" name="audioMode" value="full" checked>
-                                <i data-lucide="aperture" class="radio-icon radio-icon-selected"></i>
-                                <i data-lucide="circle" class="radio-icon radio-icon-unselected"
-                                    style="display: none;"></i>
-                                <span>Отображать весь файл</span>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="audioMode" value="sentence">
-                                <i data-lucide="aperture" class="radio-icon radio-icon-selected"
-                                    style="display: none;"></i>
-                                <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
-                                <span>Текущее предложение</span>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="audioMode" value="mic">
-                                <i data-lucide="aperture" class="radio-icon radio-icon-selected"
-                                    style="display: none;"></i>
-                                <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
-                                <span>Запись с микрофона</span>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="audioMode" value="auto">
-                                <i data-lucide="aperture" class="radio-icon radio-icon-selected"
-                                    style="display: none;"></i>
-                                <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
-                                <span>Автозаполнение</span>
-                            </label>
-                        </div>
-                    </td>
-                    <td class="controls-cell">
-                        <!-- Контейнер для волны и управления -->
-                        <div id="waveformAndControls" class="waveform-and-controls">
-                            <!-- Информация о текущем предложении (для режима микрофона) -->
-                            <div class="file-selection-content">
-                                <div class="file-selection-header">
-                                    <span id="currentAudioInfo">Аудио для волны: не выбрано</span>
-                                    <button type="button" id="selectFileBtn" class="file-select-btn"
-                                        title="Выбрать файл">...
-                                        <!-- <i data-lucide="more-horizontal"></i> -->
-                                    </button>
-                                </div>
-                                <div class="file-selection-body">
-                                    <span id="currentSentenceInfo">Строка таблицы: не выбрана</span>
-                                </div>
-                            </div>
-                            <!-- <div class="file-selection-content">
-                                <span id="currentAudioInfo">Аудио для волны: не выбрано</span>
-                                <span id="currentSentenceText">Строка таблицы: не выбрана</span>
-                                <button type="button" id="selectFileBtn" class="file-select-btn" title="Выбрать файл">
-                                    <i data-lucide="more-horizontal"></i>
-                                </button>
-                            </div> -->
-                            <!-- Контейнер для волны -->
-                            <div class="waveform-container">
-                                <div id="audioWaveform"></div>
-                            </div>
+        <!-- Панель с вкладками (корешки) -->
+        <div id="settingsTabsPanel" class="settings-tabs-panel">
+            <div class="tabs-header">
+                <button class="tab-btn active" data-tab="general">
+                    <span>1. Общие данные</span>
+                </button>
+                <button class="tab-btn" data-tab="audio">
+                    <span>2. Настройка аудио</span>
+                </button>
+                <button class="tab-btn" data-tab="dialog">
+                    <span>3. Диалог</span>
+                </button>
+            </div>
 
-                            <!-- Кнопки управления воспроизведением -->
-                            <div class="playback-controls">
-                                <button type="button" id="audioPlayBtn" class="audio-btn"
-                                    data-field-name="audio_user_shared" data-state="ready-shared" data-language="en"
-                                    data-original-state="ready-shared">
-                                    <i data-lucide="play"></i>
-                                </button>
-                                <div class="time-controls">
-                                    <label for="audioStartTimeName">Start:</label>
-                                    <input type="number" id="audioStartTime" step="0.01" min="0">
-                                    <label for="audioEndTimeName">End:</label>
-                                    <input type="number" id="audioEndTime" step="0.01" min="0">
+            <!-- Вкладка 1: Общие данные -->
+            <div class="tabs-body">
+                <div id="tab-general" class="tab-content active">
+                    <div class="general-data-content">
+                        <div class="editor-header">
+                            <div class="editor-header-panel-1">
+                                <div class="cover-section">
+                                    <div class="cover-display">
+                                        <img id="coverImage"
+                                            src="/static/data/covers/cover_{{ original_language }}.webp" alt="Cover" />
+                                    </div>
+                                    <div class="cover-upload">
+                                        <input type="file" id="coverFile" accept="image/*" style="display: none;">
+                                        <button id="coverUploadBtn" class="button-color-yellow">
+                                            <i data-lucide="download"></i>
+                                            Загрузить
+                                        </button>
+                                    </div>
                                 </div>
-                                <button type="button" id="scissorsBtn" class="button-standard">
-                                    <i data-lucide="scissors"></i>
-                                </button>
-                                <!-- <button type="button" id="audioToTableBtn" class="button-standard" -->
-                                <button type="button" id="audioTableActionBtn" class="button-standard"
-                                    title="Разрезать аудио на 1000 кусков">
-                                    <i data-lucide="scissors"></i>
-                                    <span>на 1000 кусков</span>
-                                </button>
+                            </div>
+                            <div class="editor-header-panel-2">
+
+                                <div id="category-path"></div>
+                                <div class="form-group-line">
+                                    <label style="color: var(--color-button-text-lightgreen);">{{ original_language
+                                        }}:</label>
+                                    <input class="text-input" type="text" id="title" required>
+                                </div>
+                                <div class="form-group-line">
+                                    <label style="color: var(--color-button-text-yellow);">{{ translation_language
+                                        }}:</label>
+                                    <input class="text-input" type="text" id="title_translation" required>
+                                </div>
+                                <!-- Спикеры (отображаются только для диалогов) -->
+                                <div id="speakersDisplay" class="speakers-display" style="display: none;">
+                                    <label>Спикеры:</label>
+                                    <div id="speakersList"></div>
+                                </div>
+                                <label id="dictation-id">Новый диктант: </label>
+
                             </div>
                         </div>
 
-                        <!-- Скрытые поля для совместимости с JavaScript -->
-                        <div style="display: none;">
-                            <input type="number" id="startTime" step="0.01" min="0">
-                            <input type="number" id="endTime" step="0.01" min="0">
-                        </div>
 
-                        <!-- Скрытый input для выбора файлов -->
-                        <input type="file" id="audioFileInput" accept="audio/*" style="display: none;">
-                    </td>
-                </tr>
-            </table>
+
+
+
+                        <!-- <div class="form-group">
+                        <label>Путь в дереве:</label>
+                        <div id="dictationPathDisplay" class="path-display">
+                            <i data-lucide="folder"></i>
+                            <span id="dictationPathText">Не выбран</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Аватар (обложка):</label>
+                        <div class="avatar-section">
+                            <div class="avatar-display">
+                                <img id="tabCoverImage" src="/static/data/covers/cover_{{ original_language }}.webp" alt="Cover" />
+                            </div>
+                            <div class="avatar-upload">
+                                <input type="file" id="tabCoverFile" accept="image/*" style="display: none;">
+                                <button id="tabCoverUploadBtn" class="button-color-yellow">
+                                    <i data-lucide="download"></i>
+                                    Загрузить обложку
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label style="color: var(--color-button-text-lightgreen);">{{ original_language }}:</label>
+                        <input class="text-input" type="text" id="tabTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label style="color: var(--color-button-text-yellow);">{{ translation_language }}:</label>
+                        <input class="text-input" type="text" id="tabTitleTranslation" required> 
+                    </div>-->
+                    </div>
+                </div>
+
+                <!-- Вкладка 2: Настройка аудио -->
+                <div id="tab-audio" class="tab-content">
+                    <div class="audio-settings-content">
+                        <table class="audio-settings-table">
+                            <tr>
+                                <td class="radio-cell">
+                                    <!-- Радио кнопки -->
+                                    <div class="audio-mode-controls">
+                                        <label class="radio-label">
+                                            <input type="radio" name="audioMode" value="full" checked>
+                                            <i data-lucide="aperture" class="radio-icon radio-icon-selected"></i>
+                                            <i data-lucide="circle" class="radio-icon radio-icon-unselected"
+                                                style="display: none;"></i>
+                                            <span>Отображать весь файл</span>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="audioMode" value="sentence">
+                                            <i data-lucide="aperture" class="radio-icon radio-icon-selected"
+                                                style="display: none;"></i>
+                                            <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
+                                            <span>Текущее предложение</span>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="audioMode" value="mic">
+                                            <i data-lucide="aperture" class="radio-icon radio-icon-selected"
+                                                style="display: none;"></i>
+                                            <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
+                                            <span>Запись с микрофона</span>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="audioMode" value="auto">
+                                            <i data-lucide="aperture" class="radio-icon radio-icon-selected"
+                                                style="display: none;"></i>
+                                            <i data-lucide="circle" class="radio-icon radio-icon-unselected"></i>
+                                            <span>Автозаполнение</span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="controls-cell">
+                                    <!-- Контейнер для волны и управления -->
+                                    <div id="waveformAndControls" class="waveform-and-controls">
+                                        <!-- Информация о текущем предложении (для режима микрофона) -->
+                                        <div class="file-selection-content">
+                                            <div class="file-selection-header">
+                                                <span id="currentAudioInfo">Аудио для волны: не выбрано</span>
+                                                <button type="button" id="selectFileBtn" class="file-select-btn"
+                                                    title="Выбрать файл">...
+                                                    <!-- <i data-lucide="more-horizontal"></i> -->
+                                                </button>
+                                            </div>
+                                            <div class="file-selection-body">
+                                                <span id="currentSentenceInfo">Строка таблицы: не выбрана</span>
+                                            </div>
+                                        </div>
+                                        <!-- Контейнер для волны -->
+                                        <div class="waveform-container">
+                                            <div id="audioWaveform"></div>
+                                        </div>
+
+                                        <!-- Кнопки управления воспроизведением -->
+                                        <div class="playback-controls">
+                                            <button type="button" id="audioPlayBtn" class="audio-btn"
+                                                data-field-name="audio_user_shared" data-state="ready-shared"
+                                                data-language="en" data-original-state="ready-shared">
+                                                <i data-lucide="play"></i>
+                                            </button>
+                                            <div class="time-controls">
+                                                <label for="audioStartTimeName">Start:</label>
+                                                <input type="number" id="audioStartTime" step="0.01" min="0">
+                                                <label for="audioEndTimeName">End:</label>
+                                                <input type="number" id="audioEndTime" step="0.01" min="0">
+                                            </div>
+                                            <button type="button" id="scissorsBtn" class="button-standard">
+                                                <i data-lucide="scissors"></i>
+                                            </button>
+                                            <button type="button" id="audioTableActionBtn" class="button-standard"
+                                                title="Разрезать аудио на 1000 кусков">
+                                                <i data-lucide="scissors"></i>
+                                                <span>на 1000 кусков</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Скрытые поля для совместимости с JavaScript -->
+                                    <div style="display: none;">
+                                        <input type="number" id="startTime" step="0.01" min="0">
+                                        <input type="number" id="endTime" step="0.01" min="0">
+                                    </div>
+
+                                    <!-- Скрытый input для выбора файлов -->
+                                    <input type="file" id="audioFileInput" accept="audio/*" style="display: none;">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Вкладка 3: Диалог -->
+                <div id="tab-dialog" class="tab-content">
+                    <div class="dialog-content">
+                        <div class="form-group">
+                            <label class="checkbox-label" id="tabDialogCheckboxLabel">
+                                <input type="checkbox" id="tabIsDialogCheckbox" style="display: none;">
+                                <i data-lucide="circle" class="checkbox-icon"></i>
+                                Это диалог
+                            </label>
+                        </div>
+                        <div id="tabSpeakersTable" class="speakers-table" style="display: none;">
+                            <h3>Спикеры</h3>
+                            <table id="tabSpeakersTableContent">
+                                <tbody>
+                                    <tr>
+                                        <td>1:</td>
+                                        <td><input type="text" class="speaker-name" value="Спикер 1"
+                                                placeholder="Имя спикера">
+                                        </td>
+                                        <td>
+                                            <button type="button" class="remove-speaker" title="Удалить спикера">
+                                                <i data-lucide="trash-2"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>2:</td>
+                                        <td><input type="text" class="speaker-name" value="Спикер 2"
+                                                placeholder="Имя спикера">
+                                        </td>
+                                        <td>
+                                            <button type="button" class="remove-speaker" title="Удалить спикера">
+                                                <i data-lucide="trash-2"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <button type="button" id="tabAddSpeakerBtn" title="Добавить спикера">
+                                <i data-lucide="user-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+
 
         <!-- Основная таблица предложений -->
         <div class="main-content">
@@ -234,17 +342,13 @@
                         <th class="col-speaker" style="display: none;">Спикер</th>
 
                         <th class="col-original panel-original">Оригинал</th>
-                        <th class="col-play-original panel-original"></th>
-                        <th class="col-settings-original panel-original">
-                            <button id="open_left_panel_original" title="Развернуть настройки аудио">
-                                <i data-lucide="panel-left-open"></i>
-                            </button>
-                        </th>
+                        <th class="col-play-original panel-original">o</th>
+                        
 
                         <th class="col-translation panel-translation">Перевод</th>
-                        <th class="col-play-translation panel-translation"></th>
+                        <th class="col-play-translation panel-translation">t</th>
 
-                        <th class="col-generate-tts panel-editing-avto">Avto</th>
+                        <th class="col-generate-tts panel-editing-avto">Avto a</th>
                         <th class="col-apply-avto panel-editing-avto" title="Применить">
                             <i data-lucide="arrow-big-left-dash"></i>
                         </th>
@@ -254,12 +358,12 @@
                         <th class="col-start panel-editing-user">Start</th>
                         <th class="col-end panel-editing-user">End</th>
                         <th class="col-chain panel-editing-user"><i data-lucide="link"></i></th>
-                        <th class="col-play-audio panel-editing-user">mp3</th>
+                        <th class="col-play-audio panel-editing-user">f</th>
                         <th class="col-apply-user panel-editing-user" title="Применить">
                             <i data-lucide="arrow-big-left-dash"></i>
                         </th>
 
-                        <th class="col-play-audio panel-editing-mic">mp3</th>
+                        <th class="col-play-audio panel-editing-mic">m</th>
                         <th class="col-apply-mic panel-editing-mic" title="Применить">
                             <i data-lucide="arrow-big-left-dash"></i>
                         </th>
@@ -344,78 +448,9 @@
     </div>
 
 
-
-
-
-    <!--------- СКРИПТЫ и ИНИЦИАЛИЗАЦИЯ ---------------------------------------->
-    <script src="{{ url_for('static', filename='js/lucide.js') }}"></script>
-
-    <!-- Добавляем скрипты LanguageManager и LanguageSelector -->
-    <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/language_selector.js') }}"></script>
-
-    <!-- Добавляем скрипты UserManager -->
-    <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
-
-    <script>
-        // Инициализируем Lucide иконки
-        lucide.createIcons();
-    </script>
-
-    <script id="init-data" type="application/json">
-    {{ {
-        "dictation_id": dictation_id,
-        "original_language": original_language,
-        "translation_language": translation_language,
-        "original_data": original_data,
-        "translation_data": translation_data,
-        "audio_file": audio_file,
-        "title": title,
-        "level": level,
-        "audio_words": audio_words,
-        "safe_email": safe_email,
-        "category_info": category_info
-     } | tojson }}
-    </script>
-
-
-    <!-- Загружаем основной скрипт СИНХРОННО -->
-    <script src="{{ url_for('static', filename='js/script_dictation_editor.js') }}"></script>
-
-    <script>
-        // Инициализация UserManager перед загрузкой основного скрипта
-        document.addEventListener('DOMContentLoaded', async function () {
-            // console.log('🚀 Начало инициализации редактора диктанта...');
-
-            // Проверяем что LanguageManager загружен
-            // if (window.LanguageManager) {
-            //     console.log('✅ LanguageManager доступен');
-            // }
-
-            if (!window.UM) {
-                console.warn('⚠️ UserManager не найден, создаем новый экземпляр');
-                window.UM = new UserManager({ apiBase: '/user/api' });
-            } else {
-                // console.log('✅ Используем существующий UserManager');
-            }
-
-            try {
-                // Теперь безопасно инициализируем редактор
-                if (typeof initDictationGenerator === 'function') {
-                    initDictationGenerator();
-                } else {
-                    console.error('❌ script_dictation.js не загружен правильно');
-                }
-            } catch (error) {
-                console.error('❌ JWT initialization error:', error);
-                // Даже при ошибке пробуем инициализировать редактор
-                if (typeof initDictationGenerator === 'function') {
-                    initDictationGenerator();
-                }
-            }
-        });
-    </script>
-
+    <!------------------------------------------>
+    <!------------------------------------------>
+    <!------------------------------------------>
     <!-- Модальное окно для добавления строки -->
     <div id="addRowModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
@@ -487,7 +522,7 @@
                         <label>Текст для записи:</label>
                         <div id="micRecordSentenceText" class="sentence-text"></div>
                     </div>
-                    
+
                     <div class="recording-controls">
                         <div class="recording-status">
                             <div id="recordingIndicator" class="recording-indicator">
@@ -496,7 +531,7 @@
                             </div>
                             <div id="recordingTimer" class="recording-timer">00:00</div>
                         </div>
-                        
+
                         <div class="recording-buttons">
                             <button id="startRecordBtn" class="modal-btn modal-btn-primary">
                                 <i data-lucide="mic"></i>
@@ -508,7 +543,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <div id="playbackSection" class="playback-section" style="display: none;">
                         <div class="playback-controls">
                             <button id="playRecordBtn" class="modal-btn modal-btn-secondary">
@@ -538,6 +573,81 @@
             </div>
         </div>
     </div>
+
+
+
+    <!--------- СКРИПТЫ и ИНИЦИАЛИЗАЦИЯ ---------------------------------------->
+    <script src="{{ url_for('static', filename='js/lucide.js') }}"></script>
+
+    <!-- Добавляем скрипты LanguageManager и LanguageSelector -->
+    <script src="{{ url_for('static', filename='js/audio_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/language_selector.js') }}"></script>
+
+    <!-- Добавляем скрипты UserManager -->
+    <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
+
+    <script>
+        // Инициализируем Lucide иконки
+        lucide.createIcons();
+    </script>
+
+    <script id="init-data" type="application/json">
+    {{ {
+        "dictation_id": dictation_id,
+        "original_language": original_language,
+        "translation_language": translation_language,
+        "original_data": original_data,
+        "translation_data": translation_data,
+        "audio_file": audio_file,
+        "title": title,
+        "level": level,
+        "audio_words": audio_words,
+        "safe_email": safe_email,
+        "category_info": category_info,
+        "is_dialog": is_dialog,
+        "speakers": speakers
+     } | tojson }}
+    </script>
+
+
+    <!-- Загружаем основной скрипт СИНХРОННО -->
+    <script src="{{ url_for('static', filename='js/script_dictation_editor.js') }}"></script>
+
+    <script>
+        // Инициализация UserManager перед загрузкой основного скрипта
+        document.addEventListener('DOMContentLoaded', async function () {
+            // console.log('🚀 Начало инициализации редактора диктанта...');
+
+            // Проверяем что LanguageManager загружен
+            // if (window.LanguageManager) {
+            //     console.log('✅ LanguageManager доступен');
+            // }
+
+            if (!window.UM) {
+                console.warn('⚠️ UserManager не найден, создаем новый экземпляр');
+                window.UM = new UserManager({ apiBase: '/user/api' });
+            } else {
+                // console.log('✅ Используем существующий UserManager');
+            }
+
+            try {
+                // Теперь безопасно инициализируем редактор
+                if (typeof initDictationGenerator === 'function') {
+                    initDictationGenerator();
+                } else {
+                    console.error('❌ script_dictation.js не загружен правильно');
+                }
+            } catch (error) {
+                console.error('❌ JWT initialization error:', error);
+                // Даже при ошибке пробуем инициализировать редактор
+                if (typeof initDictationGenerator === 'function') {
+                    initDictationGenerator();
+                }
+            }
+        });
+    </script>
+
 </body>
 
 </html>

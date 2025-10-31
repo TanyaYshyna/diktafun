@@ -150,7 +150,6 @@ def dictation_editor(dictation_id, language_original, language_translation):
         original_data = {
             "language": language_original,
             "title": "",
-            "speakers": {},
             "sentences": []
         }
 
@@ -163,7 +162,6 @@ def dictation_editor(dictation_id, language_original, language_translation):
         translation_data = {
             "language": language_translation,
             "title": "",
-            "speakers": {},
             "sentences": []
         }
 
@@ -664,7 +662,6 @@ def save_dictation_final():
             sentences_json = {
                 "language": lang,
                 "title": lang_data.get("title", ""),  # Берем название из данных языка
-                "speakers": lang_data.get("speakers", {}),
                 "sentences": lang_data.get("sentences", []),
                 "audio_user_shared": lang_data.get("audio_user_shared", ""),
                 "audio_user_shared_start": lang_data.get("audio_user_shared_start", 0),
@@ -680,7 +677,8 @@ def save_dictation_final():
             # Копируем все аудиофайлы из temp
             for root, dirs, files in os.walk(temp_path):
                 for file in files:
-                    if file.endswith(('.mp3', '.wav', '.ogg')):
+                    # Поддерживаемые расширения: mp3, mp4, webm, wav, ogg, m4a, aac, flac
+                    if file.lower().endswith(('.mp3', '.mp4', '.webm', '.wav', '.ogg', '.m4a', '.aac', '.flac')):
                         src_file = os.path.join(root, file)
                         # Определяем относительный путь от temp папки
                         rel_path = os.path.relpath(src_file, temp_path)
@@ -699,8 +697,8 @@ def save_dictation_final():
                 avatar_dst = os.path.join(final_path, 'cover.webp')
                 shutil.copy2(avatar_src, avatar_dst)
             
-            # Удаляем temp папку
-            shutil.rmtree(temp_path)
+            # Не удаляем temp папку при обычном сохранении — пользователь может продолжать редактирование
+            logger.info(f"Пропускаем очистку temp папки при сохранении: {temp_path}")
 
         # Добавляем диктант в категорию
         result = add_dictation_to_categories(dictation_id, info, category_key)
@@ -1005,38 +1003,38 @@ def cut_audio_file():
             logger.error(f"Файл не найден: {physical_path}")
             return jsonify({'success': False, 'error': 'Исходный файл не найден'}), 404
         
-        # Реализуем логику обрезания аудио с помощью librosa
+        # Обрезание аудио: единый путь через ffmpeg (без перекодирования)
         logger.info(f"Обрезание аудио: {filename} с {start_time} по {end_time}")
-       
+
         try:
-            # Загружаем аудиофайл
-            y, sr = librosa.load(physical_path, sr=None)
-            logger.info(f"Аудио загружено: {len(y)} samples, sample rate: {sr}")
-            
-            # Вычисляем индексы для обрезки
-            start_sample = int(start_time * sr)
-            end_sample = int(end_time * sr)
-             
-            # Проверяем валидность индексов
-            if start_sample >= end_sample:
-                return jsonify({'success': False, 'error': 'Время начала должно быть меньше времени окончания'}), 400
-            if end_sample > len(y):
-                return jsonify({'success': False, 'error': 'Время окончания превышает длительность аудио'}), 400
-            
-            logger.info(f"Обрезаем с sample {start_sample} по {end_sample}")
-            
-          
-            # Обрезаем аудио
-            y_trimmed = y[start_sample:end_sample]
-            
-            # Перезаписываем существующий файл обрезанной версией
-            sf.write(physical_path, y_trimmed, sr)
-            
-            logger.info(f"Аудиофайл успешно обрезан и перезаписан: {filename}")
-            
+            import subprocess, tempfile
+            ext = os.path.splitext(physical_path)[1].lower()
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp_out:
+                tmp_out_path = tmp_out.name
+
+            # Команда ffmpeg: копирование дорожек без перекодирования (-c copy)
+            cmd = [
+                'ffmpeg', '-y',
+                '-i', physical_path,
+                '-ss', str(max(0.0, float(start_time))),
+                '-to', str(max(0.0, float(end_time))),
+                '-c', 'copy',
+                tmp_out_path
+            ]
+            logger.info(f"Запуск ffmpeg: {' '.join(cmd)}")
+            proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if proc.returncode != 0:
+                logger.error(f"ffmpeg error: {proc.stderr.decode(errors='ignore')}")
+                return jsonify({'success': False, 'error': 'ffmpeg не смог обрезать файл'}), 500
+
+            # Заменяем исходный файл обрезанной версией
+            os.replace(tmp_out_path, physical_path)
+            logger.info(f"Аудиофайл успешно обрезан и перезаписан (ffmpeg): {filename}")
+
         except Exception as e:
-            logger.error(f"Ошибка при обрезании аудио: {e}", exc_info=True)
-            return jsonify({'success': False, 'error': f'Ошибка обрезания аудио: {str(e)}'}), 500            
+            logger.error(f"Ошибка при обрезании аудио (ffmpeg): {e}", exc_info=True)
+            return jsonify({'success': False, 'error': f'Ошибка обрезания аудио: {str(e)}'}), 500
         
         return jsonify({
             'success': True,

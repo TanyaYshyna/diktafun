@@ -1,9 +1,6 @@
 {
   "language": "en",
   "title": "Sick",
-  "speakers": {
-    "1": "Спикер 1"
-  },
   "sentences": [
     {
       "audio": "000_en_avto.mp3",
@@ -392,5 +389,5 @@
   ],
   "audio_user_shared": "audio.mp3",
   "audio_user_shared_start": 0,
-  "audio_user_shared_end": 100.94
+  "audio_user_shared_end": 100.72
 }
