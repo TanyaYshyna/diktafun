@@ -3,8 +3,9 @@
   "language_original": "en",
   "title": "Sick",
   "level": "A1",
-  "is_dialog": false,
+  "is_dialog": true,
   "speakers": {
-    "1": "Спикер 1"
+    "1": "Таня",
+    "2": "Ваня"
   }
 }

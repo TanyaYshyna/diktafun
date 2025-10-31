@@ -25,6 +25,8 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
 
     title = info.get("title", "Без названия")
     level = info.get("level", "A1")
+    is_dialog = info.get("is_dialog", False)
+    speakers = info.get("speakers", {})
 
     # Пути к JSON-файлам 
     path_sentences_orig = os.path.join(base_path, lang_orig,  "sentences.json")
@@ -66,7 +68,8 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
             "translation": translated.get("text", ""),
             "audio": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_orig}/{item.get('audio', '')}"),
             "audio_tr": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_tr}/{translated.get('audio', '')}"),
-            "completed_correctly": False
+            "completed_correctly": False,
+            "speaker": item.get("speaker")
         }
 
         sentences.append(sentence)
@@ -84,5 +87,7 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
         language_original=lang_orig,
         language_translation=lang_tr,
         sentences=sentences,
-        current_user=current_user
+        current_user=current_user,
+        is_dialog=is_dialog,
+        speakers=speakers
     )

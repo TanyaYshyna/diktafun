@@ -405,6 +405,7 @@
 
         <!-- тут пользователь набирает тектст -->
         <!-- <div id="userInput" contenteditable="true" class="text-input"></div> -->
+        <div id="speaker">Tanya: </div>
         <div id="userInput" contenteditable="true" class="text-input" spellcheck="false" autocorrect="off"
             autocapitalize="off" autocomplete="off" aria-autocomplete="none" data-gramm="false"
             data-enable-grammarly="false">
@@ -486,7 +487,10 @@
     <!-- Передаем данные диктанта через глобальные переменные -->
     <div id="dictation-data" data-sentences='{{ sentences | tojson | safe }}'
         data-language-original="{{ language_original }}" data-language-translation="{{ language_translation }}"
-        data-title-orig="{{ title_orig }}" data-dictation-id="{{ dictation_id }}" style="display: none;">
+        data-title-orig="{{ title_orig }}" data-dictation-id="{{ dictation_id }}"
+        data-is-dialog="{{ 'true' if is_dialog else 'false' }}"
+        data-speakers='{{ speakers | tojson | safe }}'
+        style="display: none;">
     </div>
 
     <!-- Загружаем основной скрипт СИНХРОННО -->

@@ -10,7 +10,7 @@
       "chain": true,
       "end": 3.06,
       "key": "000",
-      "speaker": "1",
+      "speaker": "2",
       "start": 0,
       "text": "I cannot go to school today,"
     },
@@ -34,7 +34,7 @@
       "chain": true,
       "end": 9.18,
       "key": "002",
-      "speaker": "1",
+      "speaker": "2",
       "start": 6.12,
       "text": "\"I have the measles and the mumps,"
     },
@@ -58,7 +58,7 @@
       "chain": true,
       "end": 15.29,
       "key": "004",
-      "speaker": "1",
+      "speaker": "2",
       "start": 12.24,
       "text": "My mouth is wet, my throat is dry"
     },

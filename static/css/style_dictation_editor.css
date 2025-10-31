@@ -1242,6 +1242,161 @@ label[for="startTextInput"] {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+/* ===== Диалоги: таблица спикеров (во вкладке) ===== */
+#tabSpeakersTable {
+    display: none; /* управляется JS */
+    width: -moz-fit-content;
+    width: fit-content; /* по размеру содержимого */
+    max-width: 100%;
+}
+
+.speakers-table {
+    display: grid; /* используем grid для удобного выравнивания кнопки справа */
+    grid-auto-flow: row;
+    justify-items: start;
+    align-items: start;
+    width: -moz-fit-content;
+    width: fit-content; /* не растягивать на всю ширину */
+    max-width: 100%;
+}
+
+.speakers-table table {
+    width: -moz-fit-content;
+    width: fit-content; /* натуральная ширина содержимого */
+    border-collapse: collapse;
+    border-spacing: 0; /* убрать межстрочные полосы */
+}
+
+#tabSpeakersTableContent td:first-child {
+    width: 48px;
+    min-width: 48px;
+    max-width: 48px;
+    text-align: right;
+    padding-right: 8px;
+}
+
+#tabSpeakersTableContent td:last-child {
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    text-align: center;
+    padding: 0; /* кнопка удаления на всю ячейку */
+}
+
+#tabAddSpeakerBtn {
+    float: right !important; /* прижать кнопку "+" к правому краю блока */
+    width: 46px;
+    border-radius: 0 0 8px 8px; /* верх прямой, низ скругленный */
+    overflow: hidden; /* избежать артефактов по краям */
+}
+
+/* ===== Таблица предложений: колонка Спикер как select ===== */
+td.col-speaker {
+    padding: 4px !important;
+}
+
+/* Кастомный дропдаун спикера */
+.speaker-dropdown { position: relative; }
+.speaker-dropdown-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start; /* не растягиваем, элементы рядом */
+    width: 100%;
+    min-height: 28px;
+    gap: 1px; /* минимальный зазор между кодом и шевроном */
+    padding: 2px 3px; /* чуть снизим правый отступ */
+    border: none; /* убрать пунктирную обводку */
+    background: transparent;
+    color: var(--color-text); /* как в таблице */
+    font-weight: inherit; /* не делать жирнее */
+    border-radius: 0;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+}
+.speaker-dropdown-btn:focus { outline: none; background: var(--color-hover); }
+.speaker-dropdown-btn i { width: 14px; height: 14px; color: inherit; margin-left: 0; }
+.speaker-code { font-weight: inherit; }
+.speaker-dropdown-menu {
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 2px);
+    left: 0;
+    background: var(--color-surface, var(--color-panel-bg)); /* непрозрачный фон */
+    border: 1px solid var(--color-border-light);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    min-width: 160px;
+    max-height: 240px;
+    overflow-y: auto;
+    display: none;
+}
+.speaker-dropdown-menu.open { display: block; }
+.speaker-option {
+    padding: 6px 10px;
+    cursor: pointer;
+}
+.speaker-option:hover { background: var(--color-hover); }
+
+/* Поле ввода имени спикера — без обводки */
+#tabSpeakersTableContent .speaker-name {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 16px;
+    color: var(--color-text);
+    padding: 2px 4px;
+}
+
+#tabSpeakersTableContent .speaker-name:focus {
+    background: var(--color-hover);
+}
+
+/* Кнопка удаления спикера — на всю ячейку и без скругления */
+#tabSpeakersTableContent .remove-speaker {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    outline: none;
+    box-shadow: none;
+    background-clip: padding-box; /* избегать артефактов на границах */
+}
+
+#tabSpeakersTableContent .remove-speaker:hover {
+    background: transparent; /* фон подсветки переносим на td, чтобы не было полос */
+}
+
+#tabSpeakersTableContent td:last-child:hover {
+    background: var(--color-hover);
+}
+#tabSpeakersTableContent table,
+#tabSpeakersTableContent tr,
+#tabSpeakersTableContent td {
+    border: 0;
+    background-clip: padding-box;
+}
+
+#tabSpeakersTableContent td:last-child {
+    overflow: hidden; /* избежать субпиксельных артефактов по границам */
+}
+
+/* Обводка всех ячеек таблицы спикеров */
+#tabSpeakersTableContent td,
+#tabSpeakersTableContent th {
+    border: 1px solid #ccc;
+}
+
+#tabSpeakersTableContent .remove-speaker i {
+    width: 16px;
+    height: 16px;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
     .start-modal {

@@ -69,6 +69,10 @@ let selectedSentences = [];
 let currentSentenceIndex = 0;// индекс списка выбранных по чакауту предложений
 let currentSentence = 0;   // текущее предложение из allSentences с kay = selectedSentencesх[currentSentenceIndex]
 
+// Диалоговые метаданные (из info.json)
+let dictationIsDialog = false;
+let dictationSpeakers = {};
+
 // индексы 9ти кнопок  (
 // уже или равен selectedSentences по размеру, 
 // индекс массива id="sentenceCounter">)
@@ -2327,6 +2331,18 @@ function showCurrentSentence(showTabloIndex, showSentenceIndex) {
     document.getElementById("correctAnswer").innerHTML = currentSentence.text;
     document.getElementById("correctAnswer").style.display = "none";
 
+    // Обновить отображение спикера в поле #speaker
+    const speakerDiv = document.getElementById('speaker');
+    if (speakerDiv) {
+        if (!dictationIsDialog) {
+            speakerDiv.textContent = '';
+        } else {
+            const speakerId = currentSentence && currentSentence.speaker ? String(currentSentence.speaker) : '';
+            const speakerName = speakerId ? (dictationSpeakers[speakerId] || '') : '';
+            speakerDiv.textContent = speakerName ? `${speakerName}: ` : '';
+        }
+    }
+
 
     // включаем кнопку проверки и поле ввода текста
     const perfect = currentSentence.circle_number_of_perfect + currentSentence.circle_number_of_perfect;
@@ -2452,6 +2468,16 @@ async function loadAudio() {
 // document.addEventListener("DOMContentLoaded", function () {
 function onloadInitializeDictation() {
     console.log('=======================document.addEventListener("DOMContentLoaded", function () {:');
+    // Инициализируем диалоговые метаданные из data-атрибутов
+    const dataNode = document.getElementById('dictation-data');
+    if (dataNode) {
+        dictationIsDialog = String(dataNode.getAttribute('data-is-dialog')) === 'true';
+        try {
+            dictationSpeakers = JSON.parse(dataNode.getAttribute('data-speakers') || '{}') || {};
+        } catch (e) {
+            dictationSpeakers = {};
+        }
+    }
     initializeDictation();
     loadLanguageCodes();
     // userManager.init(); 

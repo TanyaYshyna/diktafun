@@ -1,3 +1,10 @@
+/* Спикер в диктанте */
+#speaker {
+    color: var(--color-button-gray);
+    background: transparent;
+    margin: 6px 0;
+    min-height: 18px;
+}
 
 
 #title-diktation {

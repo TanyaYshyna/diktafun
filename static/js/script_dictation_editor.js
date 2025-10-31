@@ -1294,6 +1294,14 @@ function setupTabsPanel() {
                     lucide.createIcons();
                 }
             }
+
+            // Только показать/скрыть колонку без пересборки таблицы
+            const show = !!isDialog;
+            const speakerHeader = document.querySelector('th.col-speaker');
+            if (speakerHeader) speakerHeader.style.display = show ? 'table-cell' : 'none';
+            document.querySelectorAll('td.col-speaker').forEach(td => {
+                td.style.display = show ? 'table-cell' : 'none';
+            });
         });
 
         // Обработчики для таблицы спикеров во вкладке
@@ -1348,6 +1356,15 @@ function applyTableViewForTab(tabName) {
         // Общие данные и Диалог — показываем оригинал + перевод
         toggleColumnGroup('translation');
     }
+
+    // Показываем колонку спикера во всех вкладках, если это диалог
+    const showSpeaker = (currentDictation.is_dialog || false);
+    const speakerHeader = document.querySelector('th.col-speaker');
+    if (speakerHeader) {
+        speakerHeader.style.display = showSpeaker ? 'table-cell' : 'none';
+    }
+    const speakerCells = document.querySelectorAll('td.col-speaker');
+    speakerCells.forEach(td => { td.style.display = showSpeaker ? 'table-cell' : 'none'; });
 }
 
 /**
@@ -1361,6 +1378,7 @@ function setupTabSpeakersHandlers() {
         tabAddSpeakerBtn.addEventListener('click', () => {
             addSpeakerToTabTable();
             syncSpeakersFromTab();
+                refreshAllSpeakerSelectOptions();
         });
 
         // Обработчики для кнопок удаления спикеров
@@ -1369,6 +1387,7 @@ function setupTabSpeakersHandlers() {
                 const btn = e.target.closest('.remove-speaker');
                 removeSpeakerFromTabTable(btn);
                 syncSpeakersFromTab();
+                refreshAllSpeakerSelectOptions();
             }
         });
 
@@ -1376,6 +1395,7 @@ function setupTabSpeakersHandlers() {
         tabSpeakersTableContent.addEventListener('input', (e) => {
             if (e.target.classList.contains('speaker-name')) {
                 syncSpeakersFromTab();
+                refreshAllSpeakerSelectOptions();
             }
         });
     }
@@ -5396,18 +5416,21 @@ function createTableRow(key, originalSentence, translationSentence) {
 
     row.appendChild(numberCell);
 
-    // Колонка 1: Спикер (если диалог)
-    if (currentDictation.is_dialog) {
-        const speakerCell = document.createElement('td');
-        speakerCell.className = 'col-speaker';
-        speakerCell.dataset.col_id = 'col-speaker';
-        if (originalSentence && originalSentence.speaker) {
-            const speakerName = currentDictation.speakers[originalSentence.speaker] || originalSentence.speaker;
-            speakerCell.textContent = speakerName;
-            speakerCell.style.backgroundColor = getSpeakerColor(originalSentence.speaker);
+    // Колонка 1: Спикер (всегда присутствует; видимость управляется чекбоксом)
+    const speakerCell = document.createElement('td');
+    speakerCell.className = 'col-speaker';
+    speakerCell.dataset.col_id = 'col-speaker';
+    const selectedSpeakerId = originalSentence && originalSentence.speaker ? String(originalSentence.speaker) : '';
+    buildSpeakerDropdown(speakerCell, selectedSpeakerId, (newIdWithColon) => {
+        // коллбек выбора: записываем только код (например, "1:") в строку
+        if (originalSentence) {
+            const cleanId = newIdWithColon ? String(newIdWithColon).replace(':', '') : '';
+            originalSentence.speaker = cleanId || undefined;
         }
-        row.appendChild(speakerCell);
-    }
+    });
+    // Первоначальная видимость берётся из текущего состояния чекбокса
+    speakerCell.style.display = (currentDictation.is_dialog ? 'table-cell' : 'none');
+    row.appendChild(speakerCell);
 
     // Колонка 2: Оригинальный текст
     const originalCell = document.createElement('td');
@@ -5697,6 +5720,98 @@ function createTableRow(key, originalSentence, translationSentence) {
     setupRowHandlers(row);
 
     return row;
+}
+
+/**
+ * Заполнить select опциями спикеров (текст — номер с двоеточием)
+ */
+function buildSpeakerOptionsForSelect(selectEl, selectedId) { /* deprecated for custom dropdown */ }
+
+/**
+ * Построить выпадающий список спикеров в ячейке
+ * label: "{id:}" и chevron; при выборе сохраняется только код (с двоеточием) через коллбек
+ */
+function buildSpeakerDropdown(cellEl, selectedId, onSelect) {
+    cellEl.innerHTML = '';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'speaker-dropdown';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'speaker-dropdown-btn';
+    const currentLabel = selectedId ? `${selectedId}:` : '';
+    button.innerHTML = `<span class="speaker-code">${currentLabel}</span><i data-lucide="chevron-down"></i>`;
+
+    const menu = document.createElement('div');
+    menu.className = 'speaker-dropdown-menu';
+
+    const entries = Object.entries(currentDictation.speakers || {}).sort((a, b) => Number(a[0]) - Number(b[0]));
+    // Пустой вариант
+    const emptyItem = document.createElement('div');
+    emptyItem.className = 'speaker-option';
+    emptyItem.textContent = '';
+    emptyItem.addEventListener('click', () => {
+        button.querySelector('.speaker-code').textContent = '';
+        menu.classList.remove('open');
+        if (typeof onSelect === 'function') onSelect('');
+    });
+    menu.appendChild(emptyItem);
+
+    entries.forEach(([id, name]) => {
+        const item = document.createElement('div');
+        item.className = 'speaker-option';
+        item.textContent = `${id}: ${name}`;
+        item.title = name;
+        item.dataset.id = id;
+        item.addEventListener('click', () => {
+            button.querySelector('.speaker-code').textContent = `${id}:`;
+            menu.classList.remove('open');
+            if (typeof onSelect === 'function') onSelect(`${id}:`);
+        });
+        menu.appendChild(item);
+    });
+
+    button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.toggle('open');
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+
+    // Закрытие при клике вне
+    document.addEventListener('click', () => {
+        menu.classList.remove('open');
+    });
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(menu);
+    cellEl.appendChild(wrapper);
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/**
+ * Обновить опции спикеров во всех строках таблицы (после изменения списка спикеров)
+ */
+function refreshAllSpeakerSelectOptions() {
+    // Обновляем пункты в кастомных выпадающих списках
+    document.querySelectorAll('td.col-speaker').forEach(td => {
+        const currentCode = td.querySelector('.speaker-code')?.textContent || '';
+        const selectedId = currentCode ? currentCode.replace(':', '') : '';
+        buildSpeakerDropdown(td, selectedId, (newIdWithColon) => {
+            const row = td.closest('tr');
+            const key = row?.dataset.key;
+            if (!key) return;
+            const sentence = (workingData.original.sentences || []).find(s => s.key === key);
+            if (sentence) {
+                const cleanId = newIdWithColon ? String(newIdWithColon).replace(':', '') : '';
+                sentence.speaker = cleanId || undefined;
+            }
+        });
+    });
 }
 
 /**
