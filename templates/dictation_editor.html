@@ -332,10 +332,10 @@
             <!-- Группа кнопок управления таблицей -->
             <div class="table-controls">
                 <!-- Кнопка перезаполнения таблицы (слева) -->
-                <button id="refillTableBtn" class="table-control-btn refill-btn">
+                <!-- <button id="refillTableBtn" class="table-control-btn refill-btn">
                     <i data-lucide="refresh-cw"></i>
                     Перезаполнить таблицу
-                </button>
+                </button> -->
 
                 <!-- Группа навигации и управления строками (справа) -->
                 <div class="table-nav-group">
@@ -438,13 +438,6 @@
             <div id="speakersTable" class="speakers-table" style="display: none;">
                 <h3>Спикеры</h3>
                 <table id="speakersTableContent">
-                    <!-- <thead>
-                            <tr>
-                                <th>№</th>
-                                <th>Имя спикера</th>
-                                <th>Действия</th>
-                            </tr>
-                        </thead> -->
                     <tbody>
                         <tr>
                             <td>1:</td>
@@ -474,16 +467,16 @@
             </div>
 
 
+            <div class="modal-buttons">
+                <button type="button" id="cancelStartBtn">Отмена</button>
+                <button type="button" id="createDictationBtn">Сформировать диктант</button>
+            </div>
+
+
             <div class="form-group">
                 <label for="startTextInput">Текст диктанта:</label>
                 <div id="startTextInput" contenteditable="true" class="start-text-editor" rows="10"
                     placeholder="Введите текст диктанта..."></div>
-            </div>
-
-
-            <div class="modal-buttons">
-                <button type="button" id="cancelStartBtn">Отмена</button>
-                <button type="button" id="createDictationBtn">Сформировать диктант</button>
             </div>
         </div>
     </div>

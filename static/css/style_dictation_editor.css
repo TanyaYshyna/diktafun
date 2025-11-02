@@ -469,8 +469,8 @@ button.audio-btn i[data-lucide] {
 
 /* Кнопка "Отмена" - серая */
 #cancelStartBtn {
-    background: var(--color-button-gray);
-    color: var(--color-button-text-gray);
+    background: var(--color-button-text-transparent);
+    color: var(--color-button-gray);
 }
 
 /* Лейбл "Текст диктанта" - увеличенный отступ сверху */
@@ -493,7 +493,7 @@ label[for="startTextInput"] {
     white-space: pre-wrap;
     /* font-family: 'Courier New', monospace; */
     resize: vertical;
-    overflow-y: auto;
+    overflow-y: scroll !important;
 }
 
 .start-text-editor:focus {
@@ -570,28 +570,6 @@ label[for="startTextInput"] {
     transform: none;
 }
 
-/* Кнопка перезаполнения таблицы */
-.refill-btn {
-    background: var(--color-hover);
-    color: var(--color-text);
-    border-radius: 6px 6px 0 0;
-}
-
-.refill-btn:hover {
-    background: var(--color-hover);
-    transform: none !important;
-    scale: none !important;
-    width: auto !important;
-    height: auto !important;
-    box-shadow: none !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    padding: 8px 12px !important;
-}
-
-.refill-btn:hover i {
-    color: var(--color-primary);
-}
 
 /* Группа навигации */
 .table-nav-group {
@@ -704,6 +682,10 @@ label[for="startTextInput"] {
     align-items: center;
     justify-content: center;
     z-index: 1000;
+}
+#startModal .start-modal {
+    max-width: 80vw !important;
+    width: 80vw !important;
 }
 
 .modal-content {

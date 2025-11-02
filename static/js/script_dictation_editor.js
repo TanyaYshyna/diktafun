@@ -2401,25 +2401,12 @@ function setupAudioSettingsModalHandlers() {
             }
         });
     }
-
-    // Инициализация кнопок управления таблицей
-    setupTableControlsHandlers();
 }
 
 /**
  * Настройка обработчиков для кнопок управления таблицей
  */
 function setupTableControlsHandlers() {
-    // Кнопка перезаполнения таблицы
-    const refillTableBtn = document.getElementById('refillTableBtn');
-    if (refillTableBtn) {
-        refillTableBtn.addEventListener('click', () => {
-            console.log('🔄 Перезаполнение таблицы');
-            // TODO: Реализовать перезаполнение таблицы
-            alert('Функция перезаполнения таблицы пока не реализована');
-        });
-    }
-
     // Кнопка предыдущей строки
     const prevRowBtn = document.getElementById('prevRowBtn');
     if (prevRowBtn) {
