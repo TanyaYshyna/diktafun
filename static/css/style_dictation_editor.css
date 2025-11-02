@@ -130,6 +130,10 @@
     margin-bottom: 0;
 }
 
+.form-group-line label {
+    white-space: nowrap;
+}
+
 /* ---------------------------------------------------------------------- */
 /* Стили для иконок в кнопках */
 button i[data-lucide] {
@@ -428,10 +432,10 @@ button.audio-btn i[data-lucide] {
     color: var(--color-button-text-lightgreen);
 }
 
-/* Hover эффект */
-.checkbox-label:hover .checkbox-icon {
+/* Hover эффект - убираем, чтобы иконка оставалась видимой */
+/* .checkbox-label:hover .checkbox-icon {
     color: var(--color-hover);
-}
+} */
 
 /* Группа с символом перевода - выравнивание вправо */
 #translationDelimiter {
@@ -710,6 +714,12 @@ label[for="startTextInput"] {
     width: 90%;
     max-height: 90vh;
     overflow: hidden;
+    margin: 15px;
+}
+
+/* Для модальных окон без header/footer добавляем padding */
+.modal-content:not(.has-modal-header):not(.has-modal-footer) {
+    padding: 20px;
 }
 
 .modal-header {
@@ -1019,26 +1029,77 @@ label[for="startTextInput"] {
     display: none;
 }
 
+/* Контейнер для таблицы предложений - без скролла */
+.sentences-table-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Кастомная полоса прокрутки для tbody */
+#sentences-table tbody {
+    display: block;
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Для правильного отображения ячеек в блоке */
+#sentences-table thead {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+#sentences-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+/* Кастомная полоса прокрутки */
+#sentences-table tbody::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+#sentences-table tbody::-webkit-scrollbar-track {
+    background: var(--color-panel-bg);
+    border-radius: 6px;
+}
+
+#sentences-table tbody::-webkit-scrollbar-thumb {
+    background: var(--color-border-light);
+    border-radius: 6px;
+    border: 2px solid var(--color-panel-bg);
+}
+
+#sentences-table tbody::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-secondary);
+}
+
+/* Для Firefox */
+#sentences-table tbody {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-light) var(--color-panel-bg);
+}
+
 /* Основная таблица предложений */
 #sentences-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 0;
     background: var(--color-panel-bg);
-    border: 1px solid var(--color-border-light);
+    border: none;
     border-radius: 0;
     overflow: hidden;
+    table-layout: fixed;
 }
 
 #sentences-table th,
 #sentences-table td {
     padding: 12px;
     text-align: left;
-    border-bottom: 1px solid var(--color-border-light);
-}
-
-#sentences-table thead {
-    height: 40px; /* Фиксированная высота для всей шапки */
+    border: 1px solid var(--color-border-light);
 }
 
 #sentences-table th {
@@ -1072,93 +1133,59 @@ label[for="startTextInput"] {
 
 /* Колонки таблицы */
 .col-number {
+    width: 20px !important;
+    min-width: 20px !important;
+    max-width: 20px !important;
+    text-align: center;
+    font-weight: 500;
+}
+
+
+
+/* Колонка спикера - фиксированная ширина с иконкой */
+.col-speaker {
     width: 30px !important;
     min-width: 30px !important;
     max-width: 30px !important;
     text-align: center;
     font-weight: 500;
-}
-
-/* Стили для кнопок в шапке таблицы */
-#open_left_panel_original,
-#open_left_panel_translation {
-    width: 100%;
-    height: 100%;
-    padding: 12px;
-    background: var(--color-hover);
-    color: var(--color-text);
-    border: none;
-    border-radius: 0;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#open_left_panel_original:hover,
-#open_left_panel_translation:hover {
-    background: var(--color-button-gray);
-}
-
-#open_left_panel_original i,
-#open_left_panel_translation i {
-    width: 18px;
-    height: 18px;
-}
-
-/* Стили для ячеек колонок настроек - цвет как у шапки */
-.col-settings-original {
-    background: var(--color-hover) !important;
-    padding: 0 !important;
-    width: 25px !important; /* Фиксированная ширина для кнопки переключения режимов */
-    min-width: 25px !important;
-    max-width: 25px !important;
-}
-
-/* Стили для кнопки переключения режимов */
-.col-settings-original button {
-    width: 100% !important;
-    height: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
-    border: none !important;
-    background: transparent !important;
-}
-
-/* Стили для иконки в кнопке переключения режимов */
-.col-settings-original button i,
-.col-settings-original button svg {
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 20px !important;
-    min-height: 20px !important;
-}
-
-.col-settings-original td {
-    background: var(--color-hover) !important;
-}
-
-.col-speaker {
-    width: 120px;
-    font-weight: 500;
     color: var(--color-text);
 }
+.col-scrolling {
+    width: 2px !important;
+    min-width: 2px !important;
+    max-width: 2px !important;
+}
 
+/* Колонки Оригинал и Перевод - процентная ширина (не фиксированная) */
 .col-original,
 .col-translation {
-    width: 40%;
+    width: auto;
+    min-width: 150px;
     padding: 4px !important;
 }
 
-.col-audio {
-    width: 80px;
+/* Колонки аудио воспроизведения - фиксированная ширина */
+.col-play-original,
+.col-play-translation {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
     text-align: center;
+    padding: 4px !important;
 }
 
-/* Фиксированная ширина только для ячейки цепочки */
+/* Колонки Start и End - фиксированная ширина */
+.col-start,
+.col-end {
+    width: 100px !important;
+    min-width: 100px !important;
+    max-width: 100px !important;
+    text-align: center;
+    padding: 4px !important;
+}
+
+/* Фиксированная ширина для ячейки цепочки */
 .col-chain {
     width: 40px !important;
     min-width: 40px !important;
@@ -1166,22 +1193,23 @@ label[for="startTextInput"] {
     text-align: center;
 }
 
-/* Колонки аудио и применения */
+/* Колонки аудио и применения - фиксированная ширина */
 .col-generate-tts,
 .col-play-audio,
 .col-apply-avto,
 .col-apply-user,
 .col-apply-mic {
-    width: 60px !important;
-    min-width: 60px !important;
-    max-width: 60px !important;
-    text-align: center;
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    text-align: center !important;
     padding: 4px !important;
 }
 
 /* Текстовые поля в таблице */
 .sentence-text {
     width: 100%;
+    min-width: 150px;
     min-height: 20px;
     padding: 0;
     margin: 0;
@@ -1415,9 +1443,9 @@ td.col-speaker {
         padding: 8px;
     }
     
-    .col-speaker {
+    /* .col-speaker {
         width: 100px;
-    }
+    } */
 }
 
 /* ========== КЛАССЫ СОСТОЯНИЙ ДЛЯ РЕДАКТОРА ========== */
@@ -1431,14 +1459,16 @@ td.col-speaker {
 /* Показываем только панели оригинала и перевода по умолчанию */
 #sentences-table .panel-original,
 #sentences-table .panel-translation,
-#sentences-table .col-number {
+#sentences-table .col-number,
+#sentences-table .col-scrolling {
     display: table-cell !important;
 }
 
 /* Состояние: оригинал-перевод - показываем оригинал и перевод */
 #sentences-table.state-original-translation .panel-original,
 #sentences-table.state-original-translation .panel-translation,
-#sentences-table.state-original-translation .col-number {
+#sentences-table.state-original-translation .col-number,
+#sentences-table.state-original-translation .col-scrolling { 
     display: table-cell !important;
 }
 
@@ -1451,7 +1481,8 @@ td.col-speaker {
 
 /* Состояние: оригинал-редактирование - показываем оригинал и панель редактирования */
 #sentences-table.state-original-editing .panel-original,
-#sentences-table.state-original-editing .col-number {
+#sentences-table.state-original-editing .col-number,
+#sentences-table.state-original-editing .col-scrolling {
     display: table-cell !important;
 }
 
@@ -1465,6 +1496,11 @@ td.col-speaker {
 /* Скрываем колонки перевода в состоянии оригинал-редактирование */
 #sentences-table.state-original-editing .panel-translation {
     display: none !important;
+}
+
+/* Но показываем колонки перевода, которые должны быть видны на вкладке "Создание аудио" */
+#sentences-table.state-original-editing .panel-translation.panel-create-audio {
+    display: table-cell !important;
 }
 
 /* ========== СТИЛИ ПАНЕЛИ НАСТРОЕК АУДИО ========== */
@@ -1545,54 +1581,6 @@ td.col-speaker {
 }
 
 .file-select-btn i {
-    width: 14px;
-    height: 14px;
-    margin: 0;
-}
-
-/* Колонки таблицы файлов */
-.audio-files-table .col-number {
-    width: 40px;
-    text-align: center;
-    font-weight: 500;
-}
-
-.audio-files-table .col-filename {
-    width: auto;
-    min-width: 150px;
-}
-
-.audio-files-table .col-start,
-.audio-files-table .col-end {
-    width: 80px;
-    text-align: center;
-}
-
-.audio-files-table .col-split,
-.audio-files-table .col-cut {
-    width: 60px;
-    text-align: center;
-    padding: 4px;
-}
-
-/* Кнопки в таблице файлов */
-.audio-files-table .table-btn {
-    padding: 4px 8px;
-    background: var(--color-button-gray);
-    color: var(--color-button-text-gray);
-    border: 1px solid var(--color-button-shadow-gray);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: all 0.2s;
-}
-
-.audio-files-table .table-btn:hover {
-    background: var(--color-button-text-gray);
-    color: white;
-}
-
-.audio-files-table .table-btn i {
     width: 14px;
     height: 14px;
     margin: 0;
@@ -2391,4 +2379,206 @@ td.col-speaker {
     .avatar-section {
         flex-direction: column;
     }
+}
+
+/* Стили для вкладки "Создание аудио" */
+.create-audio-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.create-audio-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.audio-file-name-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 10px;
+}
+
+.audio-file-name-label {
+    color: var(--color-text);
+    font-size: 14px;
+}
+
+.audio-file-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.audio-file-dropdown-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text);
+}
+
+.audio-file-dropdown-btn:hover {
+    background: var(--color-hover);
+    border-radius: 3px;
+}
+
+.audio-file-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    min-width: 200px;
+    margin-top: 2px;
+}
+
+.audio-file-dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--color-text);
+    font-size: 14px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.audio-file-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.audio-file-dropdown-item:hover {
+    background: var(--color-hover);
+}
+
+.audio-play-btn {
+    min-width: 100px;
+}
+
+.audio-play-btn[data-state="disabled"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.audio-explanations {
+    margin-left: 20px !important;
+    padding: 15px;
+    background: var(--color-hover);
+    border-radius: 6px;
+    border: 1px solid var(--color-border-light);
+}
+
+.audio-explanations label {
+    font-weight: 600;
+    color: var(--color-text);
+    /* margin-left: 10px !important; */
+    display: block;
+}
+
+.explanations-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.explanations-list li {
+    color: var(--color-text);
+    font-size: 14px;
+}
+
+.explanations-list li strong {
+    color: var(--color-button-text-yellow);
+    font-weight: 600;
+    margin-right: 5px;
+}
+
+/* Стили для колонки с чекбоксами в таблице */
+.col-checkbox-create-audio {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    text-align: center;
+    padding: 8px !important;
+}
+
+.col-checkbox-create-audio .checkbox-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.col-checkbox-create-audio .checkbox-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--color-button-text-gray);
+    transition: color 0.2s;
+}
+
+.col-checkbox-create-audio .checkbox-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Убираем hover эффект на ячейке с чекбоксом, чтобы иконка не исчезала */
+.col-checkbox-create-audio:hover .checkbox-icon {
+    color: var(--color-button-text-gray) !important;
+}
+
+.col-checkbox-create-audio input[type="checkbox"]:checked + .checkbox-icon {
+    color: var(--color-button-text-lightgreen);
+}
+
+/* Убираем border-left у выбранных строк, так как убрали границы */
+#sentences-table tbody tr.selected {
+    background: var(--color-audio-purple-light) !important;
+    border-left: none !important;
+}
+
+#sentences-table tbody tr.selected:hover {
+    background: var(--color-audio-purple-medium) !important;
+    border-left: none !important;
+}
+
+/* Стили для таблицы вкладки "Создание аудио" - без границ */
+#create-audio-table {
+    border: none !important;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#create-audio-table,
+#create-audio-table td,
+#create-audio-table th,
+#create-audio-table tr {
+    margin: 0;
+    padding: 0;
+    border: none !important;
+    border-collapse: collapse;
+}
+
+#create-audio-table td {
+
+    border: none !important;
+}
+
+#create-audio-table tr {
+    border: none !important;
+}
+
+#create-audio-table .radio-cell {
+    border: none !important;
 }

@@ -41,7 +41,6 @@ class AudioManagerClass {
         if (isUnderWave) {
             const wf = this.waveformCanvas;
             if (wf) {
-            console.log('💎💎💎💎💎5💎 isUnderWave:', isUnderWave);
             const region = wf.region || { start: 0, end: wf.duration || 0 };
             const startTime = Math.max(region.start || 0, Math.min(wf.currentTime || 0, region.end || 0));
             if (isFinite(startTime) && startTime > 0) {
@@ -53,8 +52,7 @@ class AudioManagerClass {
         this.audio.play();
 
         if (isUnderWave) {
-            console.log('💎💎💎💎💎6💎 isUnderWave:', isUnderWave);
-            const wf = this.waveformCanvas;
+           const wf = this.waveformCanvas;
             if (wf) {
             const startSync = () => {
                 // Сообщаем волне актуальный audio-элемент и запускаем её собственный контроль

@@ -17,6 +17,7 @@ import requests
 import time
 import librosa
 import soundfile as sf
+import numpy
 from PIL import Image
 
 # from helpers.user_helpers import get_safe_email
@@ -1112,7 +1113,7 @@ def split_audio_file():
             
         except ImportError:
             logger.error("Библиотека librosa не установлена")
-            return jsonify({'success': False, 'error': 'Библиотека для работы с аудио не установлена'}), 500
+            return jsonify({'success': False, 'error': 'Библиотека librosa не установлена'}), 500
         except Exception as e:
             logger.error(f"Ошибка при разрезании аудио: {e}")
             return jsonify({'success': False, 'error': f'Ошибка разрезания аудио: {str(e)}'}), 500
@@ -1126,3 +1127,179 @@ def split_audio_file():
     except Exception as e:
         logger.error(f"Ошибка при разрезании аудиофайла: {e}")
         return jsonify({'success': False, 'error': f'Ошибка разрезания: {str(e)}'}), 500
+
+@editor_bp.route('/create-combined-audio', methods=['POST'])
+def create_combined_audio():
+    """Создание комбинированного аудио файла из последовательности файлов и пауз"""
+    try:
+        data = request.get_json()
+        dictation_id = data.get('dictation_id')
+        safe_email = data.get('safe_email')
+        file_sequence = data.get('file_sequence', [])
+        pattern = data.get('pattern', '')
+        
+        if not dictation_id:
+            return jsonify({'success': False, 'error': 'dictation_id не указан'}), 400
+        
+        if not file_sequence:
+            return jsonify({'success': False, 'error': 'file_sequence пуст'}), 400
+        
+        # Определяем пути - файл сохраняется в temp папке диктанта
+        temp_dir = os.path.join('static', 'data', 'temp', dictation_id)
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # Используем переданное имя файла или генерируем по паттерну
+        custom_filename = data.get('filename')
+        if custom_filename:
+            # Убеждаемся, что есть расширение
+            if not custom_filename.endswith(('.mp3', '.wav', '.ogg', '.m4a', '.webm')):
+                custom_filename += '.mp3'
+            output_filename = custom_filename
+        else:
+            # Генерируем имя файла: audio_<комбинация>
+            output_filename = f"audio_{pattern}.mp3"
+        output_path = os.path.join(temp_dir, output_filename)
+        
+        # Загружаем и склеиваем аудио
+        # Сначала проходим по всем файлам, чтобы определить оптимальный sample_rate
+        sample_rates = []
+        audio_segments = []
+        sample_rate = None
+        
+        # Первый проход: определяем sample_rate из всех файлов
+        for item in file_sequence:
+            item_type = item.get('type')
+            
+            if item_type == 'file':
+                filename = item.get('filename')
+                language = item.get('language', 'en')
+                
+                if filename:
+                    file_path = os.path.join(temp_dir, language, filename)
+                    if os.path.exists(file_path):
+                        try:
+                            # Загружаем только метаданные для определения sample_rate
+                            y_test, sr_test = librosa.load(file_path, sr=None, duration=0.1)
+                            sample_rates.append(sr_test)
+                            logger.info(f"Файл {filename}: sample_rate={sr_test}, формат={os.path.splitext(filename)[1]}")
+                        except Exception as e:
+                            logger.warning(f"Не удалось определить sample_rate для {filename}: {e}")
+        
+        # Выбираем sample_rate (используем самый высокий или дефолтный)
+        if sample_rates:
+            sample_rate = max(sample_rates)  # Используем самый высокий sample_rate для лучшего качества
+        else:
+            sample_rate = 22050  # Дефолтная частота дискретизации
+        
+        logger.info(f"Используемый sample_rate для склейки: {sample_rate} Hz")
+        
+        # Второй проход: загружаем и обрабатываем все файлы
+        for item in file_sequence:
+            item_type = item.get('type')
+            
+            if item_type == 'pause':
+                # Создаем тишину
+                duration = item.get('duration', 1.0)
+                silence = numpy.zeros(int(duration * sample_rate))
+                audio_segments.append(silence)
+                
+            elif item_type == 'pause_file':
+                # Пауза длиной в файл
+                duration_file = item.get('duration_file')
+                language = item.get('language', 'en')
+                
+                if duration_file:
+                    file_path = os.path.join(temp_dir, language, duration_file)
+                    if os.path.exists(file_path):
+                        try:
+                            # Загружаем файл полностью для определения длительности
+                            y_ref, sr_ref = librosa.load(file_path, sr=None)
+                            # Вычисляем длительность в секундах
+                            duration_sec = len(y_ref) / sr_ref
+                            # Создаем тишину нужной длительности с target sample_rate
+                            silence = numpy.zeros(int(duration_sec * sample_rate))
+                            audio_segments.append(silence)
+                            logger.info(f"Пауза длиной в файл {duration_file}: {duration_sec:.2f}s")
+                        except Exception as e:
+                            logger.warning(f"Не удалось загрузить файл для паузы {duration_file}: {e}")
+                            # Fallback на 1 секунду
+                            silence = numpy.zeros(int(sample_rate))
+                            audio_segments.append(silence)
+                    else:
+                        # Fallback на 1 секунду
+                        fallback_duration = item.get('fallback_duration', 1.0)
+                        silence = numpy.zeros(int(fallback_duration * sample_rate))
+                        audio_segments.append(silence)
+                else:
+                    # Fallback на 1 секунду
+                    fallback_duration = item.get('fallback_duration', 1.0)
+                    silence = numpy.zeros(int(fallback_duration * sample_rate))
+                    audio_segments.append(silence)
+                    
+            elif item_type == 'file':
+                # Загружаем аудио файл
+                filename = item.get('filename')
+                language = item.get('language', 'en')
+                
+                if filename:
+                    file_path = os.path.join(temp_dir, language, filename)
+                    if os.path.exists(file_path):
+                        try:
+                            # librosa.load автоматически:
+                            # 1. Поддерживает разные форматы (mp3, wav, webm, ogg, m4a, flac и т.д.)
+                            # 2. Конвертирует стерео в моно
+                            # 3. Нормализует данные в диапазон [-1, 1]
+                            y, sr = librosa.load(file_path, sr=None)
+                            
+                            # Ресемплируем если нужно
+                            if sr != sample_rate:
+                                y = librosa.resample(y, orig_sr=sr, target_sr=sample_rate)
+                                logger.debug(f"Ресемплирование {filename}: {sr} -> {sample_rate} Hz")
+                            
+                            # Убеждаемся, что данные нормализованы (librosa это делает автоматически, но проверим)
+                            max_val = numpy.max(numpy.abs(y))
+                            if max_val > 1.0:
+                                y = y / max_val
+                                logger.warning(f"Нормализация {filename}: max_val={max_val}")
+                            
+                            audio_segments.append(y)
+                            logger.debug(f"Загружен файл {filename}: {len(y)} samples, длительность {len(y)/sample_rate:.2f}s")
+                            
+                        except Exception as e:
+                            logger.error(f"Ошибка загрузки файла {file_path}: {e}", exc_info=True)
+                            # Пропускаем файл, если не удалось загрузить
+                            continue
+                    else:
+                        logger.warning(f"Файл не найден: {file_path}")
+                        # Пропускаем файл, если не найден
+                        continue
+        
+        if not audio_segments:
+            return jsonify({'success': False, 'error': 'Не удалось загрузить ни одного аудио сегмента'}), 400
+        
+        # Склеиваем все сегменты
+        logger.info(f"Склеивание {len(audio_segments)} сегментов...")
+        combined_audio = numpy.concatenate(audio_segments)
+        
+        # Финальная нормализация для предотвращения клиппинга
+        max_val = numpy.max(numpy.abs(combined_audio))
+        if max_val > 0.95:  # Если есть риск клиппинга, немного уменьшаем громкость
+            combined_audio = combined_audio * (0.95 / max_val)
+            logger.info(f"Применена финальная нормализация: коэффициент {0.95 / max_val:.3f}")
+        
+        # Сохраняем результат (soundfile автоматически определяет формат по расширению)
+        sf.write(output_path, combined_audio, sample_rate)
+        logger.info(f"Файл сохранен: {output_path}, длительность: {len(combined_audio)/sample_rate:.2f}s")
+        
+        logger.info(f"✅ Создан комбинированный аудио файл: {output_filename}")
+        
+        return jsonify({
+            'success': True,
+            'filename': output_filename,
+            'filepath': f"/static/data/temp/{dictation_id}/{output_filename}",
+            'message': 'Комбинированный аудио файл успешно создан'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка при создании комбинированного аудио: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': f'Ошибка создания файла: {str(e)}'}), 500

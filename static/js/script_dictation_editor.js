@@ -264,17 +264,10 @@ function initNewDictation(safe_email, initData) {
     document.getElementById('dictation-name').textContent = `Новый диктант: ` + dictation_id;
     
     // ==================== Открываем стартовое модальное окно для нового диктанта ========================================
-    // console.log('🔍 DEBUG: Готовимся открыть стартовое модальное окно...');
 
     // Проверяем существование элементов
     const startModal = document.getElementById('startModal');
-    // console.log('🔍 DEBUG: startModal элемент найден:', !!startModal);
-
-    // if (startModal) {
-    //     console.log('🔍 DEBUG: startModal текущий display:', startModal.style.display);
-    //     console.log('🔍 DEBUG: startModal computed style:', window.getComputedStyle(startModal).display);
-    // }
-
+ 
     // Открыть стартовое модальное окно для нового диктанта
     setTimeout(() => {
         openStartModal();
@@ -387,8 +380,17 @@ async function loadExistingDictation(initData) {
         translation: translation_data
     };
 
-    console.log('📊 Загруженные данные original_data:', original_data);
-    console.log('📊 Загруженные данные translation_data:', translation_data);
+    // Инициализируем поле checked для всех предложений, если его нет
+    if (workingData.original && workingData.original.sentences) {
+        workingData.original.sentences.forEach(s => {
+            if (s.checked === undefined) {
+                s.checked = false;
+            }
+        });
+    }
+
+    // console.log('📊 Загруженные данные original_data:', original_data);
+    // console.log('📊 Загруженные данные translation_data:', translation_data);
 
     // Создаем таблицу
     await createTable();
@@ -549,28 +551,37 @@ async function handleAudioPlayback(event) {
 
     // 1️⃣ Определяем URL    
     const state = button.dataset.state;
-    const language = button.dataset.language; // 'en' или 'ru'
-    let audioUrl = `/static/data/temp/${currentDictation.id}/${language}`;
+    let audioUrl = null;
 
-    const sentence = getSentenceForButton(button);
-
-    // Кнопка под волной: играем строго currentAudioFile (волна уже подготовлена внешними процедурами)
-    const isUnderWave = button && button.id === 'audioPlayBtn';
-    if (isUnderWave) {
-        const file = typeof currentAudioFileName !== 'undefined' ? currentAudioFileName : '';
-        if (!file) {
-            console.warn('⚠️ Нет текущего файла под волной — воспроизведение отменено');
+    // Кнопка воспроизведения созданного файла
+     if (button.id === 'playCreatedAudioBtn') {
+        audioUrl = button.dataset.audioUrl;
+        if (!audioUrl) {
+            console.warn('⚠️ Нет URL для воспроизведения созданного файла');
             return;
         }
-        audioUrl = `${audioUrl}/${file}`;
-        console.log('🔍🔍🔍🔍🔍🔍3🔍 audioUrl:', audioUrl);
-
-        // Не трогаем регион/волну из Play
     } else {
-        const fieldName = button.dataset.fieldName; // 'audio', 'audio_avto', 'audio_user', 'audio_mic', 'audio_user_shared'
-        const nameAudioFile = sentence && sentence[fieldName];
-        audioUrl = `${audioUrl}/${nameAudioFile}`;
-        console.log('🔍🔍🔍🔍🔍🔍4🔍 audioUrl:', audioUrl);
+        const language = button.dataset.language; // 'en' или 'ru'
+        audioUrl = `/static/data/temp/${currentDictation.id}/${language}`;
+
+        const sentence = getSentenceForButton(button);
+
+        // Кнопка под волной: играем строго currentAudioFile (волна уже подготовлена внешними процедурами)
+        const isUnderWave = button && button.id === 'audioPlayBtn';
+        if (isUnderWave) {
+            const file = typeof currentAudioFileName !== 'undefined' ? currentAudioFileName : '';
+            if (!file) {
+                console.warn('⚠️ Нет текущего файла под волной — воспроизведение отменено');
+                return;
+            }
+            audioUrl = `${audioUrl}/${file}`;
+
+            // Не трогаем регион/волну из Play
+        } else {
+            const fieldName = button.dataset.fieldName; // 'audio', 'audio_avto', 'audio_user', 'audio_mic', 'audio_user_shared'
+            const nameAudioFile = sentence && sentence[fieldName];
+            audioUrl = `${audioUrl}/${nameAudioFile}`;
+        }
     }
     // 2️⃣ Если что-то уже играет — остановим
     if (audioManager.currentButton && audioManager.currentButton !== button) {
@@ -591,7 +602,6 @@ async function handleAudioPlayback(event) {
         }
         case 'playing':
         case 'playing-shared':
-            console.log('🔍🔍🔍🔍🔍🔍2🔍 audioUrl:', audioUrl);
             audioManager.pause();
             break;
         case 'creating':
@@ -727,22 +737,6 @@ async function playAudioFile(nameAudioFile, language, updatePlayhead = false) {
     }
 
     const audioUrl = `/static/data/temp/${currentDictation.id}/${language}/${nameAudioFile}`;
-    console.log(`🎵 URL для воспроизведения: ${audioUrl}`);
-
-    // Если плеер еще не загружен, устанавливаем URL
-    // if (!player.src) {
-    //     player.src = audioUrl;
-    //     console.log(`🎵 Установлен новый URL: ${audioUrl}`);
-    // } else {
-    //     console.log(`🎵 Плеер уже имеет URL: ${player.src}`);
-    // }
-
-    // // Устанавливаем текущий плеер (останавливает все остальные)
-    // AudioManager.setCurrent(player);
-
-    // // ПРИНУДИТЕЛЬНО останавливаем все плееры перед запуском
-    // AudioManager.stopAll();
-
 
     // Если сейчас играет другая кнопка — остановим и восстановим её состояние
     if (currentPlayingButton && currentPlayingButton !== button) {
@@ -771,7 +765,6 @@ async function playAudioFile(nameAudioFile, language, updatePlayhead = false) {
         player.onerror = null;
 
         player.onloadeddata = () => {
-            console.log('🎵 Плеер загружен, запускаем воспроизведение:', audioUrl);
             player.play().catch(error => {
                 console.error('❌ Ошибка воспроизведения:', error);
                 console.error('❌ URL файла:', audioUrl);
@@ -877,14 +870,8 @@ function getSentenceForButton(button) {
  * Получить имя аудио файла
  */
 function getAudioFileName(button, language, fieldName) {
-    console.log('🔍 getAudioFileName вызвана:', fieldName, language);
-
     const sentence = getSentenceForButton(button);
-    console.log('🔍 Найденное предложение:', sentence);
-
     const fileName = sentence ? sentence[fieldName] : null;
-    console.log('🔍 Имя файла:', fileName);
-
     return fileName;
 }
 
@@ -1286,7 +1273,7 @@ function setupTabsPanel() {
             const checkboxIcon = document.querySelector('#tabDialogCheckboxLabel .checkbox-icon');
             if (checkboxIcon) {
                 if (isDialog) {
-                    checkboxIcon.setAttribute('data-lucide', 'check-square');
+                    checkboxIcon.setAttribute('data-lucide', 'circle-check');
                 } else {
                     checkboxIcon.setAttribute('data-lucide', 'circle');
                 }
@@ -1306,6 +1293,614 @@ function setupTabsPanel() {
 
         // Обработчики для таблицы спикеров во вкладке
         setupTabSpeakersHandlers();
+    }
+    
+    // Обработчики для вкладки "Создание аудио"
+    setupCreateAudioHandlers();
+}
+
+/**
+ * Обработчик переключения чекбокса (общий для всех строк, как handleAudioPlayback)
+ */
+function handleCheckboxToggle(e) {
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    
+    // Находим кнопку через closest (как в handleAudioPlayback)
+    const btn = e.target.closest('button.checkbox-btn');
+    
+    if (!btn) {
+        return;
+    }
+    
+    const key = btn.dataset.key;
+    
+    if (!key) return;
+    
+    // Находим предложение по ключу
+    const sentence = workingData.original.sentences.find(s => s.key === key);
+    if (!sentence) return;
+    
+    // Переключаем состояние checked
+    sentence.checked = !sentence.checked;
+    
+    // Находим иконку в этой кнопке и обновляем её
+    const icon = btn.querySelector('.checkbox-icon');
+    if (icon) {
+        const iconName = sentence.checked ? 'circle-check' : 'circle';
+        
+        // Очищаем старую иконку (удаляем SVG, если есть)
+        const oldSvg = icon.querySelector('svg');
+        if (oldSvg) {
+            oldSvg.remove();
+        }
+        
+        // Устанавливаем новый атрибут data-lucide
+        icon.setAttribute('data-lucide', iconName);
+        
+        // Перерисовываем иконку Lucide
+        if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+            lucide.createIcons();
+        }
+    }
+    
+    // Обновляем состояние общего чекбокса
+    updateSelectAllCheckboxState();
+}
+
+/**
+ * Настройка обработчиков для вкладки "Создание аудио"
+ */
+// Глобальный список созданных файлов в этой сессии
+let createdAudioFiles = [];
+
+function setupCreateAudioHandlers() {
+    // Обработчик для общего чекбокса "Выбрать все"
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const selectAllCheckboxLabel = document.getElementById('selectAllCheckboxLabel');
+    
+    if (selectAllCheckbox && selectAllCheckboxLabel) {
+        // Обработчик клика на label
+        selectAllCheckboxLabel.addEventListener('click', function(e) {
+            e.preventDefault();
+            selectAllCheckbox.checked = !selectAllCheckbox.checked;
+            selectAllCheckbox.dispatchEvent(new Event('change'));
+        });
+        
+        // Обработчик изменения чекбокса
+        selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = selectAllCheckbox.checked;
+            const checkboxIcon = selectAllCheckboxLabel.querySelector('.checkbox-icon');
+            
+            if (checkboxIcon) {
+                checkboxIcon.setAttribute('data-lucide', isChecked ? 'circle-check' : 'circle');
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+            
+            // Устанавливаем состояние checked для всех предложений в данных
+            if (workingData && workingData.original && workingData.original.sentences) {
+                workingData.original.sentences.forEach(sentence => {
+                    sentence.checked = isChecked;
+                });
+            }
+            
+            // Обновляем иконки во всех строках таблицы
+            const allCheckboxBtns = document.querySelectorAll('td.col-checkbox-create-audio .checkbox-btn');
+            allCheckboxBtns.forEach(btn => {
+                const icon = btn.querySelector('.checkbox-icon');
+                if (icon) {
+                    icon.setAttribute('data-lucide', isChecked ? 'circle-check' : 'circle');
+                }
+            });
+            
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    }
+    
+    // Обработчик кнопки "Создать файл"
+    const createAudioFileBtn = document.getElementById('createAudioFileBtn');
+    if (createAudioFileBtn) {
+        createAudioFileBtn.addEventListener('click', async function() {
+            await showCreateAudioFileModal();
+        });
+    }
+    
+    // Обработчик кнопки "Сохранить файл на диск"
+    const saveAudioFileBtn = document.getElementById('saveAudioFileBtn');
+    if (saveAudioFileBtn) {
+        saveAudioFileBtn.addEventListener('click', async function() {
+            await saveAudioFileToDisk();
+        });
+    }
+    
+    // Обработчик dropdown списка файлов
+    const dropdownBtn = document.getElementById('audioFileDropdownBtn');
+    const dropdown = document.getElementById('audioFileDropdown');
+    
+    if (dropdownBtn && dropdown) {
+        dropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isVisible = dropdown.style.display === 'block';
+            dropdown.style.display = isVisible ? 'none' : 'block';
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+        
+        // Закрываем dropdown при клике вне его
+        document.addEventListener('click', function(e) {
+            if (!dropdownBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+    
+    // Обработчик кнопки воспроизведения созданного аудио
+    const playCreatedAudioBtn = document.getElementById('playCreatedAudioBtn');
+    if (playCreatedAudioBtn) {
+        playCreatedAudioBtn.addEventListener('click', handleAudioPlayback);
+    }
+}
+
+/**
+ * Создать комбинированный аудио файл из выбранных предложений
+ * @param {string} customFileName - кастомное имя файла (если не указано, используется паттерн)
+ */
+async function createCombinedAudioFile(customFileName = null) {
+    const audioTypeInput = document.getElementById('audioTypeInput');
+    
+    if (!audioTypeInput) {
+        console.error('Поле ввода типа аудио не найдено');
+        return;
+    }
+    
+    const pattern = audioTypeInput.value.trim().toLowerCase();
+    if (!pattern) {
+        alert('Введите паттерн аудио (например: op, op_o, tp_mm)');
+        return;
+    }
+    
+    // Определяем имя файла
+    const fileName = customFileName || `audio_${pattern}.mp3`;
+    
+    // Получаем все выбранные предложения
+    const selectedSentences = workingData.original.sentences.filter(s => s.checked === true);
+    
+    if (selectedSentences.length === 0) {
+        alert('Выберите хотя бы одно предложение');
+        return;
+    }
+    
+    // Парсим паттерн на элементы (o, p, p_o, t, m, и т.д.)
+    const patternElements = parseAudioPattern(pattern);
+    
+    if (patternElements.length === 0) {
+        alert('Неверный паттерн аудио');
+        return;
+    }
+    
+    // Собираем список файлов для каждого предложения
+    const fileSequence = [];
+    
+    for (const sentence of selectedSentences) {
+        // Находим соответствующее предложение перевода
+        const translationSentence = workingData.translation.sentences.find(s => s.key === sentence.key);
+        
+        // Для каждого элемента паттерна получаем файл или паузу
+        for (const element of patternElements) {
+            const audioInfo = getAudioFileForPattern(element, sentence, translationSentence);
+            if (audioInfo) {
+                fileSequence.push(audioInfo);
+            }
+        }
+    }
+    
+    if (fileSequence.length === 0) {
+        alert('Не удалось найти аудио файлы для создания комбинации');
+        return;
+    }
+    
+    // Показываем индикатор загрузки
+    showLoadingIndicator('Создание комбинированного аудио файла...');
+    
+    try {
+        // Отправляем запрос на сервер для склейки
+        const response = await fetch('/create-combined-audio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                dictation_id: currentDictation.id,
+                safe_email: currentDictation.safe_email,
+                file_sequence: fileSequence,
+                pattern: pattern,
+                filename: fileName
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Добавляем файл в список созданных
+            const fileInfo = {
+                filename: result.filename,
+                filepath: result.filepath,
+                pattern: pattern,
+                createdAt: new Date().toISOString()
+            };
+            createdAudioFiles.push(fileInfo);
+            
+            // Обновляем интерфейс
+            updateAudioFileList();
+            selectAudioFileFromList(fileInfo);
+         } else {
+            alert('Ошибка создания файла: ' + (result.error || 'Неизвестная ошибка'));
+        }
+    } catch (error) {
+        console.error('❌ Ошибка при создании комбинированного аудио:', error);
+        alert('Ошибка при создании файла: ' + error.message);
+    } finally {
+        hideLoadingIndicator();
+    }
+}
+
+/**
+ * Показать модальное окно для создания аудио файла
+ */
+async function showCreateAudioFileModal() {
+    const modal = document.getElementById('createAudioFileModal');
+    const fileNameInput = document.getElementById('newAudioFileName');
+    const audioTypeInput = document.getElementById('audioTypeInput');
+    
+    if (!modal || !fileNameInput || !audioTypeInput) {
+        console.error('Элементы модального окна не найдены');
+        return;
+    }
+    
+    // Получаем паттерн из поля ввода
+    const pattern = audioTypeInput.value.trim().toLowerCase();
+    
+    // Предзаполняем имя файла
+    const defaultName = pattern ? `audio_${pattern}.mp3` : 'audio.mp3';
+    fileNameInput.value = defaultName;
+    
+    // Показываем модальное окно
+    modal.style.display = 'flex';
+    
+    // Фокусируемся на поле ввода
+    fileNameInput.focus();
+    fileNameInput.select();
+    
+    // Обработчики кнопок модального окна
+    const confirmBtn = document.getElementById('createAudioFileModalConfirm');
+    const cancelBtn = document.getElementById('createAudioFileModalCancel');
+    
+    const handleConfirm = async () => {
+        const fileName = fileNameInput.value.trim();
+        if (!fileName) {
+            alert('Введите имя файла');
+            return;
+        }
+        
+        // Закрываем модальное окно
+        modal.style.display = 'none';
+        
+        // Создаем файл с указанным именем
+        await createCombinedAudioFile(fileName);
+    };
+    
+    const handleCancel = () => {
+        modal.style.display = 'none';
+    };
+    
+    // Удаляем старые обработчики, если есть
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    newConfirmBtn.addEventListener('click', handleConfirm);
+    
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+    newCancelBtn.addEventListener('click', handleCancel);
+    
+    // Закрытие по Escape
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            modal.style.display = 'none';
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+    
+    // Обновляем иконки Lucide
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/**
+ * Обновить список созданных файлов в dropdown
+ */
+function updateAudioFileList() {
+    const dropdown = document.getElementById('audioFileDropdown');
+    const dropdownWrapper = document.querySelector('.audio-file-dropdown-wrapper');
+    
+    if (!dropdown || !dropdownWrapper) return;
+    
+    if (createdAudioFiles.length === 0) {
+        dropdownWrapper.style.display = 'none';
+        return;
+    }
+    
+    // Показываем dropdown если есть файлы
+    dropdownWrapper.style.display = 'inline-block';
+    
+    // Очищаем список
+    dropdown.innerHTML = '';
+    
+    // Добавляем файлы в обратном порядке (новые сверху)
+    createdAudioFiles.slice().reverse().forEach((fileInfo, index) => {
+        const item = document.createElement('div');
+        item.className = 'audio-file-dropdown-item';
+        item.textContent = fileInfo.filename;
+        item.dataset.index = createdAudioFiles.length - 1 - index;
+        
+        item.addEventListener('click', () => {
+            selectAudioFileFromList(fileInfo);
+            dropdown.style.display = 'none';
+        });
+        
+        dropdown.appendChild(item);
+    });
+    
+    // Обновляем иконки Lucide
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/**
+ * Выбрать файл из списка
+ */
+function selectAudioFileFromList(fileInfo) {
+    const audioFileNameLabel = document.getElementById('audioFileNameLabel');
+    const playBtn = document.getElementById('playCreatedAudioBtn');
+    
+    if (!audioFileNameLabel || !fileInfo) return;
+    
+    // Обновляем лейбл
+    audioFileNameLabel.textContent = `Имя файла: ${fileInfo.filename}`;
+    
+    // Сохраняем выбранный файл
+    window.createdAudioFileName = fileInfo.filename;
+    window.createdAudioFilePath = fileInfo.filepath;
+    
+    // Обновляем кнопку воспроизведения
+    if (playBtn) {
+        playBtn.dataset.state = 'ready';
+        playBtn.dataset.audioUrl = fileInfo.filepath;
+        setButtonState(playBtn, 'ready');
+    }
+}
+
+/**
+ * Сохранить аудио файл на диск
+ */
+async function saveAudioFileToDisk() {
+    const currentFile = window.createdAudioFileName;
+    const currentFilePath = window.createdAudioFilePath;
+    
+    if (!currentFile || !currentFilePath) {
+        alert('Выберите файл для сохранения');
+        return;
+    }
+    
+    try {
+        // Скачиваем файл
+        const response = await fetch(currentFilePath);
+        if (!response.ok) {
+            throw new Error('Не удалось загрузить файл');
+        }
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = currentFile;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error('❌ Ошибка при сохранении файла:', error);
+        alert('Ошибка при сохранении файла: ' + error.message);
+    }
+}
+
+/**
+ * Парсить паттерн аудио на элементы
+ * Например: "op" -> ["o", "p"], "op_o" -> ["o", "p_o"], "tp_mm" -> ["t", "p", "m", "m"]
+ */
+function parseAudioPattern(pattern) {
+    const elements = [];
+    let i = 0;
+    
+    while (i < pattern.length) {
+        // Проверяем паузу с длиной файла (p_o, p_t, p_a, p_f, p_m)
+        if (pattern[i] === 'p' && i + 2 < pattern.length && pattern[i + 1] === '_') {
+            const pauseType = pattern[i + 2];
+            if (['o', 't', 'a', 'f', 'm'].includes(pauseType)) {
+                elements.push(`p_${pauseType}`);
+                i += 3;
+                continue;
+            }
+        }
+        
+        // Обычный символ (o, t, a, f, m, p)
+        if (['o', 't', 'a', 'f', 'm', 'p'].includes(pattern[i])) {
+            elements.push(pattern[i]);
+            i++;
+        } else {
+            // Пропускаем неизвестные символы
+            i++;
+        }
+    }
+    
+    return elements;
+}
+
+/**
+ * Получить информацию об аудио файле для элемента паттерна
+ * @param {string} element - элемент паттерна (o, t, a, f, m, p, p_o, p_t, и т.д.)
+ * @param {Object} originalSentence - предложение оригинала
+ * @param {Object|null} translationSentence - предложение перевода
+ * @returns {Object|null} - информация об аудио файле или паузе
+ */
+function getAudioFileForPattern(element, originalSentence, translationSentence) {
+    const language_original = currentDictation.language_original;
+    const language_translation = currentDictation.language_translation;
+    
+    // Пауза 1 секунда
+    if (element === 'p') {
+        return {
+            type: 'pause',
+            duration: 1.0
+        };
+    }
+    
+    // Пауза длиной в файл
+    if (element.startsWith('p_')) {
+        const pauseType = element.substring(2); // o, t, a, f, m
+        const referenceFile = getReferenceAudioFile(pauseType, originalSentence, translationSentence);
+        
+        return {
+            type: 'pause_file',
+            duration_file: referenceFile ? referenceFile.filename : null,
+            language: referenceFile ? referenceFile.language : language_original,
+            fallback_duration: 1.0 // Если файл не найден, используем 1 секунду
+        };
+    }
+    
+    // Аудио файлы
+    let filename = null;
+    let language = language_original;
+    let fieldName = null;
+    
+    switch (element) {
+        case 'o': // оригинал
+            filename = originalSentence?.audio;
+            language = language_original;
+            fieldName = 'audio';
+            break;
+        case 't': // перевод
+            filename = translationSentence?.audio || originalSentence?.audio; // fallback на оригинал
+            language = translationSentence ? language_translation : language_original;
+            fieldName = 'audio';
+            break;
+        case 'a': // автоматическое
+            filename = originalSentence?.audio_avto;
+            language = language_original;
+            fieldName = 'audio_avto';
+            break;
+        case 'f': // вырезанное из файла
+            filename = originalSentence?.audio_user;
+            language = language_original;
+            fieldName = 'audio_user';
+            break;
+        case 'm': // микрофон
+            filename = originalSentence?.audio_mic;
+            language = language_original;
+            fieldName = 'audio_mic';
+            break;
+    }
+    
+    // Если файл не найден, используем fallback на оригинал
+    if (!filename && element !== 'o') {
+        filename = originalSentence?.audio;
+        language = language_original;
+        fieldName = 'audio';
+    }
+    
+    if (!filename) {
+        return null;
+    }
+    
+    return {
+        type: 'file',
+        filename: filename,
+        language: language,
+        sentence_key: originalSentence.key
+    };
+}
+
+/**
+ * Получить файл для определения длины паузы
+ */
+function getReferenceAudioFile(pauseType, originalSentence, translationSentence) {
+    switch (pauseType) {
+        case 'o': // оригинал
+            return originalSentence?.audio ? {
+                filename: originalSentence.audio,
+                language: currentDictation.language_original
+            } : null;
+        case 't': // перевод
+            return translationSentence?.audio ? {
+                filename: translationSentence.audio,
+                language: currentDictation.language_translation
+            } : (originalSentence?.audio ? {
+                filename: originalSentence.audio,
+                language: currentDictation.language_original
+            } : null);
+        case 'a': // автоматическое
+            return originalSentence?.audio_avto ? {
+                filename: originalSentence.audio_avto,
+                language: currentDictation.language_original
+            } : null;
+        case 'f': // вырезанное из файла
+            return originalSentence?.audio_user ? {
+                filename: originalSentence.audio_user,
+                language: currentDictation.language_original
+            } : null;
+        case 'm': // микрофон
+            return originalSentence?.audio_mic ? {
+                filename: originalSentence.audio_mic,
+                language: currentDictation.language_original
+            } : null;
+        default:
+            return null;
+    }
+}
+
+/**
+ * Обновить состояние чекбокса "Выбрать все" на основе состояния всех чекбоксов строк
+ */
+function updateSelectAllCheckboxState() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const selectAllCheckboxLabel = document.getElementById('selectAllCheckboxLabel');
+    
+    if (!selectAllCheckbox || !selectAllCheckboxLabel) return;
+    
+    // Получаем все предложения и проверяем их checked
+    const allSentences = workingData.original.sentences || [];
+    const checkedCount = allSentences.filter(s => s.checked === true).length;
+    
+    if (allSentences.length === 0) {
+        selectAllCheckbox.checked = false;
+    } else {
+        selectAllCheckbox.checked = (checkedCount === allSentences.length);
+    }
+    
+    const checkboxIcon = selectAllCheckboxLabel.querySelector('.checkbox-icon');
+    if (checkboxIcon) {
+        checkboxIcon.setAttribute('data-lucide', selectAllCheckbox.checked ? 'circle-check' : 'circle');
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 }
 
@@ -1352,9 +1947,41 @@ function applyTableViewForTab(tabName) {
         } else if (mode === 'sentence') {
             if (typeof setRegionToSelectedSentence === 'function') setRegionToSelectedSentence();
         }
+        
+        // Скрываем колонку чекбоксов на вкладке "Настройка аудио"
+        toggleCheckboxColumn(false);
+        
+    } else if (tabName === 'create-audio') {
+        // На вкладке "Создание аудио" показываем оригинал + перевод + специальные колонки
+        // Не используем toggleColumnGroup, так как он скрывает перевод
+        // Вручную показываем нужные колонки
+        const table = document.getElementById('sentences-table');
+        if (table) {
+            table.classList.remove('state-original-translation', 'state-original-editing');
+            // Показываем оригинал
+            const originalHeaders = document.querySelectorAll('th.panel-original');
+            const originalCells = document.querySelectorAll('td.panel-original');
+            originalHeaders.forEach(th => th.style.display = 'table-cell');
+            originalCells.forEach(td => td.style.display = 'table-cell');
+            
+            // Показываем перевод (текст)
+            const translationTextHeaders = document.querySelectorAll('th.col-translation');
+            const translationTextCells = document.querySelectorAll('td.col-translation');
+            translationTextHeaders.forEach(th => th.style.display = 'table-cell');
+            translationTextCells.forEach(td => td.style.display = 'table-cell');
+        }
+        
+        // Показываем колонку чекбоксов
+        toggleCheckboxColumn(true);
+        // Показываем колонки аудио для вкладки "Создание аудио"
+        toggleCreateAudioColumns(true);
     } else {
         // Общие данные и Диалог — показываем оригинал + перевод
         toggleColumnGroup('translation');
+        // Скрываем колонку чекбоксов
+        toggleCheckboxColumn(false);
+        // Скрываем колонки для вкладки "Создание аудио"
+        toggleCreateAudioColumns(false);
     }
 
     // Показываем колонку спикера во всех вкладках, если это диалог
@@ -1365,6 +1992,88 @@ function applyTableViewForTab(tabName) {
     }
     const speakerCells = document.querySelectorAll('td.col-speaker');
     speakerCells.forEach(td => { td.style.display = showSpeaker ? 'table-cell' : 'none'; });
+}
+
+/**
+ * Переключить видимость колонки с чекбоксами
+ */
+function toggleCheckboxColumn(show) {
+    const header = document.querySelector('th.col-checkbox-create-audio');
+    const cells = document.querySelectorAll('td.col-checkbox-create-audio');
+    
+    if (header) {
+        header.style.display = show ? 'table-cell' : 'none';
+    }
+    
+    cells.forEach(cell => {
+        cell.style.display = show ? 'table-cell' : 'none';
+        
+        // При показе колонки обновляем иконку чекбокса на основе данных
+        if (show) {
+            const btn = cell.querySelector('.checkbox-btn');
+            if (btn) {
+                const key = btn.dataset.key;
+                if (key) {
+                    const sentence = workingData.original.sentences.find(s => s.key === key);
+                    if (sentence) {
+                        const isChecked = sentence.checked === true;
+                        const icon = btn.querySelector('.checkbox-icon');
+                        if (icon) {
+                            icon.setAttribute('data-lucide', isChecked ? 'circle-check' : 'circle');
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Перерисовываем иконки Lucide для чекбоксов
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/**
+ * Переключить видимость колонок для вкладки "Создание аудио"
+ */
+function toggleCreateAudioColumns(show) {
+    const displayValue = show ? 'table-cell' : 'none';
+    
+    // Находим все заголовки и ячейки с классом panel-create-audio
+    const headers = document.querySelectorAll('th.panel-create-audio');
+    const cells = document.querySelectorAll('td.panel-create-audio');
+    
+    headers.forEach(th => {
+        th.style.display = displayValue;
+    });
+    
+    cells.forEach(td => {
+        td.style.display = displayValue;
+    });
+    
+    // Если показываем колонки для "Создание аудио", также показываем колонку перевода и её аудио
+    if (show) {
+        // Показываем колонку перевода (текст)
+        const translationHeaders = document.querySelectorAll('th.panel-translation');
+        const translationCells = document.querySelectorAll('td.panel-translation');
+        
+        translationHeaders.forEach(th => {
+            // Не скрываем заголовки, которые уже имеют panel-create-audio
+            if (!th.classList.contains('panel-create-audio')) {
+                // Показываем только заголовок с текстом перевода, но не сам заголовок "t"
+                if (th.classList.contains('col-translation')) {
+                    th.style.display = 'table-cell';
+                }
+            }
+        });
+        
+        translationCells.forEach(td => {
+            // Показываем ячейки перевода (текст), но не аудио (оно уже показано через panel-create-audio)
+            if (td.classList.contains('col-translation')) {
+                td.style.display = 'table-cell';
+            }
+        });
+    }
 }
 
 /**
@@ -1488,7 +2197,7 @@ function updateDialogTab() {
     // Обновляем иконку чекбокса
     const checkboxIcon = document.querySelector('#tabDialogCheckboxLabel .checkbox-icon');
     if (checkboxIcon) {
-        checkboxIcon.setAttribute('data-lucide', tabIsDialogCheckbox.checked ? 'check-square' : 'circle');
+        checkboxIcon.setAttribute('data-lucide', tabIsDialogCheckbox.checked ? 'circle-check' : 'circle');
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
@@ -1789,7 +2498,6 @@ function updateCurrentRowNumber() {
     if (currentRow && rowNumberSpan) {
         const rowNumber = currentRow.querySelector('.col-number')?.textContent || '1';
         rowNumberSpan.textContent = rowNumber;
-        console.log('📊 Обновлен номер текущей строки:', rowNumber);
     }
 }
 
@@ -1904,7 +2612,8 @@ function addNewRow(referenceRow, position) {
             audio_mic: '',
             start: 0,
             end: 0,
-            chain: false
+            chain: false,
+            checked: false
         };
         workingData.original.sentences.push(originalSentence);
     }
@@ -2051,7 +2760,6 @@ function updateWaveformVisibilityForMicMode() {
         // Загружаем аудио в волну
         loadAudioIntoWaveform(audioPath).then(() => {
             window.waveformCanvas.show();
-            console.log('🎤 Волна загружена для записанного аудио из dictations:', sentence.audio_mic);
         }).catch(error => {
             console.warn('⚠️ Файл не найден в dictations, пробуем temp:', error);
             // Если не найден в dictations, пробуем temp
@@ -2059,7 +2767,6 @@ function updateWaveformVisibilityForMicMode() {
             return loadAudioIntoWaveform(audioPath);
         }).then(() => {
             window.waveformCanvas.show();
-            console.log('🎤 Волна загружена для записанного аудио из temp:', sentence.audio_mic);
         }).catch(error => {
             console.error('❌ Ошибка загрузки аудио в волну:', error);
             window.waveformCanvas.hide();
@@ -2067,7 +2774,6 @@ function updateWaveformVisibilityForMicMode() {
     } else {
         // Нет записанного аудио - скрываем волну
         window.waveformCanvas.hide();
-        console.log('🎤 Волна скрыта - нет записанного аудио');
     }
 }
 
@@ -2124,8 +2830,6 @@ function updateMicButtonState(sentenceKey) {
 
     // Обновляем состояние кнопки на 'ready' (показываем треугольник)
     setButtonState(micButton, 'ready');
-
-    console.log('✅ Состояние кнопки микрофона обновлено для строки:', sentenceKey);
 }
 
 /**
@@ -2145,7 +2849,6 @@ async function loadAudioIntoWaveform(audioPath) {
         const duration = window.waveformCanvas.getDuration();
         window.waveformCanvas.setRegion(0, duration);
 
-        console.log('✅ Аудио загружено в волну:', audioPath, 'длительность:', duration);
     } catch (error) {
         console.error('❌ Ошибка загрузки аудио в волну:', error);
         throw error;
@@ -2164,8 +2867,6 @@ function updateInterfaceForMicMode() {
 
     // Управляем видимостью волны
     updateWaveformVisibilityForMicMode();
-
-    console.log('🎤 Интерфейс обновлен для режима микрофона');
 }
 
 /**
@@ -2186,8 +2887,6 @@ function updateCurrentSentenceInfoForMicMode() {
         sentenceInfoElement.textContent = sentence.text || '';
         sentenceInfoElement.style.display = 'block';
     }
-
-    console.log('🎤 Информация о предложении обновлена:', sentence.text);
 }
 
 /**
@@ -2247,7 +2946,6 @@ function handleScissorsMicMode() {
  * Запись с микрофона для текущего предложения
  */
 function handleMicRecordMode() {
-    console.log('🎤 Запись с микрофона для текущего предложения');
 
     const currentRow = document.querySelector('#sentences-table tbody tr.selected');
     if (!currentRow) {
@@ -2284,14 +2982,11 @@ function getSupportedMimeType() {
         'audio/webm'                      // Fallback
     ];
 
-    console.log('🔍 Проверяем поддержку типов:');
     for (const type of types) {
         const supported = MediaRecorder.isTypeSupported(type);
-        console.log(`  ${type}: ${supported ? '✅' : '❌'}`);
     }
 
     const result = types.find(type => MediaRecorder.isTypeSupported(type)) || '';
-    console.log('🎯 Выбранный тип:', result || 'пустая строка');
     return result;
 }
 
@@ -2314,7 +3009,6 @@ function openMicRecordModal(sentence) {
     const modal = document.getElementById('micRecordModal');
     if (modal) {
         modal.style.display = 'flex';
-        console.log('✅ Модальное окно показано');
     } else {
         console.error('❌ Модальное окно micRecordModal не найдено!');
     }
@@ -2366,7 +3060,6 @@ function resetRecordingState() {
 
     if (startBtn) {
         startBtn.style.display = 'block';
-        console.log('✅ Кнопка "Начать запись" показана');
     }
     if (stopBtn) {
         stopBtn.style.display = 'none';
@@ -2442,14 +3135,12 @@ async function startRecording() {
 
         // Определяем поддерживаемый mimeType с отладкой
         const mimeType = getSupportedMimeType();
-        console.log('🎤 Найденный mimeType:', mimeType);
 
         // Создаем MediaRecorder точно как на рабочей странице диктанта
         const options = {
             mimeType: mimeType
         };
 
-        console.log('🎤 Создаем MediaRecorder с options:', options);
         mediaRecorder = new MediaRecorder(stream, options);
 
         recordedChunks = [];
@@ -2478,8 +3169,6 @@ async function startRecording() {
         // Запускаем таймер
         startRecordingTimer();
 
-        console.log('🎤 Запись начата');
-
     } catch (error) {
         console.error('❌ Ошибка при начале записи:', error);
         alert('Не удалось получить доступ к микрофону. Проверьте разрешения браузера.');
@@ -2494,7 +3183,6 @@ function stopRecording() {
         mediaRecorder.stop();
         updateRecordingUI(false);
         stopRecordingTimer();
-        console.log('🎤 Запись остановлена');
     }
 }
 
@@ -2600,8 +3288,6 @@ function playRecording() {
     audio.onended = () => {
         URL.revokeObjectURL(audioUrl);
     };
-
-    console.log('🎵 Воспроизведение записи, тип:', blobType);
 }
 
 /**
@@ -2669,7 +3355,6 @@ async function saveRecording() {
             // Закрываем модальное окно
             closeMicRecordModal();
 
-            console.log('✅ Запись сохранена:', data.filename);
             alert('Запись успешно сохранена!');
 
         } else {
@@ -2826,18 +3511,9 @@ function handleSelectFile(currentMode) {
 function handleAudioModeChange(event) {
     const selectedMode = event.target.value;
     // Меняем режим во время проигрывания: останавливаем текущее аудио и сбрасываем кнопку
-    console.log('⭐⭐⭐⭐⭐handleAudioModeChange: selectedMode', audioManager);
-    if (typeof audioManager !== 'undefined' && audioManager) {
+     if (typeof audioManager !== 'undefined' && audioManager) {
         audioManager.stop();
     }
-    // // Явно сбрасываем иконку под волной на треугольник при смене режима
-    // const wavePlayBtn = document.getElementById('audioPlayBtn');
-    // if (wavePlayBtn && wavePlayBtn.querySelector('[data-lucide]')) {
-    //     wavePlayBtn.querySelector('[data-lucide]').setAttribute('data-lucide', 'play');
-    //     if (window.lucide && typeof window.lucide.createIcons === 'function') {
-    //         window.lucide.createIcons();
-    //     }
-    // }
     const audioTableActionBtn = document.getElementById('audioTableActionBtn');
 
     let modeConfig = {};
@@ -2941,6 +3617,18 @@ function handleAudioModeChange(event) {
         const element = document.getElementById(elementId);
         if (!element) continue;
         element.style.visibility = visible;
+    }
+
+    // Дополнительно управляем элементами без ID
+    // 1) Контейнер волны скрываем в режиме автозаполнения
+    const waveContainer = document.getElementById('waveformContainer');
+    if (waveContainer) {
+        waveContainer.style.display = (selectedMode === 'auto') ? 'none' : '';
+    }
+    // 2) Блок Start/End скрываем в режиме автозаполнения
+    const timeControls = document.getElementById('timeControls');
+    if (timeControls) {
+        timeControls.style.display = (selectedMode === 'auto') ? 'none' : '';
     }
 
     // Обновляем файл для волны и волну если есть аудио (и другие условия)
@@ -3510,7 +4198,11 @@ function toggleChain(row) {
  */
 function setupRowHandlers(row) {
     // Клик по строке для выбора
-    row.addEventListener('click', () => {
+    row.addEventListener('click', (e) => {
+        // Пропускаем клики по чекбоксам и их элементам
+        if (e.target.closest('.col-checkbox-create-audio') || e.target.closest('.checkbox-btn')) {
+            return;
+        }
         selectSentenceRow(row);
     });
 
@@ -3820,20 +4512,12 @@ function updateAudioFileTimes(row) {
  * Загрузить волну для файла
  */
 async function loadWaveformForFile(filepath) {
-    //console.log('🌊 Загружаем волну для файла:', filepath);
 
     try {
-        // Получаем контейнер волны
-        // const waveformContainer = document.getElementById('audioWaveform');
-        // if (!waveformContainer) {
-        //     console.error('❌ Контейнер волны не найден');
-        //     return;
-        // }
 
         // Получаем существующий WaveformCanvas или создаем новый
         let waveformCanvas = window.waveformCanvas;
         if (!waveformCanvas) {
-            // console.log('🌊 Создаем новый WaveformCanvas');
             waveformCanvas = new WaveformCanvas(waveformContainer);
             window.waveformCanvas = waveformCanvas;
         }
@@ -3854,15 +4538,6 @@ async function loadWaveformForFile(filepath) {
         console.error('❌ Ошибка загрузки волны:', error);
     }
 }
-
-/**
- * Обработчик записи аудио
- */
-function handleRecordAudio() {
-    // console.log('🎤 Записываем аудио');
-    // Здесь будет логика записи аудио
-}
-
 
 
 
@@ -4125,7 +4800,6 @@ function updateTableWithNewAudio() {
 
         if (startInput && endInput && chainCell) {
             const sentence = workingData.original.sentences.find(s => s.key === key);
-            console.log(`🔍 Обновляем строку ${key}:`, sentence);
             if (sentence) {
                 console.log(`📝 Устанавливаем значения: start=${sentence.start}, end=${sentence.end}, chain=${sentence.chain}`);
                 startInput.value = sentence.start.toFixed(2);
@@ -4174,7 +4848,6 @@ function selectSentenceRow(row) {
     const key = row.dataset.key;
     if (!key) return;
 
-    console.log('🎯 Выбрано предложение:', key);
 
     // ОСТАНАВЛИВАЕМ текущее воспроизведение при смене предложения
     if (window.waveformCanvas && window.waveformCanvas.isPlaying) {
@@ -4235,14 +4908,11 @@ function selectSentenceRow(row) {
  * Обновить волну и поля для предложения (только в режиме sentence)
  */
 function updateWaveformForSentence(sentence) {
-    console.log('📍 updateWaveformForSentence вызвана для:', sentence.key, 'регион:', sentence.start, '-', sentence.end);
-
     // Обновляем регион в волне для этого предложения
     const waveformCanvas = window.waveformCanvas;
     if (waveformCanvas) {
         // СНАЧАЛА останавливаем текущее воспроизведение
         if (waveformCanvas.isPlaying) {
-            console.log('📍 Останавливаем текущее воспроизведение перед сменой региона');
             waveformCanvas.stopAudioControl();
         }
 
@@ -4251,7 +4921,6 @@ function updateWaveformForSentence(sentence) {
 
         // Устанавливаем новый регион
         waveformCanvas.setRegion(sentence.start, sentence.end);
-        console.log('📍 Установлен регион для предложения:', sentence.start.toFixed(2), '-', sentence.end.toFixed(2));
 
         // Сбрасываем playhead в начало нового региона
         waveformCanvas.setCurrentTime(sentence.start);
@@ -5147,7 +5816,8 @@ async function parseInputText(text, delimiter, isDialog, speakers) {
             // audio_user_shared: '', // источник для отрезанного куска
             start: 0,
             end: 0,
-            chain: false
+            chain: false,
+            checked: false
         };
         // Генерировать аудио для оригинала
         await generateAudioForSentence(s_original, language_original);
@@ -5416,7 +6086,48 @@ function createTableRow(key, originalSentence, translationSentence) {
 
     row.appendChild(numberCell);
 
-    // Колонка 1: Спикер (всегда присутствует; видимость управляется чекбоксом)
+    // Колонка 1: Чекбокс (видимость только на вкладке "Создание аудио")
+    const checkboxCell = document.createElement('td');
+    checkboxCell.className = 'col-checkbox-create-audio panel-create-audio';
+    checkboxCell.dataset.col_id = 'col-checkbox-create-audio';
+    checkboxCell.style.display = 'none'; // По умолчанию скрыта
+    
+    // Создаем кнопку на всю ширину ячейки (как у кнопки play)
+    const checkboxBtn = document.createElement('button');
+    checkboxBtn.className = 'checkbox-btn checkbox-btn-table';
+    checkboxBtn.dataset.key = key;
+    checkboxBtn.style.width = '100%';
+    checkboxBtn.style.height = '100%';
+    checkboxBtn.style.padding = '0';
+    checkboxBtn.style.border = 'none';
+    checkboxBtn.style.background = 'transparent';
+    checkboxBtn.style.cursor = 'pointer';
+    checkboxBtn.style.display = 'flex';
+    checkboxBtn.style.alignItems = 'center';
+    checkboxBtn.style.justifyContent = 'center';
+    
+    const checkboxIcon = document.createElement('i');
+    checkboxIcon.className = 'checkbox-icon';
+    checkboxIcon.setAttribute('data-lucide', 'circle');
+    
+    // Инициализируем поле checked в данных предложения, если его нет
+    if (originalSentence && originalSentence.checked === undefined) {
+        originalSentence.checked = false;
+    }
+    
+    // Устанавливаем начальную иконку на основе данных
+    const isChecked = originalSentence ? (originalSentence.checked === true) : false;
+    checkboxIcon.setAttribute('data-lucide', isChecked ? 'circle-check' : 'circle');
+    
+    checkboxBtn.appendChild(checkboxIcon);
+    checkboxCell.appendChild(checkboxBtn);
+    
+    // Вешаем общий обработчик (как у кнопки play)
+    checkboxBtn.addEventListener('click', handleCheckboxToggle);
+    
+    row.appendChild(checkboxCell);
+
+    // Колонка 2: Спикер (всегда присутствует; видимость управляется чекбоксом)
     const speakerCell = document.createElement('td');
     speakerCell.className = 'col-speaker';
     speakerCell.dataset.col_id = 'col-speaker';
@@ -5485,7 +6196,7 @@ function createTableRow(key, originalSentence, translationSentence) {
 
     // Колонка 3: Аудио Оригінал
     const audioCellOriginal = document.createElement('td');
-    audioCellOriginal.className = 'col-audio panel-original';
+    audioCellOriginal.className = 'col-play-original panel-original panel-create-audio';
     audioCellOriginal.dataset.col_id = 'col-or-audio';
     // Единая кнопка для оригинала
     const audioBtnOriginal = document.createElement('button');
@@ -5549,7 +6260,7 @@ function createTableRow(key, originalSentence, translationSentence) {
 
     // Колонка 6: Аудио перекладу
     const audioCell = document.createElement('td');
-    audioCell.className = 'col-audio panel-translation';
+    audioCell.className = 'col-play-translation panel-translation panel-create-audio';
     audioCell.dataset.col_id = 'col-tr-audio';
     // Единая кнопка для перевода
     const audioBtnTranslation = document.createElement('button');
@@ -5571,7 +6282,7 @@ function createTableRow(key, originalSentence, translationSentence) {
     // Боковые колонки (правая панель)
     // Колонка AVTO1: Аудио автоперевода (генерировать TTS)
     const generateTtsCell = document.createElement('td');
-    generateTtsCell.className = 'col-generate-tts panel-editing-avto';
+    generateTtsCell.className = 'col-generate-tts panel-editing-avto panel-create-audio';
     generateTtsCell.dataset.col_id = 'col-or-avto-play';
     // generateTtsCell.style.display = 'none'; // По умолчанию скрыта
     // кнпка генерации/проигрывания аудио автоперевода
@@ -5648,7 +6359,7 @@ function createTableRow(key, originalSentence, translationSentence) {
 
     // Колонка USER4: Воспроизвести аудио
     const playAudioUserCell = document.createElement('td');
-    playAudioUserCell.className = 'col-play-audio panel-editing-user';
+    playAudioUserCell.className = 'col-play-audio panel-editing-user panel-create-audio';
     playAudioUserCell.dataset.col_id = 'col-or-user-play';
     // playAudioCell.style.display = 'none'; // По умолчанию скрыта
     // кнопка генерации/проигрывания аудио автоперевода
@@ -5683,7 +6394,7 @@ function createTableRow(key, originalSentence, translationSentence) {
 
     // Колонка MIC1: Аудио автоперевода (генерировать TTS)
     const generateAudioMicCell = document.createElement('td');
-    generateAudioMicCell.className = 'col-generate-tts panel-editing-mic';
+    generateAudioMicCell.className = 'col-play-audio panel-editing-mic panel-create-audio';
     generateAudioMicCell.dataset.col_id = 'col-or-mic-play';
     // generateTtsCell.style.display = 'none'; // По умолчанию скрыта
     // кнпка генерации/проигрывания аудио записи с микрофона
@@ -5712,6 +6423,11 @@ function createTableRow(key, originalSentence, translationSentence) {
     applyCellMic.title = 'Применить запись с микрофона';
     applyCellMic.addEventListener('click', handleApplyAudioSource);
     row.appendChild(applyCellMic);
+
+    // // Колонка для компенсации ширины скроллбара
+    // const scrollingCell = document.createElement('td');
+    // scrollingCell.className = 'col-scrolling';
+    // row.appendChild(scrollingCell);
 
     // Настраиваем обработчики для полей ввода
     setupInputHandlers(row);
@@ -6035,7 +6751,6 @@ function setupWaveformRegionCallback() {
     const waveformCanvas = window.waveformCanvas;
     if (!waveformCanvas) return;
 
-    console.log('📍 Устанавливаем callback onRegionUpdate');
     waveformCanvas.onRegionUpdate((region) => {
         if (startInput) startInput.value = region.start.toFixed(2);
         if (endInput) endInput.value = region.end.toFixed(2);
@@ -6118,10 +6833,6 @@ function updateCurrentAudioWave() {
             break;
     }
 
-    console.log('💾💾💾💾💾💾💾 Обновляем информацию о текущем аудио:', audioFileName);
-    console.log('💾💾💾💾💾💾💾 currentAudioFileName:', currentAudioFileName);
-    console.log('💾💾💾💾💾💾💾 shouldRedrawWaveform:', shouldRedrawWaveform);
-    console.log('💾💾💾💾💾💾💾 currentMode:', currentMode);
     // Обновляем информацию о текущем аудио
     // Перерисовываем волну только если изменилось текущее аудио
     if (audioFileName !== "") {
@@ -6207,7 +6918,6 @@ function handleApplyAudioSource(event) {
 
     // Копируем в главное поле "audio"
     sentence.audio = sourceValue;
-    console.log(`✅ Скопировано: ${sourceField}="${sourceValue}" -> audio="${sourceValue}"`);
 
     // Обновляем визуальные индикаторы (галочки) для всех кнопок "Применить" в этой строке
     updateApplyButtonsIndicators(sentenceKey, sourceField);
