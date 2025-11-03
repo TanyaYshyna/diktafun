@@ -123,11 +123,13 @@
               "expanded": false,
               "folder": true,
               "key": "trru_00001",
-              "title": "Ira homework en",
+              "title": "TÜRKÇE OKUYORUM 1",
               "data": {
                 "language_original": "tr",
                 "language_translation": "ru",
-                "dictations": []
+                "dictations": [
+                  "dicta_1762111380768"
+                ]
               }
             },
             {

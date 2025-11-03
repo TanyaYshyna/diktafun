@@ -2746,21 +2746,29 @@ function updateWaveformVisibilityForMicMode() {
 
         // Загружаем аудио в волну
         loadAudioIntoWaveform(audioPath).then(() => {
-            window.waveformCanvas.show();
+            if (window.waveformCanvas) {
+                window.waveformCanvas.show();
+            }
         }).catch(error => {
             console.warn('⚠️ Файл не найден в dictations, пробуем temp:', error);
             // Если не найден в dictations, пробуем temp
             audioPath = `/static/data/temp/${currentDictation.id}/${currentDictation.language_original}/${sentence.audio_mic}`;
             return loadAudioIntoWaveform(audioPath);
         }).then(() => {
-            window.waveformCanvas.show();
+            if (window.waveformCanvas) {
+                window.waveformCanvas.show();
+            }
         }).catch(error => {
             console.error('❌ Ошибка загрузки аудио в волну:', error);
-            window.waveformCanvas.hide();
+            if (window.waveformCanvas) {
+                window.waveformCanvas.hide();
+            }
         });
     } else {
         // Нет записанного аудио - скрываем волну
-        window.waveformCanvas.hide();
+        if (window.waveformCanvas) {
+            window.waveformCanvas.hide();
+        }
     }
 }
 
@@ -5151,9 +5159,9 @@ function setupStartModalHandlers() {
     }
 
     // Кнопка "Внести текст заново"
-    const reenterTextBtn = document.getElementById('reenterTextBtn');
-    if (reenterTextBtn) {
-        reenterTextBtn.addEventListener('click', () => {
+    const refillTableBtn = document.getElementById('refillTableBtn');
+    if (refillTableBtn) {
+        refillTableBtn.addEventListener('click', () => {
             if (confirm('Это удалит все существующие предложения и аудио. Продолжить?')) {
                 // Очистить таблицу
                 const tbody = document.querySelector('#sentences-table tbody');
@@ -5343,11 +5351,6 @@ async function createDictationFromStart() {
         const reenterTextSection = document.getElementById('reenterTextSection');
         if (reenterTextSection) {
             reenterTextSection.style.display = 'block';
-        }
-
-        // Показать спикеров в шапке если диалог
-        if (isDialog) {
-            showSpeakersInHeader(speakers);
         }
 
         // Обновляем данные диалога во вкладке
@@ -5649,8 +5652,23 @@ async function saveDictationAndExit() {
  */
 function getSpeakersFromTable() {
     const speakers = {};
-    const speakerInputs = document.querySelectorAll('.speaker-name');
-    speakerInputs.forEach((input, index) => {
+    // Ограничиваем поиск только таблицей во вкладке, чтобы избежать дублирования
+    const tbody = document.querySelector('#tabSpeakersTableContent tbody');
+    if (!tbody) {
+        // Если таблица во вкладке не найдена, используем основную таблицу
+        const mainTbody = document.querySelector('#speakersTableContent tbody');
+        if (mainTbody) {
+            mainTbody.querySelectorAll('.speaker-name-input').forEach((input, index) => {
+                const speakerId = (index + 1).toString();
+                const speakerName = input.value.trim() || `Спикер ${speakerId}`;
+                speakers[speakerId] = speakerName;
+            });
+        }
+        return speakers;
+    }
+    
+    // Берем спикеров только из таблицы во вкладке
+    tbody.querySelectorAll('.speaker-name').forEach((input, index) => {
         const speakerId = (index + 1).toString();
         const speakerName = input.value.trim() || `Спикер ${speakerId}`;
         speakers[speakerId] = speakerName;
@@ -5713,6 +5731,26 @@ async function autoTranslate(text, fromLanguage, toLanguage) {
 async function generateAudioForSentence(sentence, language) {
     if (!sentence.text.trim()) return null;
 
+    // Очищаем текст от меток спикеров (1:, 2:) и комментариев (/* ... */)
+    let cleanText = sentence.text;
+    
+    // Удаляем метки спикеров (например, "1: ", "2: ") - могут быть в начале строки или после пробела
+    // Используем негативный просмотр назад для удаления пробела перед меткой, если он есть
+    cleanText = cleanText.replace(/\s*\d+:\s*/g, ' ');
+    // Убираем лишние пробелы, оставшиеся после удаления меток
+    cleanText = cleanText.replace(/\s+/g, ' ');
+    
+    // Удаляем комментарии вида /* ... */
+    cleanText = cleanText.replace(/\/\*.*?\*\//g, '');
+    
+    // Очищаем от лишних пробелов
+    cleanText = cleanText.trim();
+    
+    if (!cleanText) {
+        console.warn('⚠️ Текст пустой после очистки для предложения:', sentence.key);
+        return null;
+    }
+
     // Генерируем имя файла, если его нет
     let filename = sentence.audio;
     if (!filename) {
@@ -5728,7 +5766,7 @@ async function generateAudioForSentence(sentence, language) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                text: sentence.text,
+                text: cleanText,
                 language: language,
                 filename: filename,
                 filename_audio: filename,
@@ -5932,35 +5970,6 @@ async function parseInputText(text, delimiter, isDialog, speakers) {
     return { original, translation };
 }
 
-/**
- * Показать спикеров в шапке
- */
-function showSpeakersInHeader(speakers) {
-    const speakersDisplay = document.getElementById('speakersDisplay');
-    const speakersList = document.getElementById('speakersList');
-
-    if (speakersDisplay && speakersList) {
-        speakersDisplay.style.display = 'block';
-        speakersList.innerHTML = '';
-
-        Object.entries(speakers).forEach(([id, name]) => {
-            const span = document.createElement('span');
-            span.className = 'speaker-badge';
-            span.textContent = `${id}: ${name}`;
-            span.style.backgroundColor = getSpeakerColor(id);
-            speakersList.appendChild(span);
-        });
-    }
-}
-
-/**
- * Получить цвет для спикера
- */
-function getSpeakerColor(speakerId) {
-    const colors = ['#ff9999', '#99ff99', '#9999ff', '#ffff99', '#ff99ff', '#99ffff'];
-    const index = parseInt(speakerId) - 1;
-    return colors[index % colors.length];
-}
 
 /**
  * Предварительная загрузка аудио файлов в плееры
@@ -6850,7 +6859,9 @@ function updateCurrentAudioWave() {
             }
         } else {
             // Скрываем волну если нет аудио
-            window.waveformCanvas.hide();
+            if (window.waveformCanvas) {
+                window.waveformCanvas.hide();
+            }
         }
     } else {
         // Скрываем волну если нет аудио

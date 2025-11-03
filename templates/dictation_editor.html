@@ -51,9 +51,9 @@
 
 
         <!-- Кнопка "Внести текст заново" (появляется после создания диктанта) -->
-        <div id="reenterTextSection" style="display: none;">
+        <!-- <div id="reenterTextSection" style="display: none;">
             <button id="reenterTextBtn" class="button-color-yellow">🔄 Внести текст заново</button>
-        </div>
+        </div> -->
 
         <!-- Панель с вкладками (корешки) -->
         <div id="settingsTabsPanel" class="settings-tabs-panel">
@@ -104,11 +104,6 @@
                                     <label style="color: var(--color-button-text-yellow);">{{ translation_language
                                         }}:</label>
                                     <input class="text-input" type="text" id="title_translation" required>
-                                </div>
-                                <!-- Спикеры (отображаются только для диалогов) -->
-                                <div id="speakersDisplay" class="speakers-display" style="display: none;">
-                                    <label>Спикеры:</label>
-                                    <div id="speakersList"></div>
                                 </div>
                                 <label id="dictation-id">Новый диктант: </label>
 
@@ -332,10 +327,10 @@
             <!-- Группа кнопок управления таблицей -->
             <div class="table-controls">
                 <!-- Кнопка перезаполнения таблицы (слева) -->
-                <!-- <button id="refillTableBtn" class="table-control-btn refill-btn">
+                <button id="refillTableBtn" class="table-control-btn refill-btn">
                     <i data-lucide="refresh-cw"></i>
                     Перезаполнить таблицу
-                </button> -->
+                </button>
 
                 <!-- Группа навигации и управления строками (справа) -->
                 <div class="table-nav-group">
