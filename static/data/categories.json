@@ -6,7 +6,7 @@
     {
       "expanded": true,
       "folder": true,
-      "key": "diktafun",
+      "key": "English",
       "title": "Dikta Fun",
       "data": {
         "language_original": "en",
@@ -102,7 +102,7 @@
       "expanded": false,
       "folder": true,
       "key": "tr",
-      "title": "tr",
+      "title": "Turkish",
       "data": {
         "language_original": "tr",
         "language_translation": ""
@@ -151,7 +151,7 @@
       "expanded": false,
       "folder": true,
       "key": "ar",
-      "title": "ar",
+      "title": "Arabic",
       "data": {
         "language_original": "ar",
         "language_translation": ""
@@ -186,6 +186,55 @@
               "title": "عبارات بسيطة",
               "data": {
                 "language_original": "ar",
+                "language_translation": "ru",
+                "dictations": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "expanded": false,
+      "folder": true,
+      "key": "sv",
+      "title": "Swedish",
+      "data": {
+        "language_original": "sv",
+        "language_translation": ""
+      },
+      "children": [
+        {
+          "expanded": false,
+          "folder": true,
+          "key": "svru",
+          "title": "sv=>ru",
+          "data": {
+            "language_original": "sv",
+            "language_translation": "ru",
+            "dictations": []
+          },
+          "children": [
+            {
+              "expanded": false,
+              "folder": true,
+              "key": "seru_00001",
+              "title": "START",
+              "data": {
+                "language_original": "sv",
+                "language_translation": "ru",
+                "dictations": [
+                  "dicta_1762168975503"
+                ]
+              }
+            },
+            {
+              "expanded": false,
+              "folder": true,
+              "key": "seru_00002",
+              "title": "DIALOG",
+              "data": {
+                "language_original": "se",
                 "language_translation": "ru",
                 "dictations": []
               }

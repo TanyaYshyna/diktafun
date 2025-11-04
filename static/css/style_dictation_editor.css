@@ -1164,7 +1164,8 @@ label[for="startTextInput"] {
 
 /* Колонки Оригинал и Перевод - процентная ширина (не фиксированная) */
 .col-original,
-.col-translation {
+.col-translation,
+.col-explanation {
     width: auto;
     min-width: 150px;
     padding: 4px !important;

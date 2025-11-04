@@ -69,7 +69,8 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
             "audio": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_orig}/{item.get('audio', '')}"),
             "audio_tr": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_tr}/{translated.get('audio', '')}"),
             "completed_correctly": False,
-            "speaker": item.get("speaker")
+            "speaker": item.get("speaker"),
+            "explanation": translated.get("explanation", "")
         }
 
         sentences.append(sentence)

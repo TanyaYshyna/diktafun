@@ -5185,6 +5185,12 @@ function setupStartModalHandlers() {
         });
     }
 
+    // Кнопка переключения видимости колонки explanation
+    const toggleExplanationBtn = document.getElementById('toggleExplanationBtn');
+    if (toggleExplanationBtn) {
+        toggleExplanationBtn.addEventListener('click', toggleExplanationColumn);
+    }
+
     // Кнопка "Сохранить диктант"
     const saveBtn = document.getElementById('saveBtn');
     if (saveBtn) {
@@ -5276,6 +5282,32 @@ function updateCheckboxIcon(isChecked) {
     const checkboxIcon = document.querySelector('#isDialogCheckbox + .checkbox-icon');
     if (checkboxIcon) {
         checkboxIcon.setAttribute('data-lucide', isChecked ? 'circle-check-big' : 'circle');
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+}
+
+function toggleExplanationColumn() {
+    const table = document.getElementById('sentences-table');
+    if (!table) return;
+    
+    // Находим все колонки explanation
+    const headerCells = table.querySelectorAll('th.col-explanation');
+    const dataCells = table.querySelectorAll('td.col-explanation');
+    
+    // Проверяем текущее состояние (смотрим на первую ячейку)
+    const isVisible = headerCells.length > 0 && headerCells[0].style.display !== 'none';
+    
+    // Переключаем видимость
+    const newDisplay = isVisible ? 'none' : 'table-cell';
+    headerCells.forEach(cell => cell.style.display = newDisplay);
+    dataCells.forEach(cell => cell.style.display = newDisplay);
+    
+    // Обновляем иконку кнопки
+    const toggleIcon = document.querySelector('.toggle-explanation-icon');
+    if (toggleIcon) {
+        toggleIcon.setAttribute('data-lucide', isVisible ? 'circle' : 'circle-check');
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
@@ -5851,11 +5883,13 @@ async function parseInputText(text, delimiter, isDialog, speakers) {
         // наступний рядок - переклад
         i_next = i + 1; // індекс наступного рядка в тексті, якщо в наступному рядку э /* то перекладати не тереба 
         translation_line = "";
+        let hasTranslationLine = false;
         if (i_next < lines.length) {
             if (lines[i_next].startsWith(delimiter)) {
                 // есть перевод, берем его и переводить не надо
                 translation_line = lines[i_next].substring(2).trim(); // удалить /*;
                 i++;
+                hasTranslationLine = true;
             }
             else {
                 // перекладу немає, робимо автопереклад
@@ -5877,11 +5911,37 @@ async function parseInputText(text, delimiter, isDialog, speakers) {
             // audio_user_shared: '', // источник для отрезанного куска
             start: 0,
             end: 0,
-            chain: false
+            chain: false,
+            explanation: '' // поле для комментариев
         };
         // генеруємо аудио перекладу
         await generateAudioForSentence(s_translation, language_translation);
         translation.push(s_translation);
+        
+        // Проверяем, есть ли строки // для explanation после текущего предложения
+        // Смотрим на следующую строку после перевода
+        let explanation_i = i + 1;
+        let explanation_text = '';
+        while (explanation_i < lines.length && lines[explanation_i].startsWith('//')) {
+            // Собираем все строки начинающиеся с //
+            const comment_line = lines[explanation_i].substring(2).trim(); // удалить //
+            if (explanation_text) {
+                explanation_text += '\n' + comment_line;
+            } else {
+                explanation_text = comment_line;
+            }
+            explanation_i++;
+        }
+        
+        // Если нашли строки объяснения, присваиваем их к текущему предложению
+        if (explanation_text && translation.length > 0) {
+            translation[translation.length - 1].explanation = explanation_text;
+        }
+        
+        // Пропускаем обработанные строки explanation (учитываем, что i уже инкрементирован если был delimiter)
+        if (explanation_i > i + 1) {
+            i = explanation_i - 1; // -1 потому что в конце цикла for будет i++
+        }
 
     }
 
@@ -6046,6 +6106,13 @@ async function createTable() {
     // Пересоздать иконки Lucide после создания таблицы
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
+    }
+    
+    // Проверяем, есть ли explanation в предложениях
+    const hasExplanation = translationSentences.some(s => s.explanation && s.explanation.trim());
+    if (hasExplanation) {
+        // Автоматически показываем колонку explanation
+        toggleExplanationColumn();
     }
 
     // Автоматически выбираем первую строку при создании таблицы
@@ -6274,6 +6341,28 @@ function createTableRow(key, originalSentence, translationSentence) {
     audioCell.appendChild(audioBtnTranslation);
     row.appendChild(audioCell);
 
+    // Колонка 7: Explanation
+    const explanationCell = document.createElement('td');
+    explanationCell.className = 'col-explanation';
+    explanationCell.dataset.col_id = 'col-explanation';
+    explanationCell.style.display = 'none'; // По умолчанию скрыта
+    
+    const explanationInput = document.createElement('textarea');
+    explanationInput.className = 'sentence-text';
+    explanationInput.value = (translationSentence && translationSentence.explanation) ? translationSentence.explanation : '';
+    explanationInput.dataset.key = key;
+    explanationInput.dataset.type = 'explanation';
+    explanationInput.placeholder = 'Пояснение';
+    
+    // Слушатель изменения explanation
+    explanationInput.addEventListener('input', function () {
+        if (translationSentence) {
+            translationSentence.explanation = explanationInput.value;
+        }
+    });
+    
+    explanationCell.appendChild(explanationInput);
+    row.appendChild(explanationCell);
 
     // Боковые колонки (правая панель)
     // Колонка AVTO1: Аудио автоперевода (генерировать TTS)

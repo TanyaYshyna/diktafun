@@ -2328,7 +2328,11 @@ function showCurrentSentence(showTabloIndex, showSentenceIndex) {
     userAudioAnswer.style.display = 'block';
 
     // Установка подсказок ===== 
-    document.getElementById("correctAnswer").innerHTML = currentSentence.text;
+    // Если есть explanation, показываем его, иначе показываем text
+    const initialHint = currentSentence.explanation && currentSentence.explanation.trim() 
+        ? currentSentence.explanation 
+        : currentSentence.text;
+    document.getElementById("correctAnswer").innerHTML = initialHint;
     document.getElementById("correctAnswer").style.display = "none";
 
     // Обновить отображение спикера в поле #speaker
