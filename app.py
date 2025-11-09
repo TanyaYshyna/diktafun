@@ -26,12 +26,14 @@ from routes.index import index_bp
 from routes.dictation_editor import editor_bp
 from routes.dictation import dictation_bp
 from routes.user_routes import user_bp
+from routes.statistics import statistics_bp
 
 
 app.register_blueprint(index_bp)
 app.register_blueprint(editor_bp)
 app.register_blueprint(dictation_bp)
 app.register_blueprint(user_bp)
+app.register_blueprint(statistics_bp)
 
 
 

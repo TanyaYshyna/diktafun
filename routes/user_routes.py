@@ -346,3 +346,104 @@ def api_get_avatar():
     except Exception as e:
         print(f"Error getting avatar: {e}")
         return jsonify({'error': str(e)}), 500
+
+# ==================== ИСТОРИЯ АКТИВНОСТИ ПОЛЬЗОВАТЕЛЯ ====================
+
+def get_history_folder(email):
+    """Получает путь к папке history пользователя"""
+    user_folder = get_user_folder(email)
+    history_folder = os.path.join(user_folder, 'history')
+    os.makedirs(history_folder, exist_ok=True)
+    return history_folder
+
+def get_history_filename(month_identifier):
+    """Получает имя файла истории для месяца"""
+    # month_identifier в формате 202511 (год и месяц в обратном порядке)
+    return f'h_{month_identifier}.json'
+
+@user_bp.route('/api/history/<month_identifier>', methods=['GET'])
+@jwt_required()
+def api_get_history(month_identifier):
+    """Получить историю за определенный месяц"""
+    try:
+        current_email = get_jwt_identity()
+        history_folder = get_history_folder(current_email)
+        filename = get_history_filename(month_identifier)
+        filepath = os.path.join(history_folder, filename)
+        
+        if not os.path.exists(filepath):
+            # Возвращаем пустую структуру
+            return jsonify({
+                'id_user': current_email,
+                'month': int(month_identifier),
+                'statistics': []
+            })
+        
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        return jsonify(data)
+        
+    except Exception as e:
+        print(f"Error loading history: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@user_bp.route('/api/history/<month_identifier>', methods=['POST', 'PUT'])
+@jwt_required()
+def api_save_history(month_identifier):
+    """Сохранить/обновить историю за определенный месяц"""
+    try:
+        current_email = get_jwt_identity()
+        history_folder = get_history_folder(current_email)
+        filename = get_history_filename(month_identifier)
+        filepath = os.path.join(history_folder, filename)
+        
+        data = request.get_json()
+        
+        # Убеждаемся что структура правильная
+        if 'id_user' not in data:
+            data['id_user'] = current_email
+        if 'month' not in data:
+            data['month'] = int(month_identifier)
+        if 'statistics' not in data:
+            data['statistics'] = []
+        
+        # Сохраняем файл
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        
+        return jsonify({'message': 'History saved successfully', 'data': data})
+        
+    except Exception as e:
+        print(f"Error saving history: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@user_bp.route('/api/history/all', methods=['GET'])
+@jwt_required()
+def api_get_all_history():
+    """Получить всю историю пользователя"""
+    try:
+        current_email = get_jwt_identity()
+        history_folder = get_history_folder(current_email)
+        
+        all_history = {}
+        
+        # Читаем все файлы истории
+        if os.path.exists(history_folder):
+            for filename in os.listdir(history_folder):
+                if filename.startswith('h_') and filename.endswith('.json'):
+                    month_identifier = filename.replace('h_', '').replace('.json', '')
+                    filepath = os.path.join(history_folder, filename)
+                    
+                    try:
+                        with open(filepath, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                            all_history[month_identifier] = data
+                    except Exception as e:
+                        print(f"Error reading {filename}: {e}")
+        
+        return jsonify(all_history)
+        
+    except Exception as e:
+        print(f"Error loading all history: {e}")
+        return jsonify({'error': str(e)}), 500

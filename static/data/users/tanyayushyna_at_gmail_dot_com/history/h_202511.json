@@ -1,0 +1,59 @@
+{
+  "id_user": "tanyayushyna@gmail.com",
+  "month": 202511,
+  "statistics": [
+    {
+      "audio": 3,
+      "corrected": 1,
+      "date": 20251105,
+      "end": false,
+      "id_diktation": "dicta_1760946618800",
+      "number": 1,
+      "perfect": 0
+    },
+    {
+      "audio": 3,
+      "corrected": 2,
+      "date": 20251105,
+      "end": false,
+      "id_diktation": "dicta_1760946618800",
+      "number": 2,
+      "perfect": 0
+    },
+    {
+      "audio": 3,
+      "corrected": 3,
+      "date": 20251105,
+      "end": 0,
+      "id_diktation": "dicta_1760946618800",
+      "number": 3,
+      "perfect": 0
+    },
+    {
+      "audio": 3,
+      "corrected": 1,
+      "date": 20251106,
+      "end": 2,
+      "id_diktation": "dicta_1762070781697",
+      "perfect": 1
+    },
+    {
+      "id_diktation": "dicta_1760946618800",
+      "date": 20251108,
+      "end": 0,
+      "perfect": 6,
+      "corrected": 28,
+      "audio": 29,
+      "total": 2
+    },
+    {
+      "id_diktation": "dicta_1760946618800",
+      "date": 20251109,
+      "end": 0,
+      "perfect": null,
+      "corrected": null,
+      "audio": null,
+      "total": 3
+    }
+  ]
+}

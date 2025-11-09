@@ -3,6 +3,7 @@ class AudioManagerClass {
         this.audio = null;
         this.currentButton = null;
         this.waveformCanvas = null;
+        this.audioPlayerVisual = null;
         this.playheadAnimation = null;
     }
 
@@ -10,12 +11,16 @@ class AudioManagerClass {
         this.waveformCanvas = waveformCanvas || null;
     }
 
+    setAudioPlayerVisual(audioPlayerVisual) {
+        this.audioPlayerVisual = audioPlayerVisual || null;
+    }
+
     setCurrent(audioElement, button = null) {
         this.audio = audioElement || null;
         this.currentButton = button;
     }
 
-    play(button, audioUrl) {
+    play(button, audioUrl, onEndedCallback = null) {
         const isSameAudio = this.audio && this.audio.src && this.audio.src.includes(audioUrl);
 
         if (isSameAudio && this.audio && !this.audio.paused) {
@@ -78,7 +83,27 @@ class AudioManagerClass {
             this.stopPlayheadSync();
         }
 
+        // Синхронизация для AudioPlayerVisual (если кнопка принадлежит ему)
+        if (this.audioPlayerVisual && button === this.audioPlayerVisual.playButton) {
+            const startVisualSync = () => {
+                if (this.audioPlayerVisual && this.audio) {
+                    this.audioPlayerVisual.setAudioElement(this.audio);
+                    this.audioPlayerVisual.setPlaying(true);
+                }
+            };
+            if (isFinite(this.audio.duration) && this.audio.duration > 0) {
+                startVisualSync();
+            } else {
+                this.audio.addEventListener('loadedmetadata', startVisualSync, { once: true });
+            }
+        }
+
         this.audio.onended = () => {
+            // Вызываем пользовательский callback если есть
+            if (onEndedCallback) {
+                onEndedCallback();
+            }
+            
             // По окончании возвращаем playhead в начало региона
             if (this.waveformCanvas) {
                 const wf = this.waveformCanvas;
@@ -89,6 +114,13 @@ class AudioManagerClass {
             }
 
             this.updateButtonIcon(button, "play");
+            if (this.onPlayStateChangeCallback) {
+                this.onPlayStateChangeCallback(false); // isPlaying = false
+            }
+            // Останавливаем синхронизацию AudioPlayerVisual
+            if (this.audioPlayerVisual && button === this.audioPlayerVisual.playButton) {
+                this.audioPlayerVisual.setPlaying(false);
+            }
             this.currentButton = null;
             this.audio = null;
             this.stopPlayheadSync();
@@ -105,6 +137,10 @@ class AudioManagerClass {
         if (this.waveformCanvas && typeof this.waveformCanvas.stopAudioControl === "function") {
             this.waveformCanvas.stopAudioControl();
         }
+        // Останавливаем синхронизацию AudioPlayerVisual
+        if (this.audioPlayerVisual && this.currentButton === this.audioPlayerVisual.playButton) {
+            this.audioPlayerVisual.setPlaying(false);
+        }
         this.stopPlayheadSync();
     }
 
@@ -120,6 +156,10 @@ class AudioManagerClass {
         }
         if (this.currentButton) {
             this.updateButtonIcon(this.currentButton, "play");
+            // Останавливаем синхронизацию AudioPlayerVisual
+            if (this.audioPlayerVisual && this.currentButton === this.audioPlayerVisual.playButton) {
+                this.audioPlayerVisual.setPlaying(false);
+            }
             this.currentButton = null;
         }
         // Дополнительно сбрасываем кнопку под волной

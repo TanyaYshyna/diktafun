@@ -13,13 +13,24 @@
 <body>
     <div class="topbar">
         <img src="/static/icons/logo.svg" class="logo" onclick="window.location.href='/'">
+        <div class="dictation-cover-wrapper">
+            <img src="{{ cover_url }}" alt="Обложка диктанта" class="dictation-cover-image">
+        </div>
         <div class="user-section" id="user-section">
             <!-- Заполнится JavaScript -->
             <a href="/user/profile" class="username">
                 <span class="user-avatar-small"></span>
                 <span class="username-text"></span>
             </a>
-            <button class="streak">🔥 <span class="streak-days">0</span> дней подряд</button>
+            <button class="streak"><i data-lucide="flame"></i> <span class="streak-days">0</span> дней подряд</button>
+            <button id="showStatisticsBtn" class="statistics-btn" title="Показать статистику">
+                <i data-lucide="bar-chart-3"></i>
+                <!-- <span>Статистика</span> -->
+            </button>
+            <button id="exitDictationBtn" class="exit-dictation-btn" title="Выйти из диктанта">
+                <i data-lucide="log-out"></i>
+                <!-- <span>Выйти</span> -->
+            </button>
             <!-- <a href="/user/login">Войти</a>
             <a href="/user/register">Регистрация</a> -->
         </div>
@@ -27,12 +38,13 @@
 
     <!-- Модальное окно выхода -->
     <div id="exitModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <h2>Выйти на главную?</h2>
-            <p>Вы уверены, что хотите выйти? Все несохраненные данные будут потеряны.</p>
-            <div class="modal-buttons">
-                <button id="confirmExitBtn" class="button-color-red">Да, выйти</button>
-                <button id="cancelExitBtn" class="button-color-green">Отмена</button>
+        <div class="modal-content exit-modal-content">
+            <h2>Завершить работу с диктантом?</h2>
+            <p id="exitModalMessage">Что сделать с текущим прогрессом?</p>
+            <div class="exit-modal-buttons">
+                <button id="exitStayBtn" class="button-secondary">Остаться</button>
+                <button id="exitWithoutSavingBtn" class="button-color-yellow">Выйти без сохранения</button>
+                <button id="exitWithSavingBtn" class="button-color-green">Сохранить и выйти</button>
             </div>
         </div>
     </div>
@@ -99,73 +111,8 @@
                     <!-- <td>4444</td> -->
                     <tr>
                         <td colspan="2">
-                            <!-- progress-panel  -->
-                            <div class="progress-panel-modal-r">
-                                <!-- +----------------------+
-                                     | 1111             |666|
-                                     +-----+-----+-----+----+
-                                     | 222 | 333 | 444 | 555| 
-                                     +-----+-----+-----+----+ -->
-                                <table class="table-progress">
-                                    <tr>
-                                        <!-- <td colspan="5">1111</td> -->
-                                        <td colspan="3">
-                                            <button id="btn-modal-timer" class="stat-btn row-timer timer" disabled
-                                                title="Время работы над диктантом">
-                                                <i data-lucide="alarm-clock"></i>
-                                                <span id="modal_timer">00:00:00</span>
-                                            </button>
-                                        </td>
-
-                                        <!-- <td>666</td> -->
-                                        <td>
-                                            <button id="btn-modal-circle-number" class="stat-btn row-timer nymber"
-                                                title="Какой раз проходим диктант">
-                                                <i data-lucide="iteration-cw"></i>
-                                                <span id="modal-circle-number">0</span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <!-- <td>222</td> -->
-                                        <td>
-                                            <button id="btn-modal-count-perfect" class="stat-btn perfect" disabled
-                                                title="Количество предложений набранных без ошибок с 1-й попытки">
-                                                <i data-lucide="star"></i>
-                                                <span id="modal-count-perfect">0</span>
-                                            </button>
-                                        </td>
-
-                                        <!-- <td>333</td> -->
-                                        <td>
-                                            <button id="btn-modal-count-corrected" class="stat-btn corrected" disabled
-                                                title="Количество набранных предложений">
-                                                <i data-lucide="star-half"></i>
-                                                <span id="modal-count-corrected">0</span>
-                                            </button>
-                                        </td>
-
-                                        <!-- <td>444</td> -->
-                                        <td>
-                                            <button id="btn-modal-count-audio" class="stat-btn corrected-audio" disabled
-                                                title="Сколько предложений прошло аудио контроль">
-                                                <i data-lucide="mic-off"></i>
-                                                <span id="modal-count-audio">0</span>
-                                            </button>
-                                        </td>
-
-                                        <!-- <td>555</td> -->
-                                        <td>
-                                            <button id="btn-modal-count-total" class="stat-btn total" disabled
-                                                title="Общее количество предложений на круге">
-                                                <i data-lucide="layers"></i>
-                                                <span id="modal-count-total">0</span>
-                                            </button>
-                                        </td>
-
-                                    </tr>
-                                </table>
-                            </div>
+                            <!-- Контейнер для рендера прогресс-панели (модал) -->
+                            <div id="progressPanelModalContainer" class="progress-panel-modal-r"></div>
                         </td>
                     </tr>
                     <tr>
@@ -194,6 +141,10 @@
                                     <i data-lucide="move-right"></i>
                                     <span>прямой порядок</span>
                                 </button>
+                                <button id="resetProgressBtn" class="all-checkbox-btn">
+                                    <i data-lucide="rotate-ccw"></i>
+                                    <span>Давай по новой</span>
+                                </button>
                             </div>
                         </td>
                         <!-- <td>8888</td> -->
@@ -210,8 +161,9 @@
                         <tr>
                             <th>Выбор</th>
                             <th>Код</th>
-                            <th>Текст</th>
-                            <th>Аудио</th>
+                            <th><i data-lucide="star"></i></th>
+                            <th><i data-lucide="star-half"></i></th>
+                            <th><i data-lucide="mic"></i></th>
                             <th>Предложение</th>
                         </tr>
                     </thead>
@@ -244,10 +196,18 @@
     <div class="panel">
         <!-- Счетчик предложений -->
         <div class="panel-tablo">
-            <!-- Добавляем flex-контейнер -->
-            <!-- <div class="panel-tablo-1"> -->
-            <div class="panel-column">
-                <h2>{{ title_orig }}</h2> <!-- Диктант: -->
+            <!-- Строка с заголовком и ID диктанта -->
+            <div class="title-row">
+                <div class="dictation-title-group">
+                    <h2 class="dictation-title">{{ title_orig }}</h2>
+                </div>
+                <div class="title-meta">
+                    <span id="dictationIdDisplay" class="dictation-id">{{ dictation_id }}</span>
+                    <span id="unsavedStar" class="unsaved-star" title="Есть несохраненный прогресс (Ctrl/⌘ + S — сохранить)" style="display:none">*</span>
+                </div>
+            </div>
+            <!-- Строка с панелями навигации и результатов -->
+            <div class="panels-row">
                 <div class="button-group">
                     <button id="checkPrevios" class="button-color-yellow" onclick="previousSentence()">
                         <i data-lucide="arrow-left"></i>
@@ -262,144 +222,21 @@
                         <i data-lucide="circle-fading-plus"></i>
                     </button>
                 </div>
+                <!-- Контейнер для рендера прогресс-панели (страница) -->
+                <div id="progressPanelContainer" class="progress-panel-modal-r"></div>
             </div>
-
-            <!-- progress-panel  -->
-            <div class="progress-panel">
-                <!-- <div class="progress-panel-modal-r"> -->
-                <!-- +----------------------+
-                     | 1111             |666|
-                     +-----+-----+-----+----+
-                     | 222 | 333 | 444 | 555| 
-                     +-----+-----+-----+----+ -->
-                <table class="table-progress">
-                    <tr>
-                        <!-- <td colspan="5">1111</td> -->
-                        <td colspan="3">
-                            <button id="btn-timer" class="stat-btn row-timer timer" disabled
-                                title="Время работы над диктантом">
-                                <i data-lucide="alarm-clock"></i>
-                                <span id="timer">00:00:00</span>
-                            </button>
-                        </td>
-
-                        <!-- <td>6</td> -->
-                        <td>
-                            <button id="btn-circle-number" class="stat-btn row-timer nymber"
-                                title="Какой раз проходим диктант">
-                                <i data-lucide="iteration-cw"></i>
-                                <span id="circle-number">0</span>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <!-- <td>222</td> -->
-                        <td>
-                            <button id="btn-count-perfect" class="stat-btn perfect" disabled
-                                title="Количество предложений набранных без ошибок с 1-й попытки">
-                                <i data-lucide="star"></i>
-                                <span id="count-perfect">0</span>
-                            </button>
-                        </td>
-
-                        <!-- <td>333</td> -->
-                        <td>
-                            <button id="btn-count-corrected" class="stat-btn corrected" disabled
-                                title="Количество набранных предложений">
-                                <i data-lucide="star-half"></i>
-                                <span id="count-corrected">0</span>
-                            </button>
-                        </td>
-
-                        <!-- <td>444</td> -->
-                        <td>
-                            <button id="btn-count-audio" class="stat-btn corrected-audio" disabled
-                                title="Сколько предложений прошло аудио контроль">
-                                <i data-lucide="mic-off"></i>
-                                <span id="count-audio">0</span>
-                            </button>
-                        </td>
-
-                        <!-- <td>555</td> -->
-                        <td>
-                            <button id="btn-count-total" class="stat-btn total" disabled
-                                title="Общее количество предложений на круге">
-                                <i data-lucide="layers"></i>
-                                <span id="count-total">0</span>
-                            </button>
-                        </td>
-
-                    </tr>
-                </table>
-            </div>
-
         </div>
 
         <div class="audio-players-wrapper">
-            <!-- Плеер оригинал -->
-            <div class="custom-audio-player" data-audio-id="audio1">
-                <audio id="audio" class="audio-element"></audio>
-                <div class="controls">
-                    <span class="language">{{ language_original }}</span>
-                    <button class="play-btn">
-                        <i data-lucide="play"></i>
-                    </button>
-                    <span class="current-time">0:00</span>
-                    <input type="range" class="progress-bar" value="0">
-                    <span class="total-time">0:00</span>
-                    <div class="volume-wrapper">
-                        <button class="mute-btn" aria-label="Mute">
-                            <i data-lucide="volume-2"></i>
-                        </button>
-                        <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1">
-                    </div>
-                    <div class="custom-speed-select">
-                        <button class="speed-select-button">
-                            <span class="speed-selected">1×</span>
-                            <i data-lucide="chevron-down" class="speed-arrow"></i>
-                        </button>
-                        <ul class="speed-options">
-                            <li data-value="0.5">0.5×</li>
-                            <li data-value="0.75">0.75×</li>
-                            <li data-value="1" class="selected">1×</li>
-                            <li data-value="1.5">1.5×</li>
-                            <li data-value="2">2×</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+            <!-- Плеер оригинал (через AudioPlayerVisual) -->
+            <div id="originalAudioPlayer" class="custom-audio-player" data-audio-id="audio1"></div>
 
-            <!-- Плеер перевод  -->
-            <div class="custom-audio-player" data-audio-id="audio2">
-                <audio id="audio_tr" class="audio-element"></audio>
-                <div class="controls">
-                    <span class="language">{{ language_translation }}</span>
-                    <button class="play-btn">
-                        <i data-lucide="play"></i>
-                    </button>
-                    <span class="current-time">0:00</span>
-                    <input type="range" class="progress-bar" value="0">
-                    <span class="total-time">0:00</span>
-                    <div class="volume-wrapper">
-                        <button class="mute-btn" aria-label="Mute">
-                            <i data-lucide="volume-2"></i>
-                        </button>
-                        <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1">
-                    </div>
-                    <div class="custom-speed-select">
-                        <button class="speed-select-button">
-                            <span class="speed-selected">1×</span>
-                            <i data-lucide="chevron-down" class="speed-arrow"></i>
-                        </button>
-                        <ul class="speed-options">
-                            <li data-value="0.5">0.5×</li>
-                            <li data-value="0.75">0.75×</li>
-                            <li data-value="1" class="selected">1×</li>
-                            <li data-value="1.5">1.5×</li>
-                            <li data-value="2">2×</li>
-                        </ul>
-                    </div>
-                </div>
+            <!-- Кнопка перевода (простая play/pause) -->
+            <div class="translation-audio-button-wrapper">
+                <span class="language">{{ language_translation }}</span>
+                <button id="translationPlayButton" class="play-btn-translation">
+                    <i data-lucide="play"></i>
+                </button>
             </div>
         </div>
 
@@ -447,6 +284,11 @@
                         <span id="count_percent">100</span>
                     </button>
 
+                    <!-- Индикатор записи (серая/красная кнопка) -->
+                    <button id="recordingIndicator" class="recording-indicator-btn" disabled title="Индикатор записи">
+                        <i data-lucide="circle"></i>
+                    </button>
+
                     <!-- отображение процесса записи -->
                     <canvas id="audioVisualizer" class="audio-visualizer"></canvas>
                     <button id="userPlay" class="button-color-purple">
@@ -483,6 +325,14 @@
     <!-- Сначала загружаем менеджеры -->
     <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
+    <!-- Audio runtime must be loaded before UI wrapper -->
+    <script src="{{ url_for('static', filename='js/audio_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/audio_player_visual.js') }}"></script>
+    <!-- Статистика и отчеты -->
+    <script src="{{ url_for('static', filename='js/user_activity_history.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dictation_statistics.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/progress_panel.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/statistics_report.js') }}"></script>
 
     <!-- Передаем данные диктанта через глобальные переменные -->
     <div id="dictation-data" data-sentences='{{ sentences | tojson | safe }}'
@@ -501,16 +351,74 @@
         document.addEventListener('DOMContentLoaded', async function () {
             console.log('🚀 Начало инициализации диктанта...');
 
-
-
-            // Используем уже существующий UserManager (не создаем новый!)
+        // Используем уже существующий UserManager (не создаем новый!)
             if (!window.UM) {
                 console.warn('⚠️ UserManager не найден, создаем новый экземпляр');
                 window.UM = new UserManager({ apiBase: '/user/api' });
             } else {
                 // console.log('✅ Используем существующий UserManager');
             }
-            
+
+        // Создаем/рендерим панель прогресса в обоих контейнерах
+        window.progressPanel = new ProgressPanel(window.UM, { apiBase: '/user/api', saveInterval: 5 });
+        const inlineContainer = document.getElementById('progressPanelContainer');
+        const modalContainer = document.getElementById('progressPanelModalContainer');
+        if (inlineContainer) { window.progressPanel.render(internal=inlineContainer, 'inline'); }
+        if (modalContainer) { window.progressPanel.render(modalContainer, 'modal'); }
+
+        // Кнопка для открытия статистики
+            const showStatisticsBtn = document.getElementById('showStatisticsBtn');
+            if (showStatisticsBtn) {
+                const ensureStatisticsButton = async () => {
+                    const um = window.UM;
+                    showStatisticsBtn.style.display = 'none';
+
+                    if (!um) {
+                        return;
+                    }
+
+                    const start = Date.now();
+                    while (!um.isInitialized && Date.now() - start < 5000) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+
+                    if (!um.getCurrentUser || !um.getCurrentUser()) {
+                        return;
+                    }
+
+                    showStatisticsBtn.style.display = '';
+
+                    if (typeof StatisticsReport !== 'undefined') {
+                        showStatisticsBtn.addEventListener('click', async () => {
+                            if (window.activityHistory) {
+                                await StatisticsReport.open(window.activityHistory);
+                            } else {
+                                alert('История активности еще не загружена');
+                            }
+                        });
+                    }
+                };
+
+                ensureStatisticsButton();
+            }
+
+            // Индикатор несохраненного прогресса (звездочка)
+            const unsavedStar = document.getElementById('unsavedStar');
+            function refreshUnsavedStar() {
+                try {
+                    const pp = window.progressPanel;
+                    const hasPending = !!(pp && typeof pp.hasPending === 'function' && pp.hasPending());
+                    if (unsavedStar) unsavedStar.style.display = hasPending ? 'inline-flex' : 'none';
+                } catch (e) {}
+            }
+            // Периодическое обновление на случай отсутствия событий
+            setInterval(refreshUnsavedStar, 1000);
+            // Попытка подписки на обновления, если уже создан объект
+            if (window.progressPanel && typeof window.progressPanel.updateUI === 'function') {
+                // легкий способ дергать обновление
+                const orig = window.progressPanel.updateUI.bind(window.progressPanel);
+                window.progressPanel.updateUI = function() { orig(); refreshUnsavedStar(); };
+            }
 
             // Проверяем что основной скрипт загружен
             // Запускаем инициализацию диктанта

@@ -61,7 +61,11 @@
               "data": {
                 "language_original": "en",
                 "language_translation": "ru",
-                "dictations": []
+                "dictations": [
+                  "dicta_1761748666932",
+                  "dicta_1761748765243",
+                  "dicta_1761748844334"
+                ]
               }
             },
             {

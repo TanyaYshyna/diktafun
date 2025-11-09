@@ -17,14 +17,26 @@
     <div class="topbar">
         <!-- <img src="/static/icons/logo.svg" class="logo"> -->
         <img src="/static/icons/logo.svg" class="logo" onclick="handleLogoClick()">
-        <div class="user-section" id="user-section">
-            <!-- Заполнится JavaScript -->
-            <a href="/user/profile" class="username">
-                <span class="user-avatar-small"></span>
-                <span class="username-text"></span>
-            </a>
-            <button class="streak">🔥 <span class="streak-days">0</span> дней подряд</button>
+        <div class="topbar-actions">
 
+            <di0945v class="user-section" id="user-section">
+                <!-- Заполнится JavaScript -->
+                <div class="username">
+                    <span class="user-avatar-small"></span>
+                    <span class="username-text"></span>
+                </div>
+                <button class="streak"><i data-lucide="flame"></i> <span class="streak-days">0</span> дней
+                    подряд</button>
+            </div>
+            <div class="button-group topbar-save-group">
+                <button id="saveBtn" class="button-color-yellow" title="Сохранить диктант">
+                    <i data-lucide="save"></i>
+                </button>
+                <button id="saveAndExitBtn" class="button-color-yellow" title="Сохранить диктант и выйти">
+                    <i data-lucide="save"></i>
+                    <i data-lucide="log-out"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -35,17 +47,6 @@
             </div>
             <div>
                 <h2 id="dictation-name">Новый диктант: </h2>
-            </div>
-            <div class="button-group">
-                <button id="saveBtn" class="button-color-yellow" title="Сохранить диктант">
-                    <i data-lucide="save"></i>
-                    <!-- <span>Сохранить</span> -->
-                </button>
-                <button id="saveAndExitBtn" class="button-color-yellow" title="Сохранить диктант и выйти">
-                    <i data-lucide="save"></i>
-                    <i data-lucide="log-out"></i>
-                    <!-- <span>Сохранить и выйти</span> -->
-                </button>
             </div>
         </div>
 
@@ -80,8 +81,9 @@
                             <div class="editor-header-panel-1">
                                 <div class="cover-section">
                                     <div class="cover-display">
-                                        <img id="coverImage"
-                                            src="/static/data/covers/cover_{{ original_language }}.webp" alt="Cover" />
+                                        <img id="coverImage" src="{{ cover_url }}"
+                                            data-default-cover="/static/data/covers/cover_{{ original_language }}.webp"
+                                            alt="Cover" />
                                     </div>
                                     <div class="cover-upload">
                                         <input type="file" id="coverFile" accept="image/*" style="display: none;">
@@ -333,13 +335,21 @@
                 </button>
 
                 <!-- Кнопка показать explanation -->
-                <button id="toggleExplanationBtn" class="table-control-btn refill-btn" title="Показать/скрыть пояснение">
-                    <i data-lucide="circle" class="toggle-explanation-icon"></i>
-                    Пояснение
-                </button>
-
-                <!-- Группа навигации и управления строками (справа) -->
                 <div class="table-nav-group">
+                    <button id="deleteRowBtn" class="table-control-btn delete-btn" title="Удалить строку">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+
+                    <button id="addRowBtn" class="table-control-btn add-btn" title="Добавить строку">
+                        <i data-lucide="plus"></i>
+                    </button>
+
+                    <button id="toggleExplanationBtn" class="table-control-btn refill-btn"
+                        title="Показать/скрыть пояснение">
+                        <i data-lucide="circle" class="toggle-explanation-icon"></i>
+                        Пояснение
+                    </button>
+
                     <button id="prevRowBtn" class="table-control-btn nav-btn" title="Предыдущая строка">
                         <i data-lucide="chevron-left"></i>
                     </button>
@@ -350,14 +360,6 @@
 
                     <button id="nextRowBtn" class="table-control-btn nav-btn" title="Следующая строка">
                         <i data-lucide="chevron-right"></i>
-                    </button>
-
-                    <button id="addRowBtn" class="table-control-btn add-btn" title="Добавить строку">
-                        <i data-lucide="plus"></i>
-                    </button>
-
-                    <button id="deleteRowBtn" class="table-control-btn delete-btn" title="Удалить строку">
-                        <i data-lucide="trash-2"></i>
                     </button>
                 </div>
             </div>
@@ -659,7 +661,8 @@
         "safe_email": safe_email,
         "category_info": category_info,
         "is_dialog": is_dialog,
-        "speakers": speakers
+        "speakers": speakers,
+        "cover_url": cover_url
      } | tojson }}
     </script>
 

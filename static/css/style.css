@@ -385,6 +385,24 @@ select {
     gap: 10px;
 }
 
+.topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.topbar-save-group button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+}
+
+.topbar-actions .user-section {
+    margin-left: 0;
+}
+
 .logo {
     height: 5em;
     /* ровно в 5 раз больше высоты строки текста */
@@ -396,6 +414,89 @@ select {
     display: flex;
     gap: 10px;
     align-items: center;
+}
+
+.statistics-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background-color: var(--color-button-purple);
+    color: white;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.statistics-btn:hover {
+    background-color: var(--color-button-purple-dark, #7c3aed);
+}
+
+.statistics-btn i {
+    width: 16px;
+    height: 16px;
+}
+
+.exit-dictation-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background-color: var(--color-button-yellow);
+    color: var(--color-button-text-yellow);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.exit-dictation-btn:hover {
+    color: var(--color-button-yellow-dark, #eab308);
+}
+
+.exit-dictation-btn i {
+    width: 16px;
+    height: 16px;
+}
+
+/* Индикатор несохраненного прогресса (универсальный стиль) */
+.unsaved-star {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.toast-notice {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translate(-50%, 20px);
+    opacity: 0;
+    background: var(--color-button-yellow);
+    color: var(--color-button-text-yellow);
+    padding: 10px 18px;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 1500;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast-notice.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.toast-notice.error {
+    background: var(--color-button-red, #ff4d4f);
+    color: var(--color-button-text-red, #ffffff);
 }
 .audio-user-panel {
   position: relative;

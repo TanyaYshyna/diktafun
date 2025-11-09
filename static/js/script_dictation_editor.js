@@ -71,6 +71,8 @@ let workingData = {
     }
 };
 
+let currentTabName = 'general';
+let explanationVisible = false;
 
 
 
@@ -177,7 +179,7 @@ async function loadCoverForExistingDictation(dictationId, originalLanguage) {
     }
 
     // Если cover диктанта нет, используем cover по умолчанию
-    const defaultCoverUrl = `/static/data/covers/cover_${originalLanguage}.webp`;
+    const defaultCoverUrl = coverImage.dataset.defaultCover || `/static/data/covers/cover_${originalLanguage}.webp`;
     coverImage.src = defaultCoverUrl;
 }
 
@@ -309,7 +311,8 @@ async function loadExistingDictation(initData) {
         audio_words,
         safe_email,
         is_dialog,
-        speakers
+        speakers,
+        cover_url
     } = initData;
 
     // Для редактирования диктанта категория берется из sessionStorage (текущее местоположение в дереве)
@@ -345,7 +348,16 @@ async function loadExistingDictation(initData) {
     if (tabTitleTranslation) tabTitleTranslation.value = translation_data?.title || "";
 
     // Загружаем cover если есть
-    await loadCoverForExistingDictation(dictation_id, original_language);
+    const coverImage = document.getElementById('coverImage');
+    if (coverImage) {
+        if (cover_url) {
+            coverImage.src = cover_url;
+        } else {
+            await loadCoverForExistingDictation(dictation_id, original_language);
+        }
+    } else {
+        await loadCoverForExistingDictation(dictation_id, original_language);
+    }
 
     // Показываем путь к категории если есть (данные уже загружены из info.json)
     if (currentDictation.category_path) {
@@ -443,6 +455,8 @@ function initDictationGenerator() {
 
     // Инициализируем панель вкладок
     setupTabsPanel();
+    // Обработчики навигации по строкам таблицы
+    setupTableControlsHandlers();
 
     // Обновляем отображение пути к диктанту
     updateDictationPathDisplay();
@@ -551,6 +565,12 @@ async function handleAudioPlayback(event) {
 
     // 1️⃣ Определяем URL    
     const state = button.dataset.state;
+    const language = button.dataset.language; // 'en' или 'ru'
+    const languageUrl = `/static/data/temp/${currentDictation.id}/${language}`;
+    
+    let fieldName = 'audio'; // 'audio', 'audio_avto', 'audio_user', 'audio_mic', 'audio_user_shared'
+    let nameAudioFile = 'audio.mp3';
+    let sentence = {};
     let audioUrl = null;
 
     // Кнопка воспроизведения созданного файла
@@ -561,10 +581,7 @@ async function handleAudioPlayback(event) {
             return;
         }
     } else {
-        const language = button.dataset.language; // 'en' или 'ru'
-        audioUrl = `/static/data/temp/${currentDictation.id}/${language}`;
-
-        const sentence = getSentenceForButton(button);
+        sentence = getSentenceForButton(button);
 
         // Кнопка под волной: играем строго currentAudioFile (волна уже подготовлена внешними процедурами)
         const isUnderWave = button && button.id === 'audioPlayBtn';
@@ -574,13 +591,13 @@ async function handleAudioPlayback(event) {
                 console.warn('⚠️ Нет текущего файла под волной — воспроизведение отменено');
                 return;
             }
-            audioUrl = `${audioUrl}/${file}`;
+            audioUrl = `${languageUrl}/${file}`;
 
             // Не трогаем регион/волну из Play
         } else {
-            const fieldName = button.dataset.fieldName; // 'audio', 'audio_avto', 'audio_user', 'audio_mic', 'audio_user_shared'
-            const nameAudioFile = sentence && sentence[fieldName];
-            audioUrl = `${audioUrl}/${nameAudioFile}`;
+            fieldName = button.dataset.fieldName; // 'audio', 'audio_avto', 'audio_user', 'audio_mic', 'audio_user_shared'
+            nameAudioFile = sentence && sentence[fieldName];
+            audioUrl = `${languageUrl}/${nameAudioFile}`;
         }
     }
     // 2️⃣ Если что-то уже играет — остановим
@@ -606,6 +623,7 @@ async function handleAudioPlayback(event) {
             break;
         case 'creating':
             // в состоянии "создание"
+            console.log('🔄🔄🔄🔄🔄🔄🔄 creating',language, fieldName, languageUrl);
             await createAndPlayAudio(button, language, fieldName, languageUrl);
             break;
         case 'creating_user':
@@ -652,13 +670,12 @@ async function createAndPlayAudio(button, language, fieldName, languageUrl) {
 
         // Создаем аудио файл
         const nameAudioFile = await generateAudioForSentence(sentence, language);
-
         if (!nameAudioFile) {
             throw new Error('Не удалось создать аудио файл');
         }
 
         // Обновляем данные предложения
-        sentence[fieldName] = audioFile;
+        sentence[fieldName] = nameAudioFile;
 
         // Меняем кнопку в режим готовности к воспроизведению (файл теперь существует)
         button.dataset.state = 'playing';
@@ -709,7 +726,6 @@ async function createAndPlayAudio(button, language, fieldName, languageUrl) {
 //         // Для кнопки под волной передаем управление WaveformCanvas
 //         const audioElement = AudioManager.getPlayer(audioFile, language);
 //         const audioUrl = `/static/data/temp/${currentDictation.id}/${language}/${audioFile}`;
-
 //         // Если плеер еще не загружен, устанавливаем URL
 //         if (!audioElement.src) {
 //             audioElement.src = audioUrl;
@@ -1445,7 +1461,6 @@ function setupCreateAudioHandlers() {
         playCreatedAudioBtn.addEventListener('click', handleAudioPlayback);
     }
 }
-
 /**
  * Создать комбинированный аудио файл из выбранных предложений
  * @param {string} customFileName - кастомное имя файла (если не указано, используется паттерн)
@@ -1914,6 +1929,8 @@ function applyTableViewForTab(tabName) {
     const table = document.getElementById('sentences-table');
     if (!table) return;
 
+    currentTabName = tabName;
+
     if (tabName === 'audio') {
         // Открываем режим редактирования
         toggleColumnGroup('original');
@@ -1992,6 +2009,8 @@ function applyTableViewForTab(tabName) {
     }
     const speakerCells = document.querySelectorAll('td.col-speaker');
     speakerCells.forEach(td => { td.style.display = showSpeaker ? 'table-cell' : 'none'; });
+
+    updateExplanationColumnVisibility();
 }
 
 /**
@@ -2037,43 +2056,80 @@ function toggleCheckboxColumn(show) {
  * Переключить видимость колонок для вкладки "Создание аудио"
  */
 function toggleCreateAudioColumns(show) {
-    const displayValue = show ? 'table-cell' : 'none';
-    
+    const table = document.getElementById('sentences-table');
+    if (!table) return;
+
+    const setDisplay = (el, value) => {
+        if (value === null) {
+            el.style.display = '';
+        } else {
+            el.style.display = value;
+        }
+    };
+
     // Находим все заголовки и ячейки с классом panel-create-audio
-    const headers = document.querySelectorAll('th.panel-create-audio');
-    const cells = document.querySelectorAll('td.panel-create-audio');
-    
+    const headers = table.querySelectorAll('th.panel-create-audio');
+    const cells = table.querySelectorAll('td.panel-create-audio');
+
     headers.forEach(th => {
-        th.style.display = displayValue;
+        if (show) {
+            setDisplay(th, 'table-cell');
+        } else {
+            setDisplay(th, null);
+        }
     });
-    
+
     cells.forEach(td => {
-        td.style.display = displayValue;
+        if (show) {
+            setDisplay(td, 'table-cell');
+        } else {
+            setDisplay(td, null);
+        }
     });
-    
-    // Если показываем колонки для "Создание аудио", также показываем колонку перевода и её аудио
-    if (show) {
-        // Показываем колонку перевода (текст)
-        const translationHeaders = document.querySelectorAll('th.panel-translation');
-        const translationCells = document.querySelectorAll('td.panel-translation');
-        
-        translationHeaders.forEach(th => {
-            // Не скрываем заголовки, которые уже имеют panel-create-audio
-            if (!th.classList.contains('panel-create-audio')) {
-                // Показываем только заголовок с текстом перевода, но не сам заголовок "t"
-                if (th.classList.contains('col-translation')) {
-                    th.style.display = 'table-cell';
-                }
+
+    // Управляем колонками перевода (текст)
+    const translationHeaders = table.querySelectorAll('th.panel-translation');
+    const translationCells = table.querySelectorAll('td.panel-translation');
+
+    translationHeaders.forEach(th => {
+        const isCreateAudioColumn = th.classList.contains('panel-create-audio') || th.classList.contains('col-translation');
+        if (show && isCreateAudioColumn) {
+            setDisplay(th, 'table-cell');
+        } else if (!show) {
+            setDisplay(th, null);
+        }
+    });
+
+    translationCells.forEach(td => {
+        const isCreateAudioColumn = td.classList.contains('panel-create-audio') || td.classList.contains('col-translation');
+        if (show && isCreateAudioColumn) {
+            setDisplay(td, 'table-cell');
+        } else if (!show) {
+            setDisplay(td, null);
+        }
+    });
+
+    // Прячем прочие колонки редактирования, если они не относятся к "Создание аудио"
+    const editingColumns = table.querySelectorAll('.panel-editing-avto, .panel-editing-user, .panel-editing-mic');
+    editingColumns.forEach(col => {
+        if (show) {
+            if (!col.classList.contains('panel-create-audio')) {
+                col.dataset.prevDisplay = col.style.display || '';
+                setDisplay(col, 'none');
+            } else {
+                setDisplay(col, 'table-cell');
             }
-        });
-        
-        translationCells.forEach(td => {
-            // Показываем ячейки перевода (текст), но не аудио (оно уже показано через panel-create-audio)
-            if (td.classList.contains('col-translation')) {
-                td.style.display = 'table-cell';
+        } else {
+            if (col.classList.contains('panel-create-audio')) {
+                setDisplay(col, null);
+            } else if ('prevDisplay' in col.dataset) {
+                setDisplay(col, col.dataset.prevDisplay || null);
+                delete col.dataset.prevDisplay;
+            } else {
+                setDisplay(col, null);
             }
-        });
-    }
+        }
+    });
 }
 
 /**
@@ -2240,7 +2296,6 @@ function updateDialogTab() {
         }
     }
 }
-
 // ============================================================================
 // ФУНКЦИИ ДЛЯ ПЕРЕКЛЮЧЕНИЯ ВИДИМОСТИ КОЛОНОК
 // ============================================================================
@@ -2437,6 +2492,55 @@ function setupTableControlsHandlers() {
         deleteRowBtn.addEventListener('click', () => {
             showDeleteRowDialog();
         });
+    }
+
+    const rowNumberSpan = document.getElementById('currentRowNumber');
+    if (rowNumberSpan) {
+        rowNumberSpan.contentEditable = true;
+        rowNumberSpan.setAttribute('inputmode', 'numeric');
+        rowNumberSpan.setAttribute('title', 'Введите номер строки и нажмите Enter');
+        rowNumberSpan.setAttribute('aria-label', 'Номер текущей строки');
+
+        const applyRowNumberInput = () => {
+            const rows = Array.from(document.querySelectorAll('#sentences-table tbody tr'));
+            if (!rows.length) {
+                rowNumberSpan.textContent = '1';
+                return;
+            }
+
+            const rawValue = rowNumberSpan.textContent.replace(/[^\d]/g, '');
+            let targetNumber = parseInt(rawValue, 10);
+
+            if (isNaN(targetNumber)) {
+                updateCurrentRowNumber();
+                return;
+            }
+
+            if (targetNumber < 1) targetNumber = 1;
+            if (targetNumber > rows.length) targetNumber = rows.length;
+
+            const targetRow = rows[targetNumber - 1];
+            if (targetRow) {
+                selectSentenceRow(targetRow);
+            } else {
+                updateCurrentRowNumber();
+            }
+        };
+
+        rowNumberSpan.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                rowNumberSpan.blur();
+                return;
+            }
+
+            const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab'];
+            if (!/^\d$/.test(event.key) && !allowedKeys.includes(event.key)) {
+                event.preventDefault();
+            }
+        });
+
+        rowNumberSpan.addEventListener('blur', applyRowNumberInput);
     }
 
     // Инициализация номера текущей строки
@@ -3037,7 +3141,6 @@ function closeMicRecordModal() {
     resetRecordingState();
     currentRecordingSentence = null;
 }
-
 /**
  * Сбросить состояние записи
  */
@@ -3409,33 +3512,6 @@ function handleSelectFileForSentence() {
     document.body.appendChild(fileInput);
     fileInput.click();
 }
-
-/**
- * Выбор общего файла (другие режимы)
- */
-// function handleSelectGeneralFile() {
-//     console.log('📁 Выбор общего файла');
-
-//     // Создаем input для выбора файла
-//     const fileInput = document.createElement('input');
-//     fileInput.type = 'file';
-//     fileInput.accept = 'audio/*';
-//     fileInput.style.display = 'none';
-
-//     fileInput.addEventListener('change', (event) => {
-//         const file = event.target.files[0];
-//         if (!file) return;
-
-//         // Используем существующую функцию загрузки
-//         uploadAudioFile(file);
-
-//         // Удаляем input после использования
-//         document.body.removeChild(fileInput);
-//     });
-
-//     document.body.appendChild(fileInput);
-//     fileInput.click();
-// }
 
 /**
  * Выбор общего файла (другие режимы)
@@ -3825,7 +3901,6 @@ function setupFileInputHandler() {
         });
     }
 }
-
 /**
  * Инициализация обработчиков полей под волной
  */
@@ -4583,7 +4658,6 @@ function getCurrentAudioFileForScissors() {
         file: file // может быть null для существующих файлов
     };
 }
-
 /**
  * Разрезать аудио на предложения
  */
@@ -5288,30 +5362,37 @@ function updateCheckboxIcon(isChecked) {
     }
 }
 
-function toggleExplanationColumn() {
+function updateExplanationColumnVisibility() {
     const table = document.getElementById('sentences-table');
     if (!table) return;
+    const isGeneralTab = currentTabName === 'general';
+    const displayValue = (isGeneralTab && explanationVisible) ? 'table-cell' : 'none';
     
     // Находим все колонки explanation
     const headerCells = table.querySelectorAll('th.col-explanation');
     const dataCells = table.querySelectorAll('td.col-explanation');
-    
-    // Проверяем текущее состояние (смотрим на первую ячейку)
-    const isVisible = headerCells.length > 0 && headerCells[0].style.display !== 'none';
-    
-    // Переключаем видимость
-    const newDisplay = isVisible ? 'none' : 'table-cell';
-    headerCells.forEach(cell => cell.style.display = newDisplay);
-    dataCells.forEach(cell => cell.style.display = newDisplay);
-    
-    // Обновляем иконку кнопки
+
+    headerCells.forEach(cell => cell.style.display = displayValue);
+    dataCells.forEach(cell => cell.style.display = displayValue);
+
+    // Управляем кнопкой
+    const toggleBtn = document.getElementById('toggleExplanationBtn');
+    if (toggleBtn) {
+        toggleBtn.style.display = isGeneralTab ? '' : 'none';
+    }
+
     const toggleIcon = document.querySelector('.toggle-explanation-icon');
     if (toggleIcon) {
-        toggleIcon.setAttribute('data-lucide', isVisible ? 'circle' : 'circle-check');
+        toggleIcon.setAttribute('data-lucide', explanationVisible ? 'circle-check' : 'circle');
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
     }
+}
+
+function toggleExplanationColumn() {
+    explanationVisible = !explanationVisible;
+    updateExplanationColumnVisibility();
 }
 
 function addSpeaker() {
@@ -5341,7 +5422,6 @@ function removeSpeaker(button) {
         });
     }
 }
-
 async function createDictationFromStart() {
     const text = (document.getElementById('startTextInput').innerText || document.getElementById('startTextInput').textContent).trim();
     const delimiter = document.getElementById('translationDelimiter').value.trim();
@@ -5500,7 +5580,6 @@ async function saveDictationOnly() {
         const result = await response.json();
 
         if (result.success) {
-            alert('Диктант успешно сохранен!');
 
             // Обновляем ID диктанта если это был новый диктант
             if (currentDictation.id === 'new' && result.dictation_id) {
@@ -6111,8 +6190,8 @@ async function createTable() {
     // Проверяем, есть ли explanation в предложениях
     const hasExplanation = translationSentences.some(s => s.explanation && s.explanation.trim());
     if (hasExplanation) {
-        // Автоматически показываем колонку explanation
-        toggleExplanationColumn();
+        explanationVisible = true;
+        updateExplanationColumnVisibility();
     }
 
     // Автоматически выбираем первую строку при создании таблицы
@@ -6123,7 +6202,6 @@ async function createTable() {
         }
     }, 100); // Небольшая задержка для завершения всех операций
 }
-
 /**
  * Создать строку таблицы
  * @param {string} key - ключ строки
@@ -6226,7 +6304,8 @@ function createTableRow(key, originalSentence, translationSentence) {
         }
 
         // Меняем кнопку воспроизведения в режим создания
-        const audioBtn = row.querySelector(`.col-audio .audio-btn[data-language=${currentDictation.language_original}]`);
+        // const audioBtn = row.querySelector(`.col-audio .audio-btn[data-language=${currentDictation.language_original}]`);
+        const audioBtn = row.querySelector(`.btn-col-or-audio`);
         if (audioBtn) {
             audioBtn.dataset.create = 'true';
             audioBtn.title = 'Создать аудио оригинала';
@@ -6261,9 +6340,10 @@ function createTableRow(key, originalSentence, translationSentence) {
     const audioCellOriginal = document.createElement('td');
     audioCellOriginal.className = 'col-play-original panel-original panel-create-audio';
     audioCellOriginal.dataset.col_id = 'col-or-audio';
+
     // Единая кнопка для оригинала
     const audioBtnOriginal = document.createElement('button');
-    audioBtnOriginal.className = 'audio-btn audio-btn-table state-ready';
+    audioBtnOriginal.className = 'audio-btn btn-col-or-audio audio-btn-table state-ready';
     audioBtnOriginal.innerHTML = '<i data-lucide="play"></i>';
     audioBtnOriginal.dataset.language = currentDictation.language_original;
     audioBtnOriginal.dataset.fieldName = 'audio';
@@ -6303,19 +6383,18 @@ function createTableRow(key, originalSentence, translationSentence) {
     // Слушатель изменения текста перевода
     textareaTranslation.addEventListener('input', function () {
         // Обновляем текст в данных
+        console.log('🔄1🔄🔄🔄🔄🔄🔄 textareaTranslation.value',textareaTranslation.value);
         if (translationSentence) {
             translationSentence.text = textareaTranslation.value;
         }
         // Меняем кнопку воспроизведения в режим создания (кнопка перевода создается позже)
-        // Используем setTimeout, чтобы кнопка уже была создана
-        setTimeout(() => {
-            const audioBtn = row.querySelector('.col-audio .audio-btn[data-language="' + currentDictation.language_translation + '"]');
-            if (audioBtn) {
-                audioBtn.dataset.create = 'true';
-                audioBtn.title = 'Создать аудио перевода';
-                setButtonState(audioBtn, 'ready');
-            }
-        }, 0);
+        const audioBtn = row.querySelector(`.btn-col-tr-audio`);
+        if (audioBtn) {
+            audioBtn.dataset.create = 'true';
+            audioBtn.title = 'Создать аудио перевода';
+            audioBtn.dataset.state = 'creating';
+            setButtonState(audioBtn);
+        }
     });
 
     translationCell.appendChild(textareaTranslation);
@@ -6327,7 +6406,7 @@ function createTableRow(key, originalSentence, translationSentence) {
     audioCell.dataset.col_id = 'col-tr-audio';
     // Единая кнопка для перевода
     const audioBtnTranslation = document.createElement('button');
-    audioBtnTranslation.className = 'audio-btn audio-btn-table state-ready';
+    audioBtnTranslation.className = 'audio-btn btn-col-tr-audio audio-btn-table state-ready';
     audioBtnTranslation.innerHTML = '<i data-lucide="play"></i>';
     audioBtnTranslation.dataset.language = currentDictation.language_translation;
     audioBtnTranslation.dataset.fieldName = 'audio';

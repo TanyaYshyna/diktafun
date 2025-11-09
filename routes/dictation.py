@@ -2,6 +2,7 @@ import json
 import os
 from flask import Blueprint, abort, current_app, render_template, url_for
 from helpers.user_helpers import get_current_user, login_required, get_safe_email
+from routes.index import get_cover_url_for_id
 
 dictation_bp = Blueprint('dictation', __name__)
 
@@ -62,11 +63,20 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
         key = item["key"]
         translated = translation_dict.get(key, {})
 
+        # Получаем все типы аудио для оригинала
+        audio_o_file = item.get('audio', '')
+        audio_a_file = item.get('audio_avto', '')
+        audio_f_file = item.get('audio_user', '')
+        audio_m_file = item.get('audio_mic', '')
+
         sentence = {
             "key": key,
             "text": item.get("text", ""),
             "translation": translated.get("text", ""),
-            "audio": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_orig}/{item.get('audio', '')}"),
+            "audio": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_orig}/{audio_o_file}") if audio_o_file else "",
+            "audio_a": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_orig}/{audio_a_file}") if audio_a_file else "",
+            "audio_f": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_orig}/{audio_f_file}") if audio_f_file else "",
+            "audio_m": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_orig}/{audio_m_file}") if audio_m_file else "",
             "audio_tr": url_for('static', filename=f"data/dictations/{dictation_id}/{lang_tr}/{translated.get('audio', '')}"),
             "completed_correctly": False,
             "speaker": item.get("speaker"),
@@ -79,6 +89,8 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
     current_user = get_current_user()
     
 
+    cover_url = get_cover_url_for_id(dictation_id, lang_orig)
+
     # Рендерим страницу
     return render_template(
         "dictation.html",
@@ -90,5 +102,7 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
         sentences=sentences,
         current_user=current_user,
         is_dialog=is_dialog,
-        speakers=speakers
+        speakers=speakers,
+        cover_url=cover_url
     )
+

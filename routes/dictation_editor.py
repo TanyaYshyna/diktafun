@@ -22,6 +22,7 @@ from PIL import Image
 
 # from helpers.user_helpers import get_safe_email
 from helpers.user_helpers import get_safe_email_from_token, get_current_user 
+from routes.index import get_cover_url_for_id
 
 
 # Настройка логгера
@@ -187,6 +188,8 @@ def dictation_editor(dictation_id, language_original, language_translation):
         "title": "",
         "path": ""
     }
+
+    cover_url = get_cover_url_for_id(dictation_id, language_original)
  
     return render_template(
         'dictation_editor.html',
@@ -204,7 +207,8 @@ def dictation_editor(dictation_id, language_original, language_translation):
         current_user=current_user,
         safe_email=safe_email,
             # edit_mode удален - определяется по dictation_id
-        category_info=category_info
+        category_info=category_info,
+        cover_url=cover_url
     )
 
 
@@ -220,6 +224,8 @@ def dictation_editor_new():
         # Языки по умолчанию (будут переопределены в JavaScript из глобальной переменной)
         language_original = 'en'
         language_translation = 'ru'
+
+        cover_url = get_cover_url_for_id(None, language_original)
         
         return render_template(
             'dictation_editor.html',
@@ -251,7 +257,8 @@ def dictation_editor_new():
                 "key": "",
                 "title": "",
                 "path": ""
-            }
+            },
+            cover_url=cover_url
         )
         
     except Exception as e:

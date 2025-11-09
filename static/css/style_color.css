@@ -2,15 +2,16 @@
 :root {
   --color-panel-bg: #fdfdfdff;                 /* светло-бежевый фон панели */
   --color-hover: #eeede8ff;
+  --color-hover-panel: rgb(247, 246, 245);
   /*--color-text: rgb(207, 0, 21);*/                     /* основной цвет текста */
   --color-text: #224156ff;                    /* основной цвет текста */
   --color-text-secondary: #000000ff;              /* текст-пояснение (например, перевод) */
   --color-white: #ffffff;
   
-  --color-button-gray: #dce2e5ff;  
+  --color-button-gray: #eeede8ff;  
   --color-button-mint: #aae7e4ff;  
   --color-button-lightgreen: #bbf1caff;  
-  --color-button-yellow: #fceba3ff;  
+  --color-button-yellow: rgb(252, 235, 163);  
   --color-button-orange: #f9d6a1ff;  
   --color-button-orange66: #f9d6a1;  
   --color-button-pink: #f5c0caff; 
@@ -21,7 +22,7 @@
   --color-panel-text-purple: rgb(152, 154, 224); 
 
   --color-button-text-transparent: rgb(191, 188, 175);  
-  --color-button-text-gray: #5a5e60ff;  
+  --color-button-text-gray: rgb(168, 167, 155);  
   --color-button-text-mint: #28615fff;  
   --color-button-text-lightgreen: #366f40ff;  
   --color-button-text-yellow: rgb(255, 198, 9);  
@@ -63,7 +64,7 @@
   --color-accent: #f9ebaf;                   /* жёлтая кнопка */
   --color-accent-hover: #f9e26d;             /* при наведении на жёлтую */
   --color-highlight: #ffd54f;                /* выделение слова */
-  --color-hover-panel: #e8e8e8;              /* наведение на фейковую кнопку */
+  /* --color-hover-panel: #e8e8e8;              наведение на фейковую кнопку */
   --color-focus-blue: #4da1d9;               /* синие кнопки в index */
   --color-focus-blue-hover: #45aef3;         /* hover для index */
   --color-topbar: #2c3e50;                   /* фон верхней панели */
