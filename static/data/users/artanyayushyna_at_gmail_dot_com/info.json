@@ -3,15 +3,16 @@
   "username": "tanya_ar",
   "email": "artanyayushyna@gmail.com",
   "password": "123456",
-  "native_language": "ar",
+  "native_language": "ru",
   "learning_language": "ru",
   "learning_languages": [
-    "ru"
+    "ru",
+    "en"
   ],
-  "current_learning": "ru",
+  "current_learning": "en",
   "streak_days": 0,
   "created_at": "2025-11-10T11:13:36.796592",
-  "updated_at": "2025-11-10T11:16:14.674988",
+  "updated_at": "2025-11-10T17:14:01.550249",
   "avatar": {
     "large": "/user/api/avatar?email=artanyayushyna@gmail.com&size=large",
     "small": "/user/api/avatar?email=artanyayushyna@gmail.com&size=small",

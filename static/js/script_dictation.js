@@ -169,6 +169,11 @@ const userAudioStatusText = document.getElementById('userAudioStatusText');
 // const userAudioTranscript = document.getElementById('userAudioTranscript');
 const userAudioVisualizer = document.getElementById('userAudioVisualizer');
 
+// ===== Виртуальная клавиатура =====
+const virtualKeyboardToggle = document.getElementById('virtualKeyboardToggle');
+const virtualKeyboardContainer = document.getElementById('virtualKeyboard');
+let virtualKeyboardInstance = null;
+
 // ===== Переменные для аудио =====
 // ===== Элементы DOM =====
 // Живой буфер распознанного текста (final + interim)
@@ -2701,6 +2706,49 @@ function stopVisualization() {
 
 // ===== Аудио-функционал КОНЕЦ =====
 
+async function setupVirtualKeyboard(langCode) {
+    if (!virtualKeyboardContainer || typeof window.VirtualKeyboard !== 'function') {
+        return;
+    }
+
+    const normalizedLang = (langCode || currentDictation.language_original || 'en').toLowerCase();
+
+    if (!virtualKeyboardInstance) {
+        virtualKeyboardInstance = new window.VirtualKeyboard(virtualKeyboardContainer, {
+            layoutManager: window.KeyboardLayoutManager,
+            languageManager: window.LanguageManager,
+            langCode: normalizedLang
+        });
+    } else {
+        await virtualKeyboardInstance.setLanguage(normalizedLang);
+    }
+
+    if (virtualKeyboardToggle && !virtualKeyboardToggle.dataset.listenerAttached) {
+        virtualKeyboardToggle.addEventListener('change', async (event) => {
+            if (!virtualKeyboardInstance) {
+                return;
+            }
+
+            const isChecked = Boolean(event.target.checked);
+            const langForRender = (currentDictation.language_original || normalizedLang).toLowerCase();
+            await virtualKeyboardInstance.setLanguage(langForRender);
+
+            if (isChecked) {
+                await virtualKeyboardInstance.show();
+            } else {
+                virtualKeyboardInstance.hide();
+            }
+        });
+        virtualKeyboardToggle.dataset.listenerAttached = 'true';
+    }
+
+    if (virtualKeyboardToggle && virtualKeyboardToggle.checked) {
+        await virtualKeyboardInstance.show();
+    } else if (virtualKeyboardInstance) {
+        virtualKeyboardInstance.hide();
+    }
+}
+
 
 // ===== Инициализация диктанта =================================================================== 
 // ===== Инициализация диктанта =================================================================== 
@@ -2780,6 +2828,8 @@ async function initializeDictation() {
         alert('Ошибка загрузки данных диктанта');
         return;
     }
+
+    await setupVirtualKeyboard(currentDictation.language_original);
 
     // Проверяем наличие черновика
     const hasDraft = await loadAndApplyDraft();

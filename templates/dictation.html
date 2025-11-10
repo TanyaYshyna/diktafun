@@ -260,6 +260,14 @@
             </button>
         </div>
 
+        <div class="virtual-keyboard-container">
+            <label class="vk-toggle" for="virtualKeyboardToggle">
+                <input type="checkbox" id="virtualKeyboardToggle">
+                <span>Показать клавиатуру</span>
+            </label>
+            <div id="virtualKeyboard" hidden></div>
+        </div>
+
 
         <div class="audio-user-panel">
 
@@ -336,6 +344,7 @@
     <script src="{{ url_for('static', filename='js/dictation_statistics.js') }}"></script>
     <script src="{{ url_for('static', filename='js/progress_panel.js') }}"></script>
     <script src="{{ url_for('static', filename='js/statistics_report.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/virtual_keyboard.js') }}"></script>
 
     <!-- Передаем данные диктанта через глобальные переменные -->
     <div id="dictation-data" data-sentences='{{ sentences | tojson | safe }}'
