@@ -1459,9 +1459,10 @@ body.playing-audio::after {
   display: flex;
   flex-direction: column;
   gap: 2px !important;
-  margin-left: 2px;
-  justify-content: flex-end;
+  margin-left: auto;
+  align-items: flex-end;
   width: fit-content;
+  text-align: right;
 }
 
 #btnBackToList {

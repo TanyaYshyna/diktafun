@@ -364,6 +364,16 @@ h2 {
     box-sizing: border-box;
 }
 
+.text-input.text-input-rtl {
+    text-align: right;
+    direction: rtl;
+}
+
+.text-input.text-input-ltr {
+    text-align: left;
+    direction: ltr;
+}
+
 
 select {
     padding: 5px 10px;

@@ -1205,6 +1205,7 @@ function initializeLanguageFilter() {
 
     const list = document.createElement('ul');
     list.className = 'speed-options';
+    list.style.zIndex = '2001';
 
     const optionElements = options.map(option => {
         const item = document.createElement('li');

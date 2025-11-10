@@ -1,3 +1,40 @@
+html,
+body {
+  height: 100%;
+}
+
+#container-tree-cards {
+  min-height: 0;
+  display: flex;
+  flex: 1 1 auto;
+  overflow: hidden;
+  background-color: var(--color-hover);
+  /* height: calc(100vh - 80px); 60px высота + 20px margin = 80px */
+}
+
+.page-index {
+  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.page-index .tooltip-wrapper {
+  position: relative;
+  z-index: 5;
+}
+
+.page-index .panel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.page-index #container-tree-cards {
+  overflow: hidden;
+  flex: 1 1 auto;
+}
+
 .path-label {
   font-size: 14px;
   font-weight: 600;
@@ -8,15 +45,6 @@
   display: flex;
   flex-direction: column;
   /* min-height: calc(100vh - 80px); 80px = высота header */
-}
-
-#container-tree-cards {
-  min-height: 0;
-  display: flex;
-  flex: 1 1 auto;
-  overflow: hidden;
-  background-color: var(--color-container-bg);
-  /* height: calc(100vh - 80px); 60px высота + 20px margin = 80px */
 }
 
 /* Левая панель - УБИРАЕМ overflow:auto отсюда */
@@ -91,11 +119,15 @@
   padding: 4px 0;
 }
 
-.fancytree-folder,
-.fancytree-expanded,
 .fancytree-active,
 .fancytree-selected {
-  background: transparent;
+  background: var(--color-hover) !important;
+  color: var(--color-text, #1f2933) !important;
+}
+
+.fancytree-active .fancytree-title,
+.fancytree-selected .fancytree-title {
+  font-weight: 600;
 }
 
 #treeContainer .fancytree-expander,
@@ -151,6 +183,34 @@
   fill: none;
 }
 
+#treeContainer span.fancytree-node.fancytree-focused,
+#treeContainer span.fancytree-node.fancytree-active,
+#treeContainer span.fancytree-node.fancytree-selected {
+  background: transparent !important;
+}
+
+#treeContainer .fancytree-title {
+  border-radius: 6px;
+  padding: 2px 4px;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#treeContainer span.fancytree-node.fancytree-focused > .fancytree-title,
+#treeContainer span.fancytree-node.fancytree-active > .fancytree-title,
+#treeContainer span.fancytree-node.fancytree-selected > .fancytree-title {
+  background: var(--color-hover);
+  color: var(--color-text);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+  outline: none;
+}
+
+#treeContainer .fancytree-title:focus,
+#treeContainer .fancytree-title:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
 
 
 /* Убираем принудительные высоты для внутренних элементов FancyTree */
@@ -185,7 +245,8 @@
   flex-direction: column;
   flex: 1 1 auto;
   min-width: 360px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
 }
 
@@ -220,7 +281,7 @@
   border-radius: 16px;
   padding: 12px;
   background: var(--panel-bg, #fff);
-  border: 2px solid var(--color-button-purple);
+  border: 2px solid var(--color-border);
   box-shadow: 0 4px 20px rgba(0, 0, 0, .06);
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
   overflow: hidden;
@@ -308,12 +369,13 @@
 }
 
 .short-action-btn.danger {
-  background: rgba(220, 38, 38, 0.12);
-  color: #b91c1c;
+  background: rgba(0, 0, 0, 0.05);
+  color: #ad5544;
 }
 
 .short-action-btn.danger:hover {
-  background: rgba(220, 38, 38, 0.2);
+  background: rgba(0, 0, 0, 0.1);
+  color: #9a4b3b;
 }
 
 .short-action-btn i {
@@ -402,6 +464,7 @@
 .language-filter-select {
   position: relative;
   display: inline-block;
+  z-index: 10;
 }
 
 .language-filter-select .speed-select-button {
@@ -443,7 +506,7 @@
 
 .language-filter-select .speed-options {
   position: absolute;
-  bottom: 100%;
+  top: calc(100% + 6px);
   left: 0;
   background-color: var(--color-panel-bg, #fff);
   border-radius: 8px;
@@ -469,17 +532,19 @@
 }
 
 .language-filter-select .speed-options li:hover {
-  background-color: rgba(37, 99, 235, 0.12);
+  background-color: var(--color-hover);
 }
 
 .language-filter-select .speed-options li.selected {
-  background-color: rgba(37, 99, 235, 0.18);
-  color: #1d4ed8;
+  background-color: var(--color-hover-panel);
+  color: var(--color-text);
+  font-weight: 600;
 }
 
 .language-filter-select .speed-options li.selected::before {
   content: '✓';
   margin-right: 6px;
+  color: #b26b4c;
 }
 
 .modal-backdrop {

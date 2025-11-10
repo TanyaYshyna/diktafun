@@ -16,6 +16,19 @@ let progressPanel = null; // Панель прогресса
 let circleBtn = document.getElementById('btn-circle-number');
 
 const inputField = document.getElementById('userInput');
+const RTL_LANGUAGE_PREFIXES = ['ar'];
+
+function applyInputDirection(languageCode) {
+    if (!inputField) return;
+    const normalized = (languageCode || '').toLowerCase();
+    const isRtl = RTL_LANGUAGE_PREFIXES.some(prefix => normalized.startsWith(prefix));
+    inputField.classList.remove('text-input-rtl', 'text-input-ltr');
+    if (isRtl) {
+        inputField.classList.add('text-input-rtl');
+    } else {
+        inputField.classList.add('text-input-ltr');
+    }
+}
 const checkNextDiv = document.getElementById('checkNext');
 const checkPreviosDiv = document.getElementById('checkPrevios');
 const correctAnswerDiv = document.getElementById('correctAnswer'); id = "btn-new-circle"
@@ -2740,6 +2753,7 @@ function loadDictationData() {
         currentDictation.language_original = dictationDataElement.dataset.languageOriginal || '';
         currentDictation.language_translation = dictationDataElement.dataset.languageTranslation || '';
         currentDictation.title_orig = dictationDataElement.dataset.titleOrig || '';
+        applyInputDirection(currentDictation.language_original);
         // Используем LanguageManager для получения country_cod_url
         if (window.LanguageManager && typeof window.LanguageManager.getCountryCodeUrl === 'function') {
             currentDictation.language_cod_url = window.LanguageManager.getCountryCodeUrl(currentDictation.language_original);
