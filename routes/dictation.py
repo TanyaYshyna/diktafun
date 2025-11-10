@@ -1,6 +1,7 @@
 import json
 import os
 from flask import Blueprint, abort, current_app, render_template, url_for
+from helpers.language_data import load_language_data
 from helpers.user_helpers import get_current_user, login_required, get_safe_email
 from routes.index import get_cover_url_for_id
 
@@ -8,7 +9,7 @@ dictation_bp = Blueprint('dictation', __name__)
 
 @dictation_bp.route('/dictation')
 def dictation():
-    return render_template('dictation.html')
+    return render_template('dictation.html', language_data=load_language_data())
 
 
 # ==============================================================
@@ -103,6 +104,7 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
         current_user=current_user,
         is_dialog=is_dialog,
         speakers=speakers,
-        cover_url=cover_url
+        cover_url=cover_url,
+        language_data=load_language_data()
     )
 

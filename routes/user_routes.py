@@ -10,6 +10,7 @@ from flask import Blueprint, request, jsonify, render_template, send_file
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 # Импортируем из helpers
+from helpers.language_data import load_language_data
 from helpers.user_helpers import load_user_info, save_user_info, get_user_folder
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
@@ -168,7 +169,7 @@ def register():
 @user_bp.route('/profile')
 def profile_page():
     """Страница профиля пользователя"""
-    return render_template('user_profile_jwt.html')
+    return render_template('user_profile_jwt.html', language_data=load_language_data())
 
 @user_bp.route('/logout')
 def logout():

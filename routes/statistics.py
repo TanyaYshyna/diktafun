@@ -68,6 +68,10 @@ def save_history():
         if not month or not statistics:
             print(f'❌ [SAVE_HISTORY] Ошибка: не указаны месяц ({month}) или статистика ({statistics})')
             return jsonify({'error': 'Не указаны месяц или статистика'}), 400
+
+        if not isinstance(statistics, dict):
+            print(f'❌ [SAVE_HISTORY] Некорректный формат статистики: ожидается объект, получено {type(statistics)}')
+            return jsonify({'error': 'Некорректный формат статистики'}), 400
         
         # Преобразуем месяц в строку для имени файла
         month_str = str(month)
@@ -84,6 +88,16 @@ def save_history():
             with open(file_path, 'r', encoding='utf-8') as f:
                 history_data = json.load(f)
         else:
+            history_data = None
+
+        # Поддержка старого формата, когда history_data мог быть списком статистик
+        if isinstance(history_data, list):
+            history_data = {
+                'id_user': current_email,
+                'month': int(month_str),
+                'statistics': history_data
+            }
+        elif not isinstance(history_data, dict) or 'statistics' not in history_data:
             history_data = {
                 'id_user': current_email,
                 'month': int(month_str),

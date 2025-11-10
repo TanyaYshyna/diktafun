@@ -1074,8 +1074,8 @@ function updateTableRowStatus(s) {
         micCell.innerHTML = audioHTML;
     }
 
-    // Обновляем цвет текста предложения
-    const textCell = row.querySelector('td:last-child');
+    // Обновляем состояние строки в зависимости от выполненности предложения
+    const completedSentence = unavailable || (totalPerfect > 0 && totalAudio >= REQUIRED_PASSED_COUNT);
     if (completedSentence) {
         row.classList.add('sentence-row-completed');
     } else {

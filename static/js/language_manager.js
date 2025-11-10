@@ -1,20 +1,94 @@
 class LanguageManager {
     constructor() {
-        this.languageData = {
-            'en': { country_cod: 'us', country_cod_url: 'en-US', language_ru: 'Английский', language_en: 'English' },
-            'uk': { country_cod: 'ua', country_cod_url: 'uk-UA', language_ru: 'Украинский', language_en: 'Ukrainian' },
-            'sv': { country_cod: 'se', country_cod_url: 'sv-SE', language_ru: 'Шведский', language_en: 'Swedish' },
-            'be': { country_cod: 'by', country_cod_url: 'be-BY', language_ru: 'Белорусский', language_en: 'Belarusian' },
-            'ru': { country_cod: 'ru', country_cod_url: 'ru-RU', language_ru: 'Русский', language_en: 'Russian' },
-            'de': { country_cod: 'de', country_cod_url: 'de-DE', language_ru: 'Немецкий', language_en: 'German' },
-            'fr': { country_cod: 'fr', country_cod_url: 'fr-FR', language_ru: 'Французский', language_en: 'French' },
-            'es': { country_cod: 'es', country_cod_url: 'es-ES', language_ru: 'Испанский', language_en: 'Spanish' },
-            'it': { country_cod: 'it', country_cod_url: 'it-IT', language_ru: 'Итальянский', language_en: 'Italian' },
-            'tr': { country_cod: 'tr', country_cod_url: 'tr-TR', language_ru: 'Турецкий', language_en: 'Turkish' },
-            'ar': { country_cod: 'sa', country_cod_url: 'ar-SA', language_ru: 'Арабский', language_en: 'Arabic' },
-            'pl': { country_cod: 'pl', country_cod_url: 'pl-PL', language_ru: 'Польский', language_en: 'Polish' },
-        };
-        this.isInitialized = true;
+        this.languageData = this._initializeLanguageData();
+        this.isInitialized = Object.keys(this.languageData).length > 0;
+
+        if (!this.isInitialized) {
+            this._fetchLanguageData();
+        }
+    }
+
+    _initializeLanguageData() {
+        const fromWindow = this._getFromWindow();
+        if (fromWindow) {
+            return fromWindow;
+        }
+
+        const fromScriptTag = this._getFromScriptTag();
+        if (fromScriptTag) {
+            window.LANGUAGE_DATA = fromScriptTag;
+            return fromScriptTag;
+        }
+
+        return {};
+    }
+
+    _getFromWindow() {
+        if (window.LANGUAGE_DATA && typeof window.LANGUAGE_DATA === 'object') {
+            return this._normalize(window.LANGUAGE_DATA);
+        }
+        return null;
+    }
+
+    _getFromScriptTag() {
+        const scriptEl = document.getElementById('language-data');
+        if (!scriptEl) {
+            return null;
+        }
+
+        try {
+            const parsed = JSON.parse(scriptEl.textContent);
+            return this._normalize(parsed);
+        } catch (error) {
+            console.error('❌ Ошибка парсинга language-data:', error);
+        }
+        return null;
+    }
+
+    _normalize(rawData) {
+        const normalized = {};
+
+        if (!rawData || typeof rawData !== 'object') {
+            return normalized;
+        }
+
+        Object.entries(rawData).forEach(([key, value]) => {
+            if (typeof key === 'string' && value && typeof value === 'object') {
+                normalized[key.toLowerCase()] = { ...value };
+            }
+        });
+
+        return normalized;
+    }
+
+    async _fetchLanguageData() {
+        if (!('fetch' in window)) {
+            return;
+        }
+
+        if (this._languageDataPromise) {
+            return this._languageDataPromise;
+        }
+
+        this._languageDataPromise = fetch('/static/data/languages.json', { cache: 'no-cache' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                this.languageData = this._normalize(data);
+                this.isInitialized = Object.keys(this.languageData).length > 0;
+                if (this.isInitialized) {
+                    window.LANGUAGE_DATA = this.languageData;
+                }
+            })
+            .catch(error => {
+                console.error('❌ Ошибка загрузки languages.json:', error);
+            });
+
+        return this._languageDataPromise;
     }
 
     getLanguageData() {
@@ -22,29 +96,33 @@ class LanguageManager {
     }
 
     getLanguageName(langCode, interfaceLang = 'ru') {
-        const data = this.languageData[langCode];
-        if (!data) return langCode;
+        const language = this._getLanguage(langCode);
+        if (!language) {
+            return langCode;
+        }
 
         const key = `language_${interfaceLang}`;
-        return data[key] || data.language_en || langCode;
+        return language[key] || language.language_en || langCode;
     }
 
     getNativeLanguageName(langCode) {
-        const data = this.languageData[langCode];
-        if (!data) return langCode;
+        const language = this._getLanguage(langCode);
+        if (!language) {
+            return langCode;
+        }
 
         const nativeKey = `language_${langCode}`;
-        return data[nativeKey] || data.language_en || langCode;
+        return language[nativeKey] || language.language_en || langCode;
     }
 
     getCountryCode(langCode) {
-        const data = this.languageData[langCode];
-        return data ? data.country_cod.toLowerCase() : '';
+        const language = this._getLanguage(langCode);
+        return language && language.country_cod ? language.country_cod.toLowerCase() : '';
     }
 
     getCountryCodeUrl(langCode) {
-        const data = this.languageData[langCode];
-        return data ? data.country_cod_url : '';
+        const language = this._getLanguage(langCode);
+        return language ? language.country_cod_url : '';
     }
 
     getAvailableLanguages() {
@@ -52,7 +130,14 @@ class LanguageManager {
     }
 
     isLanguageSupported(langCode) {
-        return this.languageData.hasOwnProperty(langCode);
+        return !!this._getLanguage(langCode);
+    }
+
+    _getLanguage(langCode) {
+        if (!langCode) {
+            return null;
+        }
+        return this.languageData[langCode.toLowerCase()] || null;
     }
 }
 

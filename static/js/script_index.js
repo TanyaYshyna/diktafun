@@ -15,6 +15,111 @@ let language_translation = "ru";
 let selectedCategory = null;
 let selectedCategoryForDictation = null; // Сохраняем категорию для создания диктанта
 
+// Убеждаемся, что в данных категорий есть родительский и дочерний узел для выбранной языковой пары
+function ensureLanguageNodesLocally(treeData, learningLang, nativeLang) {
+    const result = {
+        createdParent: false,
+        createdPair: false
+    };
+
+    if (!treeData || !learningLang) {
+        return result;
+    }
+
+    treeData.children = treeData.children || [];
+
+    let parentNode = treeData.children.find(child => {
+        const data = child.data || {};
+        return data.language_original === learningLang && !data.language_translation;
+    });
+
+    if (!parentNode) {
+        const langManager = window.LanguageManager;
+        const title = langManager && typeof langManager.getLanguageName === 'function'
+            ? langManager.getLanguageName(learningLang, 'en')
+            : learningLang.toUpperCase();
+
+        parentNode = {
+            expanded: false,
+            folder: true,
+            key: learningLang,
+            title: title,
+            data: {
+                language_original: learningLang,
+                language_translation: ""
+            },
+            children: []
+        };
+
+        treeData.children.push(parentNode);
+        result.createdParent = true;
+    } else {
+        parentNode.children = parentNode.children || [];
+    }
+
+    if (!nativeLang) {
+        return result;
+    }
+
+    let pairNode = parentNode.children.find(child => {
+        const data = child.data || {};
+        return data.language_original === learningLang && data.language_translation === nativeLang;
+    });
+
+    if (!pairNode) {
+        pairNode = {
+            expanded: false,
+            folder: true,
+            key: `${learningLang}${nativeLang}`,
+            title: `${learningLang}=>${nativeLang}`,
+            data: {
+                language_original: learningLang,
+                language_translation: nativeLang,
+                dictations: []
+            },
+            children: []
+        };
+
+        parentNode.children.push(pairNode);
+        result.createdPair = true;
+    } else {
+        pairNode.data = pairNode.data || {};
+        pairNode.data.dictations = pairNode.data.dictations || [];
+        pairNode.children = pairNode.children || [];
+    }
+
+    return result;
+}
+
+// Сохраняем языковую пару на сервере (idempotent)
+async function persistLanguagePair(learningLang, nativeLang) {
+    if (!learningLang || !nativeLang) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/categories/ensure-language-pair', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                language_original: learningLang,
+                language_translation: nativeLang
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('🔄 Синхронизация языковой пары с сервером:', data);
+    } catch (error) {
+        console.error('❌ Не удалось синхронизировать языковую пару с сервером', error);
+    }
+}
+
 
 
 console.log('✅ script_index.js загружен');
@@ -410,6 +515,12 @@ function initFancyTree() {
 
     console.log("🗣️ Языки для дерева:", language_original, "→", language_translation);
 
+    const ensureResult = ensureLanguageNodesLocally(allCategoriesData, language_original, language_translation);
+    if (ensureResult.createdParent || ensureResult.createdPair) {
+        console.log('✅ Автоматически добавлены отсутствующие узлы языковой пары для дерева');
+        persistLanguagePair(language_original, language_translation);
+    }
+
     try {
         // Фильтруем данные
         const filteredData = filterTreeData(allCategoriesData, currentLanguageFilter);
@@ -652,6 +763,14 @@ function updateLanguages(newLanguages) {
             // Сохраняем learningLanguages из селектора
             if (newLanguages.learningLanguages) {
                 window.USER_LANGUAGE_DATA.learningLanguages = newLanguages.learningLanguages;
+            }
+        }
+
+        if (allCategoriesData) {
+            const ensureResult = ensureLanguageNodesLocally(allCategoriesData, language_original, language_translation);
+            if (ensureResult.createdParent || ensureResult.createdPair) {
+                console.log('✅ Автоматически добавлены узлы для новой языковой пары');
+                persistLanguagePair(language_original, language_translation);
             }
         }
 

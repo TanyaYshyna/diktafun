@@ -21,6 +21,7 @@ import numpy
 from PIL import Image
 
 # from helpers.user_helpers import get_safe_email
+from helpers.language_data import load_language_data
 from helpers.user_helpers import get_safe_email_from_token, get_current_user 
 from routes.index import get_cover_url_for_id
 
@@ -208,7 +209,8 @@ def dictation_editor(dictation_id, language_original, language_translation):
         safe_email=safe_email,
             # edit_mode удален - определяется по dictation_id
         category_info=category_info,
-        cover_url=cover_url
+        cover_url=cover_url,
+        language_data=load_language_data()
     )
 
 
@@ -258,7 +260,8 @@ def dictation_editor_new():
                 "title": "",
                 "path": ""
             },
-            cover_url=cover_url
+            cover_url=cover_url,
+            language_data=load_language_data()
         )
         
     except Exception as e:

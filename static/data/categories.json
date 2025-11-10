@@ -246,6 +246,30 @@
           ]
         }
       ]
+    },
+    {
+      "expanded": false,
+      "folder": true,
+      "key": "de",
+      "title": "German",
+      "data": {
+        "language_original": "de",
+        "language_translation": ""
+      },
+      "children": [
+        {
+          "expanded": false,
+          "folder": true,
+          "key": "deru",
+          "title": "de=>ru",
+          "data": {
+            "language_original": "de",
+            "language_translation": "ru",
+            "dictations": []
+          },
+          "children": []
+        }
+      ]
     }
   ]
 }

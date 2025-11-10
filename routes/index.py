@@ -1,12 +1,82 @@
 import datetime
 import json
 import os
-from flask import Blueprint, jsonify, render_template
-from flask import current_app
+from flask import Blueprint, jsonify, render_template, request, current_app
+from helpers.language_data import load_language_data, get_language_name
 
 index_bp = Blueprint('index', __name__)
 
 DATA_DIR = os.path.join("static", "data") 
+
+
+# Вспомогательная функция для получения читабельного названия языка
+def get_language_title(lang_code: str) -> str:
+    return get_language_name(lang_code)
+
+
+# Обеспечивает наличие родительского и дочернего узла для пары языков
+def ensure_language_pair_nodes(categories_data: dict, language_original: str, language_translation: str):
+    if not categories_data:
+        categories_data = {}
+
+    categories_data.setdefault("children", [])
+
+    created_parent = False
+    created_pair = False
+
+    parent_node = None
+    for child in categories_data["children"]:
+        data = child.get("data", {})
+        if data.get("language_original") == language_original and not data.get("language_translation"):
+            parent_node = child
+            break
+
+    if not parent_node:
+        parent_node = {
+            "expanded": False,
+            "folder": True,
+            "key": language_original,
+            "title": get_language_title(language_original),
+            "data": {
+                "language_original": language_original,
+                "language_translation": ""
+            },
+            "children": []
+        }
+        categories_data["children"].append(parent_node)
+        created_parent = True
+    else:
+        parent_node.setdefault("children", [])
+
+    if language_translation:
+        pair_node = None
+        for child in parent_node["children"]:
+            data = child.get("data", {})
+            if data.get("language_original") == language_original and data.get("language_translation") == language_translation:
+                pair_node = child
+                break
+
+        if not pair_node:
+            pair_node = {
+                "expanded": False,
+                "folder": True,
+                "key": f"{language_original}{language_translation}",
+                "title": f"{language_original}=>{language_translation}",
+                "data": {
+                    "language_original": language_original,
+                    "language_translation": language_translation,
+                    "dictations": []
+                },
+                "children": []
+            }
+            parent_node["children"].append(pair_node)
+            created_pair = True
+        else:
+            pair_node.setdefault("data", {})
+            pair_node["data"].setdefault("dictations", [])
+            pair_node.setdefault("children", [])
+
+    return created_parent, created_pair
 
 
 # Получаем путь к директории, где находится index.py
@@ -27,19 +97,66 @@ def load_categories():
         return {"children": []}
 
 
+@index_bp.route("/api/categories/ensure-language-pair", methods=["POST"])
+def ensure_language_pair():
+    payload = request.get_json(silent=True) or {}
+    language_original = (payload.get("language_original") or "").strip().lower()
+    language_translation = (payload.get("language_translation") or "").strip().lower()
+
+    if not language_original:
+        return jsonify({"success": False, "error": "language_original is required"}), 400
+
+    if not language_translation:
+        return jsonify({"success": False, "error": "language_translation is required"}), 400
+
+    try:
+        with open(categories_path, 'r', encoding='utf-8') as f:
+            categories_data = json.load(f)
+    except Exception as e:
+        print(f"❌ Ошибка загрузки categories.json: {e}")
+        return jsonify({"success": False, "error": "Failed to load categories.json"}), 500
+
+    created_parent, created_pair = ensure_language_pair_nodes(
+        categories_data,
+        language_original,
+        language_translation
+    )
+
+    if created_parent or created_pair:
+        try:
+            with open(categories_path, 'w', encoding='utf-8') as f:
+                json.dump(categories_data, f, ensure_ascii=False, indent=2)
+            print(f"✅ Добавлена языковая пара {language_original} => {language_translation} в categories.json")
+        except Exception as e:
+            print(f"❌ Ошибка сохранения categories.json: {e}")
+            return jsonify({"success": False, "error": "Failed to save categories.json"}), 500
+
+    return jsonify({
+        "success": True,
+        "created_parent": created_parent,
+        "created_pair": created_pair
+    })
+
+
 @index_bp.route('/')
 def index():
     try:
         categories_data = load_categories()
 
-        return render_template('index.html', 
-                    categories_data=categories_data)
+        return render_template(
+            'index.html',
+            categories_data=categories_data,
+            language_data=load_language_data()
+        )
                     
     except Exception as e:
         print(f"❌ Ошибка на главной странице: {e}")
         categories_data = load_categories()
-        return render_template('index.html', 
-                             categories_data=categories_data)
+        return render_template(
+            'index.html',
+            categories_data=categories_data,
+            language_data=load_language_data()
+        )
 
 
 

@@ -636,6 +636,9 @@
 
     <!-- Добавляем скрипты LanguageManager и LanguageSelector -->
     <script src="{{ url_for('static', filename='js/audio_manager.js') }}"></script>
+    <script id="language-data" type="application/json">
+    {{ language_data | tojson | safe }}
+    </script>
     <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/language_selector.js') }}"></script>
 
