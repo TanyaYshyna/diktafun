@@ -49,7 +49,8 @@
                 <div id="header-language-selector"></div> <!-- ← ЭТОТ ЭЛЕМЕНТ -->
                 <!-- Выпадающий список -->
                 <div class="tooltip-wrapper">
-                    <select id="languageFilter">
+                    <div id="languageFilterControl"></div>
+                    <select id="languageFilter" style="display: none;">
                         <option value="learning_to_native">Изучаемый ⇒ Родной</option>
                         <option value="learning_only">Только изучаемый</option>
                         <option value="all">Все языки</option>
@@ -67,6 +68,9 @@
                 </div>
             </div>
             <div class="buttons-row-left-right">
+                <button id="importDictationBtn" title="Загрузить диктант из файла">
+                    <i data-lucide="upload-cloud"></i>
+                </button>
                 <button id="newDictationBtn" onclick="newDictation()" title="Создать документ">
                     <i data-lucide="file-plus-2"></i>
                 </button>
@@ -80,7 +84,7 @@
             </div>
             <div id="resizer"></div>
             <div id="rightPanel">
-                <div id="text_tree_branch">ветка дерева</div>
+                <div id="text_tree_branch" class="path-label">ветка дерева</div>
                 <div id="content">
                     <!-- <div id="dictationList"></div> -->
                     <div id="dictationsGrid" class="shorts-grid"></div>
@@ -160,6 +164,8 @@
         //     }
         // });
     </script>
+
+    <input type="file" id="dictationImportInput" accept=".zip" style="display:none;">
 </body>
 
 </html>

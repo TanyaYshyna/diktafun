@@ -34,20 +34,47 @@ def api_register():
     email = data.get('email')
     password = data.get('password')
     username = data.get('username')
-    
+    native_language = (data.get('native_language') or 'ru').lower()
+    learning_language = (data.get('learning_language') or 'en').lower()
+
+    if not username or not email or not password:
+        return jsonify({'error': 'Email, имя пользователя и пароль обязательны'}), 400
+
     # Проверяем, существует ли пользователь
     if load_user_info(email):
         return jsonify({'error': 'User already exists'}), 400
-        
+
+    language_data = load_language_data()
+    available_languages = set(language_data.keys())
+
+    if native_language not in available_languages:
+        native_language = 'ru' if 'ru' in available_languages else next(iter(available_languages), 'ru')
+
+    if learning_language not in available_languages:
+        learning_language = 'en' if 'en' in available_languages else native_language
+
+    if native_language == learning_language:
+        return jsonify({'error': 'Native and learning languages must be different'}), 400
+
+    learning_languages = data.get('learning_languages')
+    if not isinstance(learning_languages, list) or not learning_languages:
+        learning_languages = [learning_language]
+
+    learning_languages = [lang.lower() for lang in learning_languages if isinstance(lang, str)]
+
+    if learning_language not in learning_languages:
+        learning_languages.append(learning_language)
+
     # Создаем пользователя
     user_data = {
         'id': generate_user_id(),
         'username': username,
         'email': email,
         'password': password,  # 🚨 В будущем нужно хэшировать!
-        'native_language': data.get('native_language', 'ru'),
-        'learning_language': data.get('learning_language', 'en'),
-        'learning_languages': data.get('learning_languages', ['en']),
+        'native_language': native_language,
+        'learning_language': learning_language,
+        'learning_languages': learning_languages,
+        'current_learning': learning_language,
         'streak_days': 0,
         'created_at': datetime.now().isoformat()
     }
@@ -155,16 +182,7 @@ def login():
 @user_bp.route('/register')
 def register():
     """Страница регистрации через JWT (заглушка)"""
-    return """
-    <!DOCTYPE html>
-    <html>
-    <body>
-        <h2>Регистрация</h2>
-        <p>Регистрация будет доступна в следующем обновлении</p>
-        <a href="/user/login">Назад к входу</a>
-    </body>
-    </html>
-    """
+    return render_template('user_register.html', language_data=load_language_data())
 
 @user_bp.route('/profile')
 def profile_page():

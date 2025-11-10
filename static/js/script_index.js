@@ -14,6 +14,68 @@ let language_original = "en";
 let language_translation = "ru";
 let selectedCategory = null;
 let selectedCategoryForDictation = null; // Сохраняем категорию для создания диктанта
+let languageFilterUI = null;
+let languageFilterOutsideHandler = null;
+
+function getNodeLanguageContext(node) {
+    let current = node;
+    while (current) {
+        const data = current.data || {};
+        if (data.language_original && data.language_translation) {
+            return {
+                language_original: data.language_original,
+                language_translation: data.language_translation
+            };
+        }
+        current = current.parent;
+    }
+    return null;
+}
+
+function canAddCategoryChild(node) {
+    if (!node || node.isRoot()) {
+        return false;
+    }
+    const context = getNodeLanguageContext(node);
+    return !!(context && context.language_translation);
+}
+
+async function fetchCategoriesFromServer(activeKey = null) {
+    try {
+        const response = await fetch('/api/categories/tree');
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
+        }
+        allCategoriesData = await response.json();
+        if (activeKey && categoriesTree) {
+            const node = categoriesTree.getNodeByKey(activeKey);
+            if (node) {
+                selectedCategory = node;
+            }
+        }
+        return true;
+    } catch (error) {
+        console.error('❌ Не удалось обновить категории с сервера:', error);
+        return false;
+    }
+}
+
+async function renameCategoryOnServer(key, title) {
+    const response = await fetch(`/api/categories/${encodeURIComponent(key)}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title })
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `Server returned ${response.status}`);
+    }
+
+    return result.node;
+}
 
 // Убеждаемся, что в данных категорий есть родительский и дочерний узел для выбранной языковой пары
 function ensureLanguageNodesLocally(treeData, learningLang, nativeLang) {
@@ -278,15 +340,57 @@ function createCardDOM(d) {
     meta.textContent = `Язык: ${langLeft} ⇒ ${langRight} • Уровень: ${d.level || '—'}`;
     card.appendChild(meta);
 
-    // Кнопка-иконка редактирования (ссылка)
-    const edit = document.createElement('a');
-    edit.className = 'short-edit';
-    edit.href = editUrl;
-    edit.title = 'Редактировать';
-    edit.setAttribute('aria-label', 'Редактировать');
-    // lucide-иконка
-    edit.innerHTML = `<i data-lucide="pencil-ruler"></i>`;
-    card.appendChild(edit);
+    const actions = document.createElement('div');
+    actions.className = 'short-actions';
+
+    const editBtn = document.createElement('a');
+    editBtn.className = 'short-action-btn';
+    editBtn.href = editUrl;
+    editBtn.title = 'Редактировать';
+    editBtn.setAttribute('aria-label', 'Редактировать');
+    editBtn.innerHTML = `<i data-lucide="pencil-ruler"></i>`;
+    actions.appendChild(editBtn);
+
+    const moveBtn = document.createElement('button');
+    moveBtn.type = 'button';
+    moveBtn.className = 'short-action-btn';
+    moveBtn.title = 'Перенести в другую категорию';
+    moveBtn.setAttribute('aria-label', 'Перенести в другую категорию');
+    moveBtn.innerHTML = `<i data-lucide="folder-symlink"></i>`;
+    moveBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openMoveDictationModal(d);
+    });
+    actions.appendChild(moveBtn);
+
+    const downloadBtn = document.createElement('button');
+    downloadBtn.type = 'button';
+    downloadBtn.className = 'short-action-btn';
+    downloadBtn.title = 'Скачать диктант';
+    downloadBtn.setAttribute('aria-label', 'Скачать диктант');
+    downloadBtn.innerHTML = `<i data-lucide="download"></i>`;
+    downloadBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        exportDictation(d);
+    });
+    actions.appendChild(downloadBtn);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'short-action-btn danger';
+    deleteBtn.title = 'Удалить диктант';
+    deleteBtn.setAttribute('aria-label', 'Удалить диктант');
+    deleteBtn.innerHTML = `<i data-lucide="trash-2"></i>`;
+    deleteBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        deleteDictationWithConfirmation(d);
+    });
+    actions.appendChild(deleteBtn);
+
+    card.appendChild(actions);
 
     return card;
 }
@@ -480,6 +584,100 @@ function loadDictations() {
 // Глобальная ссылка на дерево
 let categoriesTree = null;
 let allCategoriesData = null;
+let lastAppliedIconHtml = '';
+
+function chooseLucideIcon(name, fallback = 'folder') {
+    if (typeof lucide !== 'undefined' && lucide.icons && lucide.icons[name]) {
+        return name;
+    }
+    return fallback;
+}
+
+function getLucideIconSvg(iconName, size = 18) {
+    const html = `<span class="tree-icon" data-lucide="${iconName}" aria-hidden="true" style="display:inline-flex;width:${size}px;height:${size}px;"></span>`;
+    lastAppliedIconHtml = html;
+    return html;
+}
+
+function nodeHasChildren(node) {
+    if (!node) return false;
+    if (node.children && node.children.length > 0) return true;
+    if (node.lazy && !node.children) return true;
+    return false;
+}
+
+function getTreeNodeIconName(node) {
+    if (!node) {
+        return chooseLucideIcon('file-text', 'folder');
+    }
+
+    if (node.isRoot && node.isRoot()) {
+        return chooseLucideIcon('library', 'folder');
+    }
+
+    const data = node.data || {};
+    const hasOriginal = !!data.language_original;
+    const hasTranslation = !!data.language_translation;
+
+    if (hasOriginal && !hasTranslation) {
+        return chooseLucideIcon('languages', 'book-open');
+    }
+
+    if (hasOriginal && hasTranslation) {
+        const closedIcon = chooseLucideIcon('folder-symlink', 'folder');
+        const openIcon = chooseLucideIcon('folder-open', 'folder');
+        return node.isExpanded() ? openIcon : closedIcon;
+    }
+
+    if (node.folder !== false || nodeHasChildren(node)) {
+        const closedIcon = chooseLucideIcon('folder', 'folder');
+        const openIcon = chooseLucideIcon('folder-open', 'folder');
+        return node.isExpanded() ? openIcon : closedIcon;
+    }
+
+    return chooseLucideIcon('file-text', 'file');
+}
+
+function updateFancyTreeNodeIcons(node) {
+    if (!node || !node.span) {
+        return;
+    }
+
+    const span = node.span;
+    const expander = span.querySelector('.fancytree-expander');
+    const iconSpan = span.querySelector('.fancytree-icon');
+
+    if (expander) {
+        const hasChildren = nodeHasChildren(node);
+        if (hasChildren) {
+            const iconName = node.isExpanded()
+                ? chooseLucideIcon('chevron-down', 'chevron-down')
+                : chooseLucideIcon('chevron-right', 'chevron-right');
+            expander.innerHTML = getLucideIconSvg(iconName, 16);
+            expander.classList.remove('is-empty');
+        } else {
+            expander.innerHTML = '';
+            expander.classList.add('is-empty');
+        }
+    }
+
+    if (iconSpan) {
+        const iconName = getTreeNodeIconName(node);
+        iconSpan.innerHTML = getLucideIconSvg(iconName, 16);
+    }
+
+    if (typeof lucide !== 'undefined') {
+        const icons = span.querySelectorAll('[data-lucide]');
+        if (icons.length) {
+            lucide.createIcons({ elements: icons });
+        }
+    }
+}
+
+function refreshFancyTreeIcons(tree) {
+    if (!tree) return;
+    tree.visit(updateFancyTreeNodeIcons);
+}
 
 // Функция для загрузки данных категорий из HTML
 function loadCategoriesData() {
@@ -530,6 +728,53 @@ function initFancyTree() {
             extensions: ["dnd5", "edit"],
             source: filteredData,
             lazy: false,
+            renderNode: function (event, data) {
+                updateFancyTreeNodeIcons(data.node);
+            },
+            renderComplete: function (event, data) {
+                refreshFancyTreeIcons(data.tree);
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            },
+            edit: {
+                triggerStart: ["f2", "dblclick", "shift+click"],
+                beforeClose: function (event, data) {
+                    if (data.save) {
+                        const value = data.input.val().trim();
+                        if (!value) {
+                            alert("Название категории не может быть пустым");
+                            data.input.focus();
+                            return false;
+                        }
+                    }
+                },
+                close: function (event, data) {
+                    if (!data.save) {
+                        data.node.setTitle(data.orgTitle);
+                        return;
+                    }
+
+                    const newTitle = data.input.val().trim();
+                    if (newTitle === data.orgTitle) {
+                        data.node.setTitle(newTitle);
+                        return;
+                    }
+
+                    renameCategoryOnServer(data.node.key, newTitle)
+                        .then(async () => {
+                            data.node.setTitle(newTitle);
+                            selectedCategory = data.node;
+                            await fetchCategoriesFromServer(data.node.key);
+                            await reloadTreeWithFilter(data.node.key);
+                        })
+                        .catch(error => {
+                            console.error("❌ Ошибка переименования категории:", error);
+                            data.node.setTitle(data.orgTitle);
+                            alert(`Не удалось переименовать категорию: ${error.message || error}`);
+                        });
+                }
+            },
             init: function (event, data) {
                 categoriesTree = data.tree;
                 console.log("✅ FancyTree инициализирован");
@@ -538,6 +783,14 @@ function initFancyTree() {
                 categoriesTree.visit(function (node) {
                     node.setExpanded(true);
                 });
+
+                refreshFancyTreeIcons(categoriesTree);
+                if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+        if (lastAppliedIconHtml) {
+            lucide.createIcons();
+        }
+                }
             },
             activate: function (event, data) {
                 const node = data.node;
@@ -585,37 +838,94 @@ function initFancyTree() {
 
 
 function setupTreeButtons() {
-    // Кнопка добавления
-    $('#btnAddNode').click(function () {
+    $('#btnAddNode').off('click').on('click', async function () {
         if (!categoriesTree) {
             console.warn("Дерево не инициализировано");
             return;
         }
 
-        const activeNode = categoriesTree.getActiveNode() || categoriesTree.getRootNode();
-        const newNode = activeNode.addChildren({
-            title: "Новая категория",
-            key: "node_" + Date.now(),
-            folder: true
-        });
+        const activeNode = categoriesTree.getActiveNode();
 
-        activeNode.setExpanded(true);
-        newNode.setActive(true);
-        newNode.editStart();
-    });
-
-    // Кнопка удаления
-    $('#btnDeleteNode').click(function () {
-        if (!categoriesTree) return;
-
-        const node = categoriesTree.getActiveNode();
-        if (!node || node.isRoot()) {
-            alert("Нельзя удалить корневой элемент");
+        if (!activeNode) {
+            alert("Сначала выберите категорию");
+            highlightTreeContainer();
             return;
         }
 
-        if (confirm(`Удалить категорию "${node.title}"?`)) {
+        if (!canAddCategoryChild(activeNode)) {
+            alert("Новые папки можно создавать только внутри выбранной языковой пары");
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/categories/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    parent_key: activeNode.key,
+                    title: "Новая категория"
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || `Server returned ${response.status}`);
+            }
+
+            await fetchCategoriesFromServer(activeNode.key);
+
+            const newNode = activeNode.addChildren(result.node);
+            activeNode.setExpanded(true);
+
+            if (newNode) {
+                newNode.setActive(true);
+                selectedCategory = newNode;
+                newNode.editStart();
+            }
+        } catch (error) {
+            console.error("❌ Ошибка создания категории:", error);
+            alert(`Не удалось создать категорию: ${error.message || error}`);
+        }
+    });
+
+    $('#btnDeleteNode').off('click').on('click', async function () {
+        if (!categoriesTree) {
+            return;
+        }
+
+        const node = categoriesTree.getActiveNode();
+        if (!node || node.isRoot()) {
+            alert("Нельзя удалить этот элемент");
+            return;
+        }
+
+        const parentNode = node.getParent();
+        const confirmMessage = `Удалить категорию "${node.title}"? Все вложенные папки будут удалены.`;
+
+        if (!window.confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/categories/${encodeURIComponent(node.key)}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || `Server returned ${response.status}`);
+            }
+
+            const parentKey = parentNode ? parentNode.key : null;
             node.remove();
+
+            await fetchCategoriesFromServer(parentKey);
+            await reloadTreeWithFilter(parentKey);
+        } catch (error) {
+            console.error("❌ Ошибка удаления категории:", error);
+            alert(`Не удалось удалить категорию: ${error.message || error}`);
         }
     });
 }
@@ -677,68 +987,111 @@ function getFlagImg(lang) {
 
 let currentLanguageFilter = 'learning_to_native';
 
+function setLanguageFilter(value, { triggerReload = true, forceReload = false } = {}) {
+    if (!value) {
+        return;
+    }
+
+    const previousValue = currentLanguageFilter;
+    currentLanguageFilter = value;
+
+    const hiddenSelect = document.getElementById('languageFilter');
+    if (hiddenSelect) {
+        hiddenSelect.value = value;
+    }
+
+    if (languageFilterUI && typeof languageFilterUI.update === 'function') {
+        languageFilterUI.update(value);
+    }
+
+    if (triggerReload && (forceReload || previousValue !== value)) {
+        reloadTreeWithFilter();
+    }
+}
+
 // Функция для фильтрации данных JSON перед загрузкой в дерево
 function filterTreeData(treeData, filter) {
-    const learningLang = language_original; // Используем глобальные переменные
-    const nativeLang = language_translation;
+    if (!treeData) {
+        return { children: [] };
+    }
+
+    const learningLang = (language_original || '').toLowerCase();
+    const nativeLang = (language_translation || '').toLowerCase();
 
     console.log('Фильтрация данных дерева:', filter, learningLang, '→', nativeLang);
 
-    if (filter === 'all') {
-        return treeData;
-    }
-
-    // Создаем копию данных для фильтрации
     const filteredData = JSON.parse(JSON.stringify(treeData));
 
-    // Фильтруем детей корневого элемента (уровень 1)
-    if (filteredData.children) {
-        filteredData.children = filteredData.children.filter(rootChild => {
-            const rootLang = rootChild.data?.language_original;
+    if (!filter || filter === 'all') {
+        return filteredData;
+    }
 
-            if (filter === 'learning_only') {
-                // Оставляем только изучаемый язык
-                return rootLang === learningLang;
-            }
-            else if (filter === 'learning_to_native') {
-                // Оставляем изучаемый язык и фильтруем его детей
-                if (rootLang === learningLang) {
-                    if (rootChild.children) {
-                        rootChild.children = rootChild.children.filter(secondLevelChild => {
-                            const secondLang = secondLevelChild.data?.language_translation;
-                            return secondLang === nativeLang;
-                        });
-                    }
-                    return rootChild.children && rootChild.children.length > 0;
-                }
-                return false;
-            }
+    function nodeMatchesLearning(node) {
+        const data = node.data || {};
+        const original = (data.language_original || '').toLowerCase();
+        if (original && original === learningLang) {
             return true;
-        });
+        }
+        return (node.children || []).some(child => nodeMatchesLearning(child));
+    }
+
+    if (filter === 'learning_only') {
+        filteredData.children = (filteredData.children || []).filter(child => nodeMatchesLearning(child));
+        return filteredData;
+    }
+
+    if (filter === 'learning_to_native') {
+        filteredData.children = (filteredData.children || []).map(rootChild => {
+            if (!nodeMatchesLearning(rootChild)) {
+                return null;
+            }
+            rootChild.children = (rootChild.children || []).filter(secondLevelChild => {
+                const data = secondLevelChild.data || {};
+                const original = (data.language_original || '').toLowerCase();
+                const translation = (data.language_translation || '').toLowerCase();
+                return original === learningLang && translation === nativeLang;
+            });
+            return rootChild.children && rootChild.children.length > 0 ? rootChild : null;
+        }).filter(Boolean);
+
+        return filteredData;
     }
 
     return filteredData;
 }
 
 // Переинициализация дерева с отфильтрованными данными
-function reloadTreeWithFilter() {
+function reloadTreeWithFilter(activeKey = null) {
     if (!categoriesTree || !allCategoriesData) {
         console.log('⚠️ Дерево или данные категорий не загружены');
-        return;
+        return Promise.resolve();
     }
 
     console.log('🔄 Перезагрузка дерева с фильтром:', currentLanguageFilter);
 
-    // Фильтруем данные
     const filteredData = filterTreeData(allCategoriesData, currentLanguageFilter);
 
-    // Перезагружаем дерево
-    categoriesTree.reload(filteredData).then(() => {
-        // Разворачиваем все узлы после загрузки
+    return categoriesTree.reload(filteredData).then(() => {
         categoriesTree.visit(node => {
             node.setExpanded(true);
         });
+
+        refreshFancyTreeIcons(categoriesTree);
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        if (activeKey) {
+            const nodeToActivate = categoriesTree.getNodeByKey(activeKey);
+            if (nodeToActivate) {
+                nodeToActivate.setActive(true);
+                selectedCategory = nodeToActivate;
+            }
+        }
+
         console.log('✅ Дерево перезагружено с фильтром');
+    }).catch(error => {
+        console.error('❌ Ошибка при перезагрузке дерева:', error);
     });
 }
 
@@ -810,31 +1163,120 @@ function updateLanguages(newLanguages) {
 
 // Новая функция для применения фильтра
 function applyTreeFilter(filter) {
-    if (!categoriesTree) {
-        console.log('Дерево еще не инициализировано, откладываем фильтрацию');
-        return;
-    }
-
     console.log('Применение фильтра к дереву:', filter);
-    reloadTreeWithFilter();
+
+    const treeReady = !!categoriesTree;
+    setLanguageFilter(filter, { triggerReload: treeReady });
+
+    if (!treeReady) {
+        console.log('Дерево еще не инициализировано, откладываем фильтрацию');
+    }
 }
 
 // Функция инициализации фильтра
 function initializeLanguageFilter() {
     const filterSelect = document.getElementById('languageFilter');
-    if (!filterSelect) return;
+    const controlContainer = document.getElementById('languageFilterControl');
 
-    filterSelect.value = currentLanguageFilter;
+    if (!filterSelect || !controlContainer) {
+        return;
+    }
 
-    filterSelect.addEventListener('change', function (e) {
-        currentLanguageFilter = e.target.value;
-        console.log('🔄 Пользователь выбрал фильтр:', currentLanguageFilter);
+    const options = Array.from(filterSelect.options).map(option => ({
+        value: option.value,
+        label: option.textContent
+    }));
 
-        // Только при РУЧНОМ изменении перезагружаем
-        reloadTreeWithFilter();
+    controlContainer.innerHTML = '';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'custom-speed-select language-filter-select';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'speed-select-button';
+    button.innerHTML = `
+        <span class="language-filter-icon" data-lucide="filter"></span>
+        <span class="speed-current-label"></span>
+        <span class="speed-arrow" data-lucide="chevron-up"></span>
+    `;
+
+    const currentLabel = button.querySelector('.speed-current-label');
+
+    const list = document.createElement('ul');
+    list.className = 'speed-options';
+
+    const optionElements = options.map(option => {
+        const item = document.createElement('li');
+        item.dataset.value = option.value;
+        item.textContent = option.label;
+        list.appendChild(item);
+        return item;
     });
 
-    // ❌ НЕТ автоматической перезагрузки при инициализации
+    wrapper.appendChild(button);
+    wrapper.appendChild(list);
+    controlContainer.appendChild(wrapper);
+
+    const closeDropdown = () => {
+        wrapper.classList.remove('open');
+    };
+
+    languageFilterUI = {
+        update(value) {
+            optionElements.forEach(item => {
+                item.classList.toggle('selected', item.dataset.value === value);
+            });
+            const currentOption = options.find(option => option.value === value);
+            currentLabel.textContent = currentOption ? currentOption.label : '';
+        },
+        close: closeDropdown
+    };
+
+    const applySelection = (value) => {
+        setLanguageFilter(value);
+        closeDropdown();
+    };
+
+    optionElements.forEach(item => {
+        item.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            applySelection(item.dataset.value);
+        });
+    });
+
+    button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        wrapper.classList.toggle('open');
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+
+    if (languageFilterOutsideHandler) {
+        document.removeEventListener('click', languageFilterOutsideHandler);
+    }
+
+    languageFilterOutsideHandler = (event) => {
+        if (!wrapper.contains(event.target)) {
+            closeDropdown();
+        }
+    };
+
+    document.addEventListener('click', languageFilterOutsideHandler);
+
+    filterSelect.addEventListener('change', (event) => {
+        setLanguageFilter(event.target.value);
+    });
+
+    const initialValue = filterSelect.value || currentLanguageFilter || 'learning_to_native';
+    setLanguageFilter(initialValue, { triggerReload: false });
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 function fitFancyTreeHeight() {
@@ -909,6 +1351,357 @@ function highlightTreeContainer() {
     }
 }
 
+function findPairNode(node) {
+    let current = node;
+    while (current) {
+        const data = current.data || {};
+        if (data.language_original && data.language_translation) {
+            const parent = current.getParent ? current.getParent() : current.parent;
+            const parentData = parent ? (parent.data || {}) : {};
+            const parentIsRoot = !parent || (typeof parent.isRoot === 'function' ? parent.isRoot() : false);
+            const parentIsLanguageRoot =
+                parent &&
+                parentData.language_original === data.language_original &&
+                !parentData.language_translation;
+
+            if (parentIsRoot || parentIsLanguageRoot) {
+                return current;
+            }
+        }
+        current = current.getParent ? current.getParent() : current.parent;
+    }
+    return null;
+}
+
+function collectPairNodes(pairNode) {
+    if (!pairNode) {
+        return [];
+    }
+
+    const pairData = pairNode.data || {};
+    const result = [];
+
+    function traverse(node) {
+        if (!node) {
+            return;
+        }
+
+        const data = node.data || {};
+        const matchesPair =
+            data.language_original === pairData.language_original &&
+            data.language_translation === pairData.language_translation;
+
+        if (node === pairNode || matchesPair) {
+            result.push(node);
+            const children = node.children || [];
+            children.forEach(child => traverse(child));
+        } else {
+            const children = node.children || [];
+            children.forEach(child => traverse(child));
+        }
+    }
+
+    traverse(pairNode);
+    return result;
+}
+
+function getRelativePath(node, rootNode) {
+    const parts = [];
+    let current = node;
+    while (current && current !== rootNode && current.title !== 'root') {
+        parts.unshift(current.title);
+        current = current.parent;
+    }
+    if (rootNode) {
+        parts.unshift(rootNode.title);
+    }
+    return parts.join(' / ');
+}
+
+async function refreshDictationsForActiveNode() {
+    if (!categoriesTree) {
+        return;
+    }
+
+    const activeNode = categoriesTree.getActiveNode();
+    if (!activeNode) {
+        renderDictationsGrid([]);
+        return;
+    }
+
+    const ids = (activeNode.data && activeNode.data.dictations) || [];
+    const filteredDictations = allDictations.filter(d => ids.includes(d.id));
+    renderDictationsGrid(filteredDictations);
+    updateUIForSelectedNode(activeNode);
+}
+
+async function moveDictation(dictationId, sourceKey, targetKey) {
+    const response = await fetch('/api/dictations/move', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            dictation_id: dictationId,
+            source_category_key: sourceKey,
+            target_category_key: targetKey
+        })
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `Server returned ${response.status}`);
+    }
+
+    await fetchCategoriesFromServer(targetKey);
+    await reloadTreeWithFilter(targetKey);
+    await refreshDictationsForActiveNode();
+}
+
+function openMoveDictationModal(dictation) {
+    if (!categoriesTree) {
+        return;
+    }
+
+    const activeNode = categoriesTree.getActiveNode();
+    if (!activeNode) {
+        alert('Сначала выберите категорию в дереве');
+        highlightTreeContainer();
+        return;
+    }
+
+    const pairNode = findPairNode(activeNode);
+    if (!pairNode) {
+        alert('Перенос возможен только внутри выбранной языковой пары');
+        return;
+    }
+
+    const options = collectPairNodes(pairNode).map(node => ({
+        key: node.key,
+        label: getRelativePath(node, pairNode)
+    }));
+
+    if (!options.length) {
+        alert('Нет доступных категорий для переноса');
+        return;
+    }
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-window';
+
+    const titleEl = document.createElement('h3');
+    titleEl.textContent = 'Перенос диктанта';
+    modal.appendChild(titleEl);
+
+    const body = document.createElement('div');
+    body.className = 'modal-body';
+
+    const info = document.createElement('div');
+    const infoTitle = document.createElement('strong');
+    infoTitle.textContent = dictation.title || 'Без названия';
+    info.appendChild(infoTitle);
+    body.appendChild(info);
+
+    const label = document.createElement('label');
+    label.textContent = 'Целевая категория';
+
+    const select = document.createElement('select');
+    options.forEach(optionData => {
+        const option = document.createElement('option');
+        option.value = optionData.key;
+        option.textContent = optionData.label;
+        if (optionData.key === activeNode.key) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+
+    label.appendChild(select);
+    body.appendChild(label);
+
+    modal.appendChild(body);
+
+    const actions = document.createElement('div');
+    actions.className = 'modal-actions';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-secondary';
+    cancelBtn.textContent = 'Отмена';
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'btn-primary';
+    confirmBtn.textContent = 'Перенести';
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(confirmBtn);
+    modal.appendChild(actions);
+
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+
+    function closeModal() {
+        if (backdrop.parentNode) {
+            backdrop.parentNode.removeChild(backdrop);
+        }
+    }
+
+    cancelBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', (event) => {
+        if (event.target === backdrop) {
+            closeModal();
+        }
+    });
+
+    confirmBtn.addEventListener('click', async () => {
+        const targetKey = select.value;
+        if (!targetKey) {
+            alert('Выберите целевую категорию');
+            return;
+        }
+
+        if (targetKey === activeNode.key) {
+            closeModal();
+            return;
+        }
+
+        try {
+            await moveDictation(dictation.id, activeNode.key, targetKey);
+            closeModal();
+        } catch (error) {
+            console.error('❌ Ошибка переноса диктанта:', error);
+            alert(`Не удалось перенести диктант: ${error.message || error}`);
+        }
+    });
+}
+
+async function deleteDictationWithConfirmation(dictation) {
+    const title = dictation.title || dictation.id;
+    if (!window.confirm(`Удалить диктант "${title}"? Действие необратимо.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/dictations/${encodeURIComponent(dictation.id)}`, {
+            method: 'DELETE'
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || `Server returned ${response.status}`);
+        }
+
+        allDictations = allDictations.filter(d => d.id !== dictation.id);
+
+        const activeNode = categoriesTree ? categoriesTree.getActiveNode() : null;
+        const activeKey = activeNode ? activeNode.key : null;
+
+        await fetchCategoriesFromServer(activeKey);
+        await reloadTreeWithFilter(activeKey);
+        await refreshDictationsForActiveNode();
+    } catch (error) {
+        console.error('❌ Ошибка удаления диктанта:', error);
+        alert(`Не удалось удалить диктант: ${error.message || error}`);
+    }
+}
+
+async function exportDictation(dictation) {
+    try {
+        const response = await fetch(`/api/dictations/${encodeURIComponent(dictation.id)}/export`);
+        if (!response.ok) {
+            let errorMessage = `Server returned ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorMessage;
+            } catch (parseError) {
+                // ignore parse errors, fallback to default message
+            }
+            throw new Error(errorMessage);
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${dictation.id}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('❌ Ошибка экспорта диктанта:', error);
+        alert(`Не удалось скачать диктант: ${error.message || error}`);
+    }
+}
+
+async function importDictationFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const activeNode = categoriesTree ? categoriesTree.getActiveNode() : null;
+    const targetKey = activeNode ? activeNode.key : '';
+    if (targetKey) {
+        formData.append('target_category_key', targetKey);
+    }
+
+    const response = await fetch('/api/dictations/import', {
+        method: 'POST',
+        body: formData
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `Server returned ${response.status}`);
+    }
+
+    await loadDictations();
+    const keyToActivate = result.category_key || targetKey || null;
+
+    await fetchCategoriesFromServer(keyToActivate);
+    await reloadTreeWithFilter(keyToActivate);
+    await refreshDictationsForActiveNode();
+}
+
+function setupImportButton() {
+    const importBtn = document.getElementById('importDictationBtn');
+    const fileInput = document.getElementById('dictationImportInput');
+
+    if (!importBtn || !fileInput) {
+        return;
+    }
+
+    importBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        if (!file.name.toLowerCase().endsWith('.zip')) {
+            alert('Пожалуйста, выберите ZIP-файл с диктантом');
+            fileInput.value = '';
+            return;
+        }
+
+        try {
+            await importDictationFile(file);
+            alert('Диктант успешно загружен');
+        } catch (error) {
+            console.error('❌ Ошибка импорта диктанта:', error);
+            alert(`Не удалось импортировать диктант: ${error.message || error}`);
+        } finally {
+            fileInput.value = '';
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 
     try {
@@ -937,6 +1730,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         initFancyTree();
                         setupPanelResizer();
                         setupTreeButtons();
+                        setupImportButton();
                     });
                 }).catch(error => {
                     console.error('Ошибка инициализации:', error);

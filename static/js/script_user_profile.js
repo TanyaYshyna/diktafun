@@ -1,7 +1,8 @@
 let UM;
 let language_selector;
 let originalData = {};
-let avatarChanged = false;
+let hasUnsavedChanges = false;
+let isSavingProfile = false;
 
 
 // Инициализация при загрузке страницы - ТОЛЬКО ОДИН ОБРАБОТЧИК
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         loadUserData();
         initializeLanguageSelector();
         setupFormListeners();
+        initializeTopbarControls();
 
     } catch (error) {
         console.error('Ошибка инициализации:', error);
@@ -44,6 +46,7 @@ function loadUserData() {
     document.getElementById('username').value = originalData.username;
     document.getElementById('email').value = originalData.email;
     updateAvatarDisplay(originalData.avatar);
+    setUnsavedState(false);
 }
 
 
@@ -92,12 +95,38 @@ function setupFormListeners() {
     inputs.forEach(id => {
         document.getElementById(id).addEventListener('input', checkForChanges);
     });
-    
-    // Также отслеживаем изменения файла аватара
-    document.getElementById('avatarUpload').addEventListener('change', function() {
-        avatarChanged = true;
-        checkForChanges();
-    });
+}
+
+function initializeTopbarControls() {
+    const avatarButton = document.getElementById('avatarUploadButton');
+    const avatarInput = document.getElementById('avatarUpload');
+    if (avatarButton && avatarInput) {
+        avatarButton.addEventListener('click', () => avatarInput.click());
+        avatarInput.addEventListener('change', handleAvatarFileSelection);
+    }
+
+    const saveButton = document.getElementById('saveButton');
+    if (saveButton) {
+        saveButton.addEventListener('click', () => saveProfile());
+    }
+
+    const exitButton = document.getElementById('exitButton');
+    if (exitButton) {
+        exitButton.addEventListener('click', handleProfileExit);
+    }
+
+    const backdrop = document.querySelector('#exitModal .profile-modal__backdrop');
+    if (backdrop) {
+        backdrop.addEventListener('click', () => toggleExitModal(false));
+    }
+}
+
+function handleAvatarFileSelection(event) {
+    const input = event.target;
+    if (!input.files || input.files.length === 0) {
+        return;
+    }
+    uploadAvatar();
 }
 
 
@@ -109,13 +138,38 @@ function checkForChanges() {
         currentValues.password !== '' ||
         currentValues.native_language !== originalData.native_language ||
         JSON.stringify(currentValues.learning_languages) !== JSON.stringify(originalData.learning_languages) ||
-        currentValues.current_learning !== originalData.current_learning ||
-        avatarChanged;
+        currentValues.current_learning !== originalData.current_learning;
+
+    setUnsavedState(hasChanges);
+}
+
+function setUnsavedState(state) {
+    hasUnsavedChanges = state;
 
     const saveButton = document.getElementById('saveButton');
     if (saveButton) {
-        saveButton.disabled = !hasChanges;
+        if (isSavingProfile) {
+            saveButton.disabled = true;
+        } else {
+            saveButton.disabled = !state;
+        }
     }
+
+    const unsavedStar = document.getElementById('unsavedStar');
+    if (unsavedStar) {
+        unsavedStar.style.display = state ? 'inline-flex' : 'none';
+    }
+
+    if (state) {
+        window.addEventListener('beforeunload', beforeUnloadHandler);
+    } else {
+        window.removeEventListener('beforeunload', beforeUnloadHandler);
+    }
+}
+
+function beforeUnloadHandler(event) {
+    event.preventDefault();
+    event.returnValue = '';
 }
 
 // Получение текущих значений формы
@@ -148,16 +202,18 @@ async function uploadAvatar() {
 
     if (!file.type.startsWith('image/')) {
         showError('Выберите изображение');
+        fileInput.value = '';
         return;
     }
 
     if (file.size > 5 * 1024 * 1024) { // 5MB
         showError('Размер файла не должен превышать 5MB');
+        fileInput.value = '';
         return;
     }
 
     try {
-        showSuccess('Загружаем аватар...');
+        showInfo('Загружаем аватар...');
         const response = await UM.uploadAvatar(file);
         
         // console.log('Ответ от сервера при загрузке аватара:', response);
@@ -167,8 +223,6 @@ async function uploadAvatar() {
         originalData.avatar = UM.userData.avatar || {};
         updateAvatarDisplay(originalData.avatar);
         
-        avatarChanged = false;
-        checkForChanges();
         showSuccess('Аватар успешно загружен!');
         
         // Очищаем input
@@ -216,11 +270,26 @@ function updateAvatarDisplay(avatar) {
 
 
 // Сохранение профиля
-async function saveProfile() {
+async function saveProfile(options = {}) {
+    if (isSavingProfile) {
+        return;
+    }
+
+    const { afterSave } = options;
+
+    if (!hasUnsavedChanges) {
+        if (typeof afterSave === 'function') {
+            afterSave();
+        }
+        return;
+    }
+
+    isSavingProfile = true;
+    setUnsavedState(hasUnsavedChanges);
+
     const formValues = getCurrentFormValues();
 
     try {
-        // Подготовка данных для отправки
         const updateData = {
             username: formValues.username,
             native_language: formValues.native_language,
@@ -228,18 +297,14 @@ async function saveProfile() {
             current_learning: formValues.current_learning
         };
 
-        // Добавляем пароль только если он был изменен
         if (formValues.password) {
             updateData.password = formValues.password;
         }
 
-        showSuccess('Сохраняем изменения...');
+        showInfo('Сохраняем изменения...');
 
-        // РЕАЛЬНЫЙ вызов API
         const updatedUser = await UM.updateProfile(updateData);
 
-
-        /// Обновляем оригинальные данные
         originalData = {
             ...originalData,
             username: updatedUser.username,
@@ -248,32 +313,110 @@ async function saveProfile() {
             current_learning: updatedUser.current_learning
         };
 
-        // Очищаем поле пароля
         if (formValues.password) {
             document.getElementById('password').value = '';
         }
 
-        avatarChanged = false;
         checkForChanges();
         showSuccess('Профиль успешно сохранен!');
+
+        if (typeof afterSave === 'function') {
+            afterSave();
+        }
 
     } catch (error) {
         console.error('Ошибка сохранения:', error);
         showError('Ошибка сохранения: ' + error.message);
+    } finally {
+        isSavingProfile = false;
+        setUnsavedState(hasUnsavedChanges);
     }
 }
 
-// Вспомогательные функции для сообщений
-function showError(message) {
-    const element = document.getElementById('errorMessage');
-    element.textContent = message;
-    element.style.display = 'block';
-    setTimeout(() => element.style.display = 'none', 5000);
+function handleProfileExit(event) {
+    if (event) {
+        event.preventDefault();
+    }
+
+    if (hasUnsavedChanges) {
+        toggleExitModal(true);
+    } else {
+        proceedToExit();
+    }
+}
+
+function handleModalSave() {
+    toggleExitModal(false);
+    saveProfile({ afterSave: proceedToExit });
+}
+
+function handleModalDiscard() {
+    toggleExitModal(false);
+    proceedToExit();
+}
+
+function toggleExitModal(show) {
+    const modal = document.getElementById('exitModal');
+    if (!modal) {
+        return;
+    }
+
+    if (show) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+        if (window.lucide) {
+            window.lucide.createIcons({ root: modal });
+        }
+    } else {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+}
+
+function proceedToExit() {
+    window.location.href = '/';
+}
+
+// Вспомогательные функции для уведомлений
+function showToast(message, type = 'info') {
+    if (!message) {
+        return;
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast-notice toast-with-icon${type ? ` ${type}` : ''}`;
+
+    const iconName = type === 'error' ? 'alert-circle' : type === 'success' ? 'circle-check' : 'info';
+    toast.innerHTML = `
+        <span class="toast-icon">
+            <i data-lucide="${iconName}"></i>
+        </span>
+        <span class="toast-message">${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        if (window.lucide) {
+            window.lucide.createIcons({ root: toast });
+        }
+        toast.classList.add('visible');
+    });
+
+    setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 200);
+    }, 2400);
+}
+
+function showInfo(message) {
+    showToast(message, 'info');
 }
 
 function showSuccess(message) {
-    const element = document.getElementById('successMessage');
-    element.textContent = message;
-    element.style.display = 'block';
-    setTimeout(() => element.style.display = 'none', 5000);
+    showToast(message, 'success');
+}
+
+function showError(message) {
+    showToast(message, 'error');
 }

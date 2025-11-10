@@ -32,8 +32,6 @@
                 "language_original": "en",
                 "language_translation": "ru",
                 "dictations": [
-                  "dicta_1760946618800",
-                  "dicta_1761249915612",
                   "dicta_1761250770283",
                   "dicta_1761250886504",
                   "dicta_1762070781697"
@@ -82,7 +80,9 @@
                   "data": {
                     "language_original": "en",
                     "language_translation": "ru",
-                    "dictations": []
+                    "dictations": [
+                      "dicta_1760946618800"
+                    ]
                   }
                 }
               ]
@@ -99,6 +99,18 @@
               }
             }
           ]
+        },
+        {
+          "expanded": false,
+          "folder": true,
+          "key": "enuk",
+          "title": "en=>uk",
+          "data": {
+            "language_original": "en",
+            "language_translation": "uk",
+            "dictations": []
+          },
+          "children": []
         }
       ]
     },
@@ -195,6 +207,20 @@
               }
             }
           ]
+        },
+        {
+          "expanded": false,
+          "folder": true,
+          "key": "aruk",
+          "title": "ar=>uk",
+          "data": {
+            "language_original": "ar",
+            "language_translation": "uk",
+            "dictations": [
+              "dicta_1762763292944"
+            ]
+          },
+          "children": []
         }
       ]
     },
@@ -265,6 +291,30 @@
           "data": {
             "language_original": "de",
             "language_translation": "ru",
+            "dictations": []
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "expanded": false,
+      "folder": true,
+      "key": "ru",
+      "title": "Russian",
+      "data": {
+        "language_original": "ru",
+        "language_translation": ""
+      },
+      "children": [
+        {
+          "expanded": false,
+          "folder": true,
+          "key": "ruar",
+          "title": "ru=>ar",
+          "data": {
+            "language_original": "ru",
+            "language_translation": "ar",
             "dictations": []
           },
           "children": []

@@ -323,14 +323,35 @@ class UserManager {
   }
 
 
-  async register(username, email, password) {
+  async register(arg1, arg2, arg3) {
+    const payload = normalizeRegisterArgs(arg1, arg2, arg3);
+    const {
+      username,
+      email,
+      password,
+      nativeLanguage,
+      learningLanguage,
+      learningLanguages,
+    } = payload;
+
+    if (!username || !email || !password) {
+      return { success: false, error: 'Не все обязательные поля заполнены' };
+    }
+
     try {
       const response = await fetch('/user/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, email, password })
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          native_language: nativeLanguage,
+          learning_language: learningLanguage,
+          learning_languages: learningLanguages
+        })
       });
 
       // Читаем ответ ТОЛЬКО ОДИН РАЗ
@@ -436,6 +457,45 @@ class UserManager {
 }
 
 
+
+function normalizeRegisterArgs(arg1, arg2, arg3) {
+  if (typeof arg1 === 'object' && arg1 !== null) {
+    const {
+      username = '',
+      email = '',
+      password = '',
+      nativeLanguage = 'ru',
+      learningLanguage = 'en',
+      learningLanguages,
+    } = arg1;
+
+    const normalizedLearning = Array.isArray(learningLanguages) && learningLanguages.length
+      ? [...new Set(learningLanguages.map((lang) => (lang || '').toLowerCase()).filter(Boolean))]
+      : [learningLanguage.toLowerCase()];
+
+    if (!normalizedLearning.includes(learningLanguage.toLowerCase())) {
+      normalizedLearning.push(learningLanguage.toLowerCase());
+    }
+
+    return {
+      username,
+      email,
+      password,
+      nativeLanguage: nativeLanguage.toLowerCase(),
+      learningLanguage: learningLanguage.toLowerCase(),
+      learningLanguages: normalizedLearning,
+    };
+  }
+
+  return {
+    username: arg1,
+    email: arg2,
+    password: arg3,
+    nativeLanguage: 'ru',
+    learningLanguage: 'en',
+    learningLanguages: ['en'],
+  };
+}
 
 if (!window.UM) {
   window.UM = new UserManager();

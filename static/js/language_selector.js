@@ -199,33 +199,22 @@ createLearningList() {
     `;
 }
 
-    // НОВЫЙ МЕТОД: создание двухпанельной структуры для профиля
+    // НОВЫЙ МЕТОД: компактная структура для профиля пользователя
     createProfilePanels() {
         return `
-            <div class="language-panels-container">
-                <!-- Левая панель - Родной язык -->
-                <div class="language-panel native-panel">
-                    <h3>Родной язык</h3>
-                    <div class="panel-content">
+            <div class="profile-language-section">
+                <div class="profile-language-inline">
+                    <div class="profile-language-item profile-language-item--native">
+                        <span class="profile-language-label">Родной</span>
                         ${this.createNativeSelector()}
                     </div>
-                </div>
-
-                <!-- Правая панель - Изучаемые языки -->
-                <div class="language-panel learning-panel">
-                    <h3>Изучаемые языки</h3>
-                    <div class="panel-content">
-                        <!-- Текущий изучаемый язык -->
-                        <div class="current-learning-section">
-                            ${this.createLearningSelector()}
-                        </div>
-                        
-                        <!-- Список изучаемых языков -->
-                        <div class="learning-list-section">
-                            <h4>Мои изучаемые языки</h4>
-                            ${this.createLearningList()}
-                        </div>
+                    <div class="profile-language-item profile-language-item--learning">
+                        <span class="profile-language-label">Учу</span>
+                        ${this.createLearningSelector()}
                     </div>
+                </div>
+                <div class="profile-language-list">
+                    ${this.createLearningList()}
                 </div>
             </div>
         `;

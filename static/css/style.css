@@ -416,6 +416,10 @@ select {
     align-items: center;
 }
 
+.auth-buttons a + a {
+    margin-left: 12px;
+}
+
 .statistics-btn {
     display: flex;
     align-items: center;

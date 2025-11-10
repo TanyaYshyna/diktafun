@@ -3293,6 +3293,8 @@ const REQUIRE_EVERY_WORD = true;
 const DASHES = /[\u2010\u2011\u2012\u2013\u2014\u2015\u2212-]/g;
 // «умные» апострофы → для унификации
 const CURLY_APOS = /[\u2019\u2018\u02BC]/g;
+const PUNCTUATION_REGEX = /[.,!?:;"«»„“()\[\]{}،؛؟]/g;
+const ARABIC_DIACRITICS_REGEX = /[\u064B-\u0655\u0670\u0671]/g;
 
 // === ЧИСЛА ДЛЯ ASR: маскируем и цифры, и словесные числа в <num> ===
 // === ЧИСЛА И НОРМАЛИЗАЦИЯ ДЛЯ ASR ===
@@ -3323,7 +3325,8 @@ function simplifyText(text) {
         .replace(CURLY_APOS, "'")   // «умные» апострофы → обычный
         .replace(/['`´]/g, "")      // убираем апострофы
         .replace(DASHES, ' ')       // КЛЮЧ: любое тире/дефис → ПРОБЕЛ
-        .replace(/[.,!?:;"«»()]/g, "") // остальная пунктуация в мусор
+        .replace(PUNCTUATION_REGEX, "") // остальная пунктуация в мусор
+        .replace(ARABIC_DIACRITICS_REGEX, "") // снимаем огласовки
         .replace(/\s+/g, " ")
         .trim()
         .split(" ");
