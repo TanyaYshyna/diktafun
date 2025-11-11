@@ -54,6 +54,24 @@
       "corrected": null,
       "audio": null,
       "total": 3
+    },
+    {
+      "id_diktation": "dicta_1762070781697",
+      "date": 20251110,
+      "end": 0,
+      "perfect": 81,
+      "corrected": 136,
+      "audio": 303,
+      "total": 32
+    },
+    {
+      "id_diktation": "dicta_1762070781697",
+      "date": 20251111,
+      "end": 0,
+      "perfect": 154,
+      "corrected": 257,
+      "audio": 495,
+      "total": 32
     }
   ]
 }

@@ -332,6 +332,14 @@ function createCardDOM(d) {
     h3.appendChild(titleLink);
     card.appendChild(h3);
 
+    const diktNumber = d.Dikt_numer || d.dikt_numer || d.id;
+    if (diktNumber) {
+        const diktBadge = document.createElement('div');
+        diktBadge.className = 'short-dikt-number';
+        diktBadge.textContent = diktNumber;
+        card.appendChild(diktBadge);
+    }
+
     // <div class="short-meta">Язык ... • Уровень ...</div>
     const meta = document.createElement('div');
     meta.className = 'short-meta';

@@ -327,6 +327,13 @@ body {
   width: 100%;
 }
 
+.short-dikt-number {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-button-text-gray);
+  margin-top: 4px;
+}
+
 /* Мета-информация */
 .short-meta {
   font-size: 11px;

@@ -992,7 +992,7 @@ class ProgressPanel {
                 </div>
                 <div class="timer-dialog-actions">
                     <button type="button" class="button-secondary" data-action="cancel">Отмена</button>
-                    <button type="button" class="button-primary" data-action="apply">Применить</button>
+                    <button type="button" class="button-primary" data-action="start">Старт</button>
                 </div>
             </div>
         `;
@@ -1006,7 +1006,7 @@ class ProgressPanel {
         const secondsInput = overlay.querySelector('input[name="timerSeconds"]');
         const timerFields = overlay.querySelector('.timer-dialog-timer-fields');
         const cancelBtn = overlay.querySelector('[data-action="cancel"]');
-        const applyBtn = overlay.querySelector('[data-action="apply"]');
+        const startBtn = overlay.querySelector('[data-action="start"]');
 
         const updateFields = () => {
             const showTimer = timerRadio.checked;
@@ -1021,7 +1021,7 @@ class ProgressPanel {
         timerRadio.addEventListener('change', updateFields);
 
         cancelBtn.addEventListener('click', () => this.closeTimerDialog());
-        applyBtn.addEventListener('click', () => {
+        startBtn.addEventListener('click', () => {
             const mode = timerRadio.checked ? 'countdown' : 'clock';
             const minutes = parseInt(minutesInput.value, 10) || 0;
             const seconds = parseInt(secondsInput.value, 10) || 0;
@@ -1062,6 +1062,7 @@ class ProgressPanel {
             } else {
                 this.updateTimer();
             }
+            this.startSession();
             this._saveTimerPreference();
             return true;
         }
@@ -1091,18 +1092,16 @@ class ProgressPanel {
         this.updateTimer();
         this.updateTimerIcon();
         this._updateTimerButtonColor();
+        this.startSession({ resetCountdown: true });
         this._saveTimerPreference();
         return true;
     }
 
     _handleCountdownFinished() {
-        this.stopTimer();
         this._playCountdownSound();
+        this.stopTimer({ resetCountdown: true });
         if (typeof window.pauseGame === 'function') {
             window.pauseGame();
-        }
-        if (typeof window.alert === 'function') {
-            window.alert('⏱ Время вышло! Можно сделать паузу или продлить таймер.');
         }
     }
 

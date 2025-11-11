@@ -105,6 +105,7 @@ def show_dictation(dictation_id, lang_orig, lang_tr):
         is_dialog=is_dialog,
         speakers=speakers,
         cover_url=cover_url,
+        dikt_numer=info.get("Dikt_numer") or info.get("dikt_numer") or dictation_id,
         language_data=load_language_data()
     )
 

@@ -430,10 +430,16 @@ class DictationStatistics {
      */
     async loadResumeState(dictationId) {
         try {
+            const token = this.userManager?.token;
+            if (!token) {
+                console.warn('[DictationStatistics] loadResumeState: отсутствует токен, пропускаем запрос к API');
+                return null;
+            }
+
             const response = await fetch(`/api/statistics/dictation_state/${dictationId}`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${this.userManager.token}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -454,10 +460,16 @@ class DictationStatistics {
      */
     async saveResumeState(dictationId, state) {
         try {
+            const token = this.userManager?.token;
+            if (!token) {
+                console.warn('[DictationStatistics] saveResumeState: отсутствует токен, пропускаем запрос к API');
+                return false;
+            }
+
             const response = await fetch('/api/statistics/dictation_state/save', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${this.userManager.token}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -484,10 +496,16 @@ class DictationStatistics {
      */
     async deleteResumeState(dictationId) {
         try {
+            const token = this.userManager?.token;
+            if (!token) {
+                console.warn('[DictationStatistics] deleteResumeState: отсутствует токен, пропускаем запрос к API');
+                return false;
+            }
+
             const response = await fetch(`/api/statistics/dictation_state/${dictationId}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': `Bearer ${this.userManager.token}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });

@@ -2750,6 +2750,66 @@ async function setupVirtualKeyboard(langCode) {
 }
 
 
+function hideVirtualKeyboardIfActive() {
+    if (virtualKeyboardToggle) {
+        virtualKeyboardToggle.checked = false;
+    }
+
+    if (virtualKeyboardInstance && typeof virtualKeyboardInstance.hide === 'function') {
+        virtualKeyboardInstance.hide();
+    } else if (virtualKeyboardContainer) {
+        virtualKeyboardContainer.setAttribute('hidden', 'true');
+        virtualKeyboardContainer.style.display = 'none';
+    }
+}
+
+
+function isRecordingActive() {
+    return Boolean(
+        (typeof mediaRecorder !== 'undefined' && mediaRecorder && mediaRecorder.state === 'recording') ||
+        isRecording
+    );
+}
+
+function showRecordingPlaybackWarning() {
+    const warningText = 'Сначала остановите запись, чтобы прослушать аудио';
+    const answer = document.getElementById('userAudioAnswer');
+    if (answer) {
+        if (!answer.dataset.originalContent) {
+            answer.dataset.originalContent = answer.innerHTML || '';
+        }
+        answer.dataset.showingRecordingWarning = 'true';
+        answer.textContent = warningText;
+
+        if (answer._recordingHintTimer) {
+            clearTimeout(answer._recordingHintTimer);
+        }
+        answer._recordingHintTimer = window.setTimeout(() => {
+            if (answer.dataset.showingRecordingWarning === 'true' && answer.textContent === warningText) {
+                answer.innerHTML = answer.dataset.originalContent || '';
+            }
+            delete answer.dataset.originalContent;
+            delete answer.dataset.showingRecordingWarning;
+            delete answer._recordingHintTimer;
+        }, 2000);
+    }
+
+    const rb = document.getElementById('recordButton');
+    if (rb) {
+        rb.classList.add('recording-warning');
+        window.setTimeout(() => rb.classList.remove('recording-warning'), 500);
+    }
+}
+
+function blockAudioPlaybackIfRecording() {
+    if (!isRecordingActive()) {
+        return false;
+    }
+    showRecordingPlaybackWarning();
+    return true;
+}
+
+
 // ===== Инициализация диктанта =================================================================== 
 // ===== Инициализация диктанта =================================================================== 
 // ===== Инициализация диктанта =================================================================== 
@@ -3123,6 +3183,13 @@ function onloadInitializeDictation() {
                 ? window.AudioManager.isPlaying()
                 : !!(window.AudioManager && window.AudioManager.audio && !window.AudioManager.audio.paused && !window.AudioManager.audio.ended);
 
+            if (blockAudioPlaybackIfRecording()) {
+                if (isPlaying && window.AudioManager) {
+                    window.AudioManager.pause();
+                }
+                return;
+            }
+
             if (isPlaying && window.AudioManager) {
                 window.AudioManager.pause();
             } else if (window.AudioManager) {
@@ -3133,6 +3200,9 @@ function onloadInitializeDictation() {
         originalAudioVisual.setOnAudioTypeChange((type, path) => {
             if (window.AudioManager && window.AudioManager.isPlaying()) {
                 window.AudioManager.stop();
+                if (blockAudioPlaybackIfRecording()) {
+                    return;
+                }
                 window.AudioManager.play(originalAudioVisual.playButton, path);
             }
         });
@@ -3168,6 +3238,13 @@ function onloadInitializeDictation() {
             const isPlaying = (window.AudioManager && typeof window.AudioManager.isPlaying === 'function')
                 ? window.AudioManager.isPlaying()
                 : !!(window.AudioManager && window.AudioManager.audio && !window.AudioManager.audio.paused && !window.AudioManager.audio.ended);
+
+            if (blockAudioPlaybackIfRecording()) {
+                if (isPlaying && window.AudioManager) {
+                    window.AudioManager.pause();
+                }
+                return;
+            }
 
             if (isPlaying && window.AudioManager) {
                 window.AudioManager.pause();
@@ -3796,6 +3873,9 @@ function playAudioSequence(sequence) {
         }
 
         // Воспроизводим через AudioManager с callback для следующего шага
+        if (blockAudioPlaybackIfRecording()) {
+            return;
+        }
         window.AudioManager.play(button, audioPath, () => {
             index++;
             playNext();
@@ -3824,6 +3904,7 @@ function disableCheckButton(active) {
             checkBtn.innerHTML = '<i data-lucide="star"></i> <i data-lucide="check"></i>';
             if (userInput) userInput.contentEditable = "true";
             checkBtn.classList.add('button-color-mint');
+            hideVirtualKeyboardIfActive();
             break;
 
         case 1:
@@ -3831,6 +3912,7 @@ function disableCheckButton(active) {
             checkBtn.innerHTML = '<i data-lucide="star-half"></i><i data-lucide="check"></i>';
             if (userInput) userInput.contentEditable = "true";
             checkBtn.classList.add('button-color-lightgreen');
+            hideVirtualKeyboardIfActive();
             break;
     }
     lucide.createIcons();
@@ -4112,6 +4194,14 @@ async function saveDictationDraft() {
     };
 
     try {
+        const localKey = `dictationDraft_${currentDictation.id}`;
+        const stateForLocal = { ...state, local_saved_at: Date.now() };
+        localStorage.setItem(localKey, JSON.stringify(stateForLocal));
+    } catch (error) {
+        console.warn('[Draft] saveDictationDraft: не удалось сохранить черновик в localStorage', error);
+    }
+
+    try {
         const result = await dictationStatistics.saveResumeState(currentDictation.id, state);
         console.log('[Draft] saveDictationDraft: completed', { success: !!result });
         return result;
@@ -4133,7 +4223,21 @@ async function loadAndApplyDraft() {
     if (panel) panel._suppressDirty = true;
 
     try {
-        const draft = await dictationStatistics.loadResumeState(currentDictation.id);
+        let draft = await dictationStatistics.loadResumeState(currentDictation.id);
+
+        if (!draft) {
+            try {
+                const localKey = `dictationDraft_${currentDictation.id}`;
+                const localRaw = localStorage.getItem(localKey);
+                if (localRaw) {
+                    draft = JSON.parse(localRaw);
+                    console.log('[Draft] loadAndApplyDraft: использован локальный черновик');
+                }
+            } catch (error) {
+                console.warn('[Draft] loadAndApplyDraft: ошибка чтения локального черновика', error);
+            }
+        }
+
         if (!draft) {
             if (panel) {
                 panel.markClean();
