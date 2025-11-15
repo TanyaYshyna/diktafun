@@ -1,0 +1,16 @@
+{
+  "id_user": "omar@gmail.com",
+  "month": 202511,
+  "statistics": [
+    {
+      "audio": 5,
+      "corrected": 3,
+      "date": 20251114,
+      "end": 0,
+      "id_diktation": "dicta_1762168975503",
+      "perfect": 0,
+      "timer_seconds": 86,
+      "total": 32
+    }
+  ]
+}

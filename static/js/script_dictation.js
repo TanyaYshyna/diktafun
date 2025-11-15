@@ -214,7 +214,7 @@ let recognitionActivityTimer = null;  // Таймер для отслежива�
 
 // === Настройки для аудио-урока ===
 const MIN_MATCH_PERCENT = 80;      // минимальный % совпадения, чтобы засчитать попытку
-const REQUIRED_PASSED_COUNT = 3;   // сколько засчитанных аудио нужно для сдачи урока
+let REQUIRED_PASSED_COUNT = 3;   // сколько засчитанных аудио нужно для сдачи урока (можно изменить через поле ввода)
 
 // Служебный счётчик пройденных попыток в текущем уроке
 let passedAudioCount = 0;
@@ -1182,6 +1182,15 @@ function startGame(isResume = false) {
     playSequenceTypo = sequences.typo;
     playSequenceSuccess = sequences.success;
 
+    // Обновляем REQUIRED_PASSED_COUNT из поля ввода
+    const audioRepeatsInput = document.getElementById('audioRepeatsInput');
+    if (audioRepeatsInput) {
+        const value = parseInt(audioRepeatsInput.value, 10);
+        if (!isNaN(value) && value >= 0 && value <= 9) {
+            REQUIRED_PASSED_COUNT = value;
+        }
+    }
+
     // выбрать из таблицы ключи отмеченных предложений по порядку
     getSelectedSentences();
     if (!selectedSentences.length) {
@@ -2067,7 +2076,19 @@ function checkIfAllCompleted() {
         panel.updateTimer();
     }
 
+    // Записываем историю при открытии модального окна
+    if (activityHistory && currentDictation.id) {
+        activityHistory.startSession(currentDictation.id);
+        activityHistory.saveSession().catch(err => {
+            console.warn('Не удалось сохранить историю при открытии модального окна:', err);
+        });
+    }
+
     startModal.style.display = 'flex';
+    // Инициализируем иконки Lucide после открытия модального окна
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
     confirmStartBtn.focus();
 }
 
@@ -2919,8 +2940,20 @@ async function initializeDictation() {
         panel.updateTimer();
     }
 
+    // Записываем историю при открытии модального окна
+    if (activityHistory && currentDictation.id) {
+        activityHistory.startSession(currentDictation.id);
+        activityHistory.saveSession().catch(err => {
+            console.warn('Не удалось сохранить историю при открытии модального окна:', err);
+        });
+    }
+
     // Показываем модальное окно сразу
     startModal.style.display = 'flex';
+    // Инициализируем иконки Lucide после открытия модального окна
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
     confirmStartBtn.focus();
 }
 
@@ -4325,12 +4358,10 @@ async function loadAndApplyDraft() {
 }
 
 function clickBtnBackToList() {
-    // Проверяем, завершены ли все предложения
-    if (circle_number > 0 && !isAllCompleted()) {
-        showExitModal(() => window.location.href = "/");
-        return;
+    // Просто закрываем модальное окно
+    if (startModal) {
+        startModal.style.display = 'none';
     }
-    window.location.href = "/"; // на головну сторінку
 }
 
 async function handleSaveAndExit() {

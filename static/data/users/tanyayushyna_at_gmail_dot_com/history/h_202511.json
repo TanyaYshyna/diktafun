@@ -72,6 +72,15 @@
       "corrected": 257,
       "audio": 495,
       "total": 32
+    },
+    {
+      "id_diktation": "dicta_1761748765243",
+      "date": 20251113,
+      "end": 1,
+      "perfect": 95,
+      "corrected": 140,
+      "audio": 297,
+      "total": 10
     }
   ]
 }
