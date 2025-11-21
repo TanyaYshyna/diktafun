@@ -1,0 +1,105 @@
+{
+  "dictation_id": "dicta_1761748765243",
+  "circle_number": 4,
+  "current_index": 0,
+  "playSequenceStart": "oto",
+  "playSequenceTypo": "o",
+  "playSequenceSuccess": "ot",
+  "is_mixed": false,
+  "per_sentence": {
+    "000": {
+      "number_of_perfect": 0,
+      "number_of_corrected": 3,
+      "number_of_audio": 0,
+      "circle_number_of": 4,
+      "circle_number_of_perfect": 1,
+      "circle_number_of_corrected": 0,
+      "circle_number_of_audio": 0
+    },
+    "001": {
+      "number_of_perfect": 1,
+      "number_of_corrected": 0,
+      "number_of_audio": 0,
+      "circle_number_of": 0,
+      "circle_number_of_perfect": 0,
+      "circle_number_of_corrected": 0,
+      "circle_number_of_audio": 0
+    },
+    "002": {
+      "number_of_perfect": 1,
+      "number_of_corrected": 2,
+      "number_of_audio": 0,
+      "circle_number_of": 0,
+      "circle_number_of_perfect": 0,
+      "circle_number_of_corrected": 0,
+      "circle_number_of_audio": 0
+    },
+    "003": {
+      "number_of_perfect": 1,
+      "number_of_corrected": 2,
+      "number_of_audio": 0,
+      "circle_number_of": 0,
+      "circle_number_of_perfect": 0,
+      "circle_number_of_corrected": 0,
+      "circle_number_of_audio": 0
+    },
+    "004": {
+      "number_of_perfect": 1,
+      "number_of_corrected": 0,
+      "number_of_audio": 0,
+      "circle_number_of": 0,
+      "circle_number_of_perfect": 0,
+      "circle_number_of_corrected": 0,
+      "circle_number_of_audio": 0
+    },
+    "005": {
+      "number_of_perfect": 1,
+      "number_of_corrected": 2,
+      "number_of_audio": 0,
+      "circle_number_of": 0,
+      "circle_number_of_perfect": 0,
+      "circle_number_of_corrected": 0,
+      "circle_number_of_audio": 0
+    },
+    "006": {
+      "number_of_perfect": 1,
+      "number_of_corrected": 2,
+      "number_of_audio": 0,
+      "circle_number_of": 0,
+      "circle_number_of_perfect": 0,
+      "circle_number_of_corrected": 0,
+      "circle_number_of_audio": 0
+    },
+    "007": {
+      "number_of_perfect": 1,
+      "number_of_corrected": 1,
+      "number_of_audio": 0,
+      "circle_number_of": 0,
+      "circle_number_of_perfect": 0,
+      "circle_number_of_corrected": 0,
+      "circle_number_of_audio": 0
+    },
+    "008": {
+      "number_of_perfect": 1,
+      "number_of_corrected": 0,
+      "number_of_audio": 0,
+      "circle_number_of": 0,
+      "circle_number_of_perfect": 0,
+      "circle_number_of_corrected": 0,
+      "circle_number_of_audio": 0
+    },
+    "009": {
+      "number_of_perfect": 1,
+      "number_of_corrected": 1,
+      "number_of_audio": 0,
+      "circle_number_of": 0,
+      "circle_number_of_perfect": 0,
+      "circle_number_of_corrected": 0,
+      "circle_number_of_audio": 0
+    }
+  },
+  "number_of_perfect": 9,
+  "number_of_corrected": 13,
+  "number_of_audio": 0,
+  "date_saved": 20251120
+}

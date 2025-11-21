@@ -749,6 +749,8 @@ select {
   display: flex;
   align-items: center;
   margin-right: 15px;
+  height: 100%;
+  min-height: 40px;
 }
 
 /* Стили для самого селектора */
@@ -757,10 +759,12 @@ select {
   display: flex;
   align-items: center;
   cursor: pointer;
-  padding: 4px 4px;
-  border-radius: 8px;
-  background: var(--color-background-soft);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
   transition: background-color 0.2s;
+  height: auto;
+  box-sizing: border-box;
 }
 
 .header-language-selector:hover {
@@ -822,16 +826,22 @@ select {
   position: relative;
   z-index: 1000;
   min-width: 80px;                 /* чтобы не схлопнулся */
+  height: 40px;
+  box-sizing: border-box;
 }
 
 #header-language-selector .header-flag-combo {
   display: inline-flex;
   align-items: center;
   gap: 0px;
-  padding: 6px 10px;
+  padding: 6px 12px;
   background: var(--color-background-light, #f8f9fa);
   border-radius: 6px;
   border: 1px solid var(--color-border, #dee2e6);
+  height: 40px;
+  min-height: 40px;
+  line-height: 1;
+  box-sizing: border-box;
 }
 /* ------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------ */

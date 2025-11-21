@@ -8,7 +8,7 @@ body {
   display: flex;
   flex: 1 1 auto;
   overflow: hidden;
-  background-color: var(--color-hover);
+  background-color: var(--сolor-panel-bg);
   /* height: calc(100vh - 80px); 60px высота + 20px margin = 80px */
 }
 
@@ -23,6 +23,10 @@ body {
 .page-index .tooltip-wrapper {
   position: relative;
   z-index: 5;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-height: 40px;
 }
 
 .page-index .panel {
@@ -58,6 +62,9 @@ body {
   max-width: 45%;
   /* overflow:auto; */
   background: transparent;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* Контейнер дерева - ДОБАВЛЯЕМ правильные настройки скролла */
@@ -71,6 +78,9 @@ body {
   box-sizing: border-box;
   overflow: hidden;    /* скролл дадим внутреннему .fancytree-container */
   background: transparent;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   /* height: 100%; Явно указываем высоту */
 }
 
@@ -81,6 +91,9 @@ body {
   overflow-x: hidden !important;/* отключаем горизонтальную */
   box-sizing: border-box;
   padding-right: 6px;           /* чтобы текст не заезжал под скроллбар */
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* 3) Предотвращаем, чтобы заголовки узлов растягивали ширину */
@@ -99,7 +112,9 @@ body {
   /* height: 100% !important;    позволяет занять высоту дочернего flex-контейнера */
   overflow-y: auto !important;/* вертикальный скролл */
   overflow-x: auto !important; /* горизонтальный скролл */
-  border: none;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   background: transparent !important;
    /* УБИРАЕМ height: 100% !important и min-height */
   /* Оставляем только минимальные стили */
@@ -117,6 +132,9 @@ body {
 .fancytree-node {
   background: transparent;
   padding: 4px 0;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .fancytree-active,
@@ -183,16 +201,19 @@ body {
   fill: none;
 }
 
-#treeContainer span.fancytree-node.fancytree-focused,
+/* #treeContainer span.fancytree-node.fancytree-focused,
 #treeContainer span.fancytree-node.fancytree-active,
 #treeContainer span.fancytree-node.fancytree-selected {
   background: transparent !important;
-}
+} */
 
 #treeContainer .fancytree-title {
   border-radius: 6px;
   padding: 2px 4px;
-  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 #treeContainer span.fancytree-node.fancytree-focused > .fancytree-title,
@@ -201,14 +222,16 @@ body {
   background: var(--color-hover);
   color: var(--color-text);
   font-weight: 600;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
-  outline: none;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 #treeContainer .fancytree-title:focus,
 #treeContainer .fancytree-title:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 
@@ -227,7 +250,7 @@ body {
 #resizer {
   min-height: 0;
   width: 8px;
-  background: #e0e0e0;
+  background: var(--color-hover-panel);
   cursor: col-resize;
   transition: background 0.2s;
   -webkit-user-select: none;
@@ -235,7 +258,7 @@ body {
 }
 
 #resizer:hover {
-  background: #bdbdbd;
+  background: var(--color-hover);
 }
 
 /* Правая панель */
@@ -449,8 +472,8 @@ body {
 /* Кнопки */
 .buttons-row button {
   padding: 6px 12px;
-  border: 1px solid #ccc;
-  background: #f0f0f0;
+  border: 1px solid var(--color-border, #dee2e6);
+  background: var(--color-background-light, #f8f9fa);
   cursor: pointer;
   border-radius: 6px;
   font-size: 14px;
@@ -458,7 +481,7 @@ body {
 }
 
 .buttons-row button:hover {
-  background: #e0e0e0;
+  background: var(--color-background-light, #f8f9fa);
 }
 
 /* Ссылка без подчёркивания */
@@ -487,8 +510,10 @@ body {
   gap: 8px;
   outline: none;
   min-width: 180px;
-  min-height: 36px;
+  height: 40px;
+  min-height: 40px;
   line-height: 1;
+  box-sizing: border-box;
 }
 
 .language-filter-select .speed-select-button:hover,

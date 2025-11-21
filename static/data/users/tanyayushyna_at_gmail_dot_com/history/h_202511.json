@@ -38,48 +38,84 @@
       "perfect": 1
     },
     {
-      "id_diktation": "dicta_1760946618800",
+      "audio": 29,
+      "corrected": 28,
       "date": 20251108,
       "end": 0,
+      "id_diktation": "dicta_1760946618800",
       "perfect": 6,
-      "corrected": 28,
-      "audio": 29,
       "total": 2
     },
     {
-      "id_diktation": "dicta_1760946618800",
+      "audio": null,
+      "corrected": null,
       "date": 20251109,
       "end": 0,
+      "id_diktation": "dicta_1760946618800",
       "perfect": null,
-      "corrected": null,
-      "audio": null,
       "total": 3
     },
     {
-      "id_diktation": "dicta_1762070781697",
+      "audio": 303,
+      "corrected": 136,
       "date": 20251110,
       "end": 0,
+      "id_diktation": "dicta_1762070781697",
       "perfect": 81,
-      "corrected": 136,
-      "audio": 303,
       "total": 32
     },
     {
-      "id_diktation": "dicta_1762070781697",
+      "audio": 495,
+      "corrected": 257,
       "date": 20251111,
       "end": 0,
+      "id_diktation": "dicta_1762070781697",
       "perfect": 154,
-      "corrected": 257,
-      "audio": 495,
       "total": 32
     },
     {
-      "id_diktation": "dicta_1761748765243",
+      "audio": 297,
+      "corrected": 140,
       "date": 20251113,
       "end": 1,
+      "id_diktation": "dicta_1761748765243",
       "perfect": 95,
-      "corrected": 140,
-      "audio": 297,
+      "total": 10
+    },
+    {
+      "audio": 36,
+      "corrected": 21,
+      "date": 20251116,
+      "end": 0,
+      "id_diktation": "dicta_1762070781697",
+      "perfect": 12,
+      "timer_seconds": 554,
+      "total": 2
+    },
+    {
+      "audio": 0,
+      "corrected": 0,
+      "date": 20251117,
+      "end": 0,
+      "id_diktation": "dicta_1762070781697",
+      "perfect": 0
+    },
+    {
+      "audio": 0,
+      "corrected": 0,
+      "date": 20251119,
+      "end": 0,
+      "id_diktation": "dicta_1762070781697",
+      "perfect": 0
+    },
+    {
+      "audio": 0,
+      "corrected": 0,
+      "date": 20251120,
+      "end": 0,
+      "id_diktation": "dicta_1761748765243",
+      "perfect": 0,
+      "timer_seconds": 0,
       "total": 10
     }
   ]

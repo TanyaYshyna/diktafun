@@ -959,10 +959,8 @@ function setupPanelResizer() {
 
         leftPanel.width(Math.min(maxWidth, Math.max(minWidth, newWidth)) + "px");
 
-        // Обновляем размеры дерева
-        if (categoriesTree) {
-            categoriesTree.resize();
-        }
+        // FancyTree автоматически адаптируется к изменению размера контейнера через CSS
+        // Дополнительные действия не требуются
     }
 
     function stopResize() {
