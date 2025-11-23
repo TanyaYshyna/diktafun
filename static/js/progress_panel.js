@@ -15,7 +15,6 @@ class ProgressPanel {
             timer: document.getElementById('timer'),
             timerSettings: document.getElementById('btn-timer-settings'),
             timerModeIcon: document.getElementById('timer-mode-icon'),
-            circleNumber: document.getElementById('circle-number'),
             perfect: document.getElementById('count-perfect'),
             corrected: document.getElementById('count-corrected'),
             audio: document.getElementById('count-audio'),
@@ -24,7 +23,6 @@ class ProgressPanel {
             modalTimer: document.getElementById('modal_timer'),
             modalTimerSettings: document.getElementById('btn-modal-timer-settings'),
             modalTimerModeIcon: document.getElementById('modal-timer-mode-icon'),
-            modalCircleNumber: document.getElementById('modal-circle-number'),
             modalPerfect: document.getElementById('modal-count-perfect'),
             modalCorrected: document.getElementById('modal-count-corrected'),
             modalAudio: document.getElementById('modal-count-audio'),
@@ -69,6 +67,62 @@ class ProgressPanel {
     }
 
     /**
+     * Генерирует HTML для панели прогресса
+     * @param {('inline'|'modal')} variant - вариант отображения (определяет префикс ID)
+     * @returns {string} HTML строка
+     */
+    _generateHTML(variant = 'inline') {
+        const prefix = variant === 'modal' ? 'modal-' : '';
+        const timerId = variant === 'modal' ? 'modal_timer' : 'timer';
+        const timerBtnId = variant === 'modal' ? 'btn-modal-timer' : 'btn-timer';
+        const timerSettingsId = variant === 'modal' ? 'btn-modal-timer-settings' : 'btn-timer-settings';
+        const timerModeIconId = variant === 'modal' ? 'modal-timer-mode-icon' : 'timer-mode-icon';
+        
+        return `
+            <table class="table-progress">
+                <tr>
+                    <td colspan="4">
+                        <div class="timer-control">
+                            <button id="${timerSettingsId}" class="stat-btn timer-settings" title="Режим времени">
+                                <span id="${timerModeIconId}" class="timer-mode-icon" aria-hidden="true"></span>
+                            </button>
+                            <button id="${timerBtnId}" class="stat-btn row-timer timer" disabled title="Время работы над диктантом">
+                                <span id="${timerId}">00:00:00</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button id="btn-${prefix}count-perfect" class="stat-btn perfect" disabled title="Количество предложений набранных без ошибок с 1-й попытки">
+                            <i data-lucide="star"></i>
+                            <span id="${prefix}count-perfect">0</span>
+                        </button>
+                    </td>
+                    <td>
+                        <button id="btn-${prefix}count-corrected" class="stat-btn corrected" disabled title="Количество набранных предложений">
+                            <i data-lucide="star-half"></i>
+                            <span id="${prefix}count-corrected">0</span>
+                        </button>
+                    </td>
+                    <td>
+                        <button id="btn-${prefix}count-audio" class="stat-btn corrected-audio" disabled title="Сколько предложений прошло аудио контроль">
+                            <i data-lucide="mic-off"></i>
+                            <span id="${prefix}count-audio">0</span>
+                        </button>
+                    </td>
+                    <td>
+                        <button id="btn-${prefix}count-total" class="stat-btn total" disabled title="Общее количество предложений">
+                            <i data-lucide="layers"></i>
+                            <span id="${prefix}count-total">0</span>
+                        </button>
+                    </td>
+                </tr>
+            </table>
+        `;
+    }
+
+    /**
      * Рендер панели в указанный контейнер
      * @param {HTMLElement} container
      * @param {('inline'|'modal')} variant
@@ -76,105 +130,8 @@ class ProgressPanel {
     render(container, variant = 'inline') {
         if (!container) return;
 
-        if (variant === 'inline') {
-            container.innerHTML = `
-                <table class="table-progress">
-                    <tr>
-                        <td colspan="3">
-                            <div class="timer-control">
-                                <button id="btn-timer-settings" class="stat-btn timer-settings" title="Режим времени">
-                                    <span id="timer-mode-icon" class="timer-mode-icon" aria-hidden="true"></span>
-                                </button>
-                                <button id="btn-timer" class="stat-btn row-timer timer" disabled title="Время работы над диктантом">
-                                    <span id="timer">00:00:00</span>
-                                </button>
-                            </div>
-                        </td>
-                        <td>
-                            <button id="btn-circle-number" class="stat-btn row-timer nymber" title="Какой раз проходим диктант">
-                                <i data-lucide="iteration-cw"></i>
-                                <span id="circle-number">0</span>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <button id="btn-count-perfect" class="stat-btn perfect" disabled title="Количество предложений набранных без ошибок с 1-й попытки">
-                                <i data-lucide="star"></i>
-                                <span id="count-perfect">0</span>
-                            </button>
-                        </td>
-                        <td>
-                            <button id="btn-count-corrected" class="stat-btn corrected" disabled title="Количество набранных предложений">
-                                <i data-lucide="star-half"></i>
-                                <span id="count-corrected">0</span>
-                            </button>
-                        </td>
-                        <td>
-                            <button id="btn-count-audio" class="stat-btn corrected-audio" disabled title="Сколько предложений прошло аудио контроль">
-                                <i data-lucide="mic-off"></i>
-                                <span id="count-audio">0</span>
-                            </button>
-                        </td>
-                        <td>
-                            <button id="btn-count-total" class="stat-btn total" disabled title="Общее количество предложений на круге">
-                                <i data-lucide="layers"></i>
-                                <span id="count-total">0</span>
-                            </button>
-                        </td>
-                    </tr>
-                </table>
-            `;
-        } else {
-            container.innerHTML = `
-                <table class="table-progress">
-                    <tr>
-                        <td colspan="3">
-                            <div class="timer-control">
-                                <button id="btn-modal-timer-settings" class="stat-btn timer-settings" title="Режим времени">
-                                    <span id="modal-timer-mode-icon" class="timer-mode-icon" aria-hidden="true"></span>
-                                </button>
-                                <button id="btn-modal-timer" class="stat-btn row-timer timer" disabled title="Время работы над диктантом">
-                                    <span id="modal_timer">00:00:00</span>
-                                </button>
-                            </div>
-                        </td>
-                        <td>
-                            <button id="btn-modal-circle-number" class="stat-btn row-timer nymber" title="Какой раз проходим диктант">
-                                <i data-lucide="iteration-cw"></i>
-                                <span id="modal-circle-number">0</span>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <button id="btn-modal-count-perfect" class="stat-btn perfect" disabled title="Количество предложений набранных без ошибок с 1-й попытки">
-                                <i data-lucide="star"></i>
-                                <span id="modal-count-perfect">0</span>
-                            </button>
-                        </td>
-                        <td>
-                            <button id="btn-modal-count-corrected" class="stat-btn corrected" disabled title="Количество набранных предложений">
-                                <i data-lucide="star-half"></i>
-                                <span id="modal-count-corrected">0</span>
-                            </button>
-                        </td>
-                        <td>
-                            <button id="btn-modal-count-audio" class="stat-btn corrected-audio" disabled title="Сколько предложений прошло аудио контроль">
-                                <i data-lucide="mic-off"></i>
-                                <span id="modal-count-audio">0</span>
-                            </button>
-                        </td>
-                        <td>
-                            <button id="btn-modal-count-total" class="stat-btn total" disabled title="Общее количество предложений на круге">
-                                <i data-lucide="layers"></i>
-                                <span id="modal-count-total">0</span>
-                            </button>
-                        </td>
-                    </tr>
-                </table>
-            `;
-        }
+        // Используем общий метод генерации HTML
+        container.innerHTML = this._generateHTML(variant);
 
         if (window.lucide && window.lucide.createIcons) {
             window.lucide.createIcons();
@@ -185,7 +142,6 @@ class ProgressPanel {
             timer: document.getElementById('timer'),
             timerSettings: document.getElementById('btn-timer-settings'),
             timerModeIcon: document.getElementById('timer-mode-icon'),
-            circleNumber: document.getElementById('circle-number'),
             perfect: document.getElementById('count-perfect'),
             corrected: document.getElementById('count-corrected'),
             audio: document.getElementById('count-audio'),
@@ -193,7 +149,6 @@ class ProgressPanel {
             modalTimer: document.getElementById('modal_timer'),
             modalTimerSettings: document.getElementById('btn-modal-timer-settings'),
             modalTimerModeIcon: document.getElementById('modal-timer-mode-icon'),
-            modalCircleNumber: document.getElementById('modal-circle-number'),
             modalPerfect: document.getElementById('modal-count-perfect'),
             modalCorrected: document.getElementById('modal-count-corrected'),
             modalAudio: document.getElementById('modal-count-audio'),
@@ -213,9 +168,6 @@ class ProgressPanel {
         
         // Обновим глобальные переменные для совместимости со старым кодом
         if (typeof window !== 'undefined') {
-            window.circleBtn = document.getElementById('btn-circle-number');
-            window.circleBtnModal = document.getElementById('btn-modal-circle-number');
-            
             // Обновляем ссылки на элементы таймера для старой системы
             const timerEl = document.getElementById('timer');
             const modalTimerEl = document.getElementById('modal_timer');
@@ -276,10 +228,6 @@ class ProgressPanel {
                 });
             }
             
-            // Вызываем функцию установки обработчиков, если она существует
-            if (typeof window.setupCircleButtonHandlers === 'function') {
-                window.setupCircleButtonHandlers();
-            }
         }
 
         this.markClean({ lastSaveOk: true });
@@ -658,9 +606,6 @@ class ProgressPanel {
         if (this.elements.total) {
             this.elements.total.textContent = safe(this.stats.total);
         }
-        if (this.elements.circleNumber) {
-            this.elements.circleNumber.textContent = safe(this.stats.circleNumber);
-        }
 
         // Обновляем модальный UI
         if (this.elements.modalPerfect) {
@@ -674,9 +619,6 @@ class ProgressPanel {
         }
         if (this.elements.modalTotal) {
             this.elements.modalTotal.textContent = safe(this.stats.total);
-        }
-        if (this.elements.modalCircleNumber) {
-            this.elements.modalCircleNumber.textContent = safe(this.stats.circleNumber);
         }
 
         // Обновляем таймер

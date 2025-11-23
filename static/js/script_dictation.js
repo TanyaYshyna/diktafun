@@ -14,6 +14,10 @@ let progressPanel = null; // Панель прогресса
 // let userManager = null;
 // circleBtn будет переопределен после рендера панели прогресса
 let circleBtn = document.getElementById('btn-circle-number');
+const btnCurrent = document.getElementById("sentenceCurrentNumber");
+const btnPrev = document.getElementById("checkPrevios");
+const btnNext = document.getElementById("checkNext");
+
 
 const inputField = document.getElementById('userInput');
 const RTL_LANGUAGE_PREFIXES = ['ar'];
@@ -96,7 +100,14 @@ let playSequenceSuccess = "ot"; // Для правильного ответа (�
  * только те предложениы которые не набраны с первого раза верно)
  * @property {0|1}    circle_number_of_perfect    // 1 — с первого раза (на текущем круге)
  * @property {0|1}    circle_number_of_corrected  // 1 — со 2-й и далее (на текущем круге)
- * @property {number} circle_number_of_audio      // 1,2,.. круги по диктанту (сколько раз проходим "с начала" в реальности каждый следующий раз проходим только те предложениы которые не набраны с первого раха верно)
+ * @property {number} circle_number_of_audio      // 1,2,.. сколько раз надиктовано аудио
+ * 
+ * @property {'unchecked'|'checked'|'completed'} selection_state  // Состояние выбора в таблице:
+ *   - 'unchecked' - не выбрано для работы (пустой кружочек)
+ *   - 'checked' - выбрано для работы (кружок с галочкой)
+ *   - 'completed' - все выполнено (кружок со звездой, не изменяется кнопкой "отметить все")
+ * 
+ * @property {boolean} all_audio_completed  // Все аудио для этого предложения выполнены (>= REQUIRED_PASSED_COUNT)
  * 
  */
 /** @type {Sentence[]} */
@@ -131,6 +142,7 @@ let counterTabloBtn; // кнопка на которой текущая пози
 let counterTabloIndex = 0; // текущая позиция курсора
 let counterTabloIndex_old = 0; // предыдущая позиция курсора
 let buttonsTablo = [];
+let totalSelectedSentences = 0; // Общее количество выбранных предложений при старте (не изменяется)
 
 // номер текущего круга
 let circle_number = 0;
@@ -476,6 +488,197 @@ function hideExitModal() {
     window.pendingExitAction = null;
 }
 
+/**
+ * Показывает модальное окно завершения диктанта
+ */
+function showCompletionModal() {
+    const completionModal = document.getElementById('completionModal');
+    if (!completionModal) {
+        console.warn('Модальное окно завершения не найдено');
+        return;
+    }
+    
+    // Останавливаем таймер
+    stopTimer();
+    
+    // Останавливаем таймер бездействия
+    if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = null;
+    }
+    
+    // Останавливаем все аудио
+    stopAllAudios();
+    
+    // Показываем модальное окно
+    completionModal.style.display = 'flex';
+    
+    // Инициализируем иконки Lucide
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
+    
+    // Устанавливаем фокус на кнопку "Пройти еще раз"
+    const retryBtn = document.getElementById('completionRetryBtn');
+    if (retryBtn) {
+        retryBtn.focus();
+    }
+}
+
+/**
+ * Скрывает модальное окно завершения диктанта
+ */
+function hideCompletionModal() {
+    const completionModal = document.getElementById('completionModal');
+    if (completionModal) {
+        completionModal.style.display = 'none';
+    }
+}
+
+/**
+ * Инициализация обработчиков модального окна завершения
+ */
+function setupCompletionModalHandlers() {
+    const completionModal = document.getElementById('completionModal');
+    const exitBtn = document.getElementById('completionExitBtn');
+    const retryBtn = document.getElementById('completionRetryBtn');
+    
+    if (!completionModal || !exitBtn || !retryBtn) {
+        console.warn('Элементы модального окна завершения не найдены');
+        return;
+    }
+    
+    // Обработчик кнопки "Выйти"
+    // Если диктант полностью завершен, история уже сохранена и черновик удален
+    // Не нужно показывать модальное окно сохранения прогресса - сразу выходим
+    exitBtn.addEventListener('click', () => {
+        hideCompletionModal();
+        // При полном завершении сразу перенаправляем на главную
+        // История уже сохранена через registerCompletedDictation()
+        // Черновик уже удален, временный прогресс не нужен
+        window.location.href = "/";
+    });
+    
+    // Обработчик кнопки "Пройти еще раз"
+    retryBtn.addEventListener('click', () => {
+        hideCompletionModal();
+        
+        // Сбрасываем флаг начала игры
+        gameHasAlreadyBegun = false;
+        
+        // Сбрасываем completed состояние у всех предложений и отмечаем их как checked
+        allSentences.forEach(s => {
+            // Сбрасываем состояние выбора - все становятся checked (доступны для выбора)
+            // completed предложения теряют звезду и становятся обычными
+            s.selection_state = 'checked';
+            updateSentenceSelectionState(s);
+        });
+        
+        // Обновляем таблицу выбора предложений
+        renderSelectionTable();
+        
+        // Показываем модальное окно списка предложений
+        startModal.style.display = 'flex';
+        
+        // Инициализируем иконки Lucide
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+        
+        // Устанавливаем фокус на кнопку "Начать"
+        if (confirmStartBtn) {
+            confirmStartBtn.focus();
+        }
+    });
+    
+    // Закрытие по клику вне контента
+    // При полном завершении сразу выходим, без модального окна сохранения прогресса
+    completionModal.addEventListener('click', (e) => {
+        if (e.target === completionModal) {
+            hideCompletionModal();
+            // При полном завершении сразу перенаправляем на главную
+            window.location.href = "/";
+        }
+    });
+    
+    // Закрытие по клавише Escape
+    // При полном завершении сразу выходим, без модального окна сохранения прогресса
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && completionModal.style.display === 'flex') {
+            hideCompletionModal();
+            // При полном завершении сразу перенаправляем на главную
+            window.location.href = "/";
+        }
+    });
+}
+
+/**
+ * Показывает модальное окно предупреждения о невыбранных предложениях
+ */
+function showNoSelectionModal() {
+    const noSelectionModal = document.getElementById('noSelectionModal');
+    if (!noSelectionModal) {
+        console.warn('Модальное окно предупреждения не найдено');
+        return;
+    }
+    
+    // Показываем модальное окно
+    noSelectionModal.style.display = 'flex';
+    
+    // Инициализируем иконки Lucide
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
+    
+    // Устанавливаем фокус на кнопку "Понятно"
+    const okBtn = document.getElementById('noSelectionOkBtn');
+    if (okBtn) {
+        okBtn.focus();
+    }
+}
+
+/**
+ * Скрывает модальное окно предупреждения о невыбранных предложениях
+ */
+function hideNoSelectionModal() {
+    const noSelectionModal = document.getElementById('noSelectionModal');
+    if (noSelectionModal) {
+        noSelectionModal.style.display = 'none';
+    }
+}
+
+/**
+ * Инициализация обработчиков модального окна предупреждения
+ */
+function setupNoSelectionModalHandlers() {
+    const noSelectionModal = document.getElementById('noSelectionModal');
+    const okBtn = document.getElementById('noSelectionOkBtn');
+    
+    if (!noSelectionModal || !okBtn) {
+        console.warn('Элементы модального окна предупреждения не найдены');
+        return;
+    }
+    
+    // Обработчик кнопки "Понятно"
+    okBtn.addEventListener('click', () => {
+        hideNoSelectionModal();
+    });
+    
+    // Закрытие по клику вне контента
+    noSelectionModal.addEventListener('click', (e) => {
+        if (e.target === noSelectionModal) {
+            hideNoSelectionModal();
+        }
+    });
+    
+    // Закрытие по клавише Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && noSelectionModal.style.display === 'flex') {
+            hideNoSelectionModal();
+        }
+    });
+}
+
 // ===== Обработчики аутентификации =====
 function setupAuthHandlers() {
     const loginBtn = document.getElementById('loginBtn');
@@ -729,6 +932,98 @@ function makeByKeyMap(arr) {
 
 // ====== 2.1 Рендер универсальной таблицы ======
 
+/**
+ * Вычисляет состояние выбора предложения на основе прогресса
+ * @param {Sentence} s - Предложение
+ * @returns {'unchecked'|'checked'|'completed'} Состояние выбора
+ */
+function calculateSentenceSelectionState(s) {
+    if (!s) return 'unchecked';
+    
+    const totalPerfect = (Number(s.number_of_perfect) || 0) + (Number(s.circle_number_of_perfect) || 0);
+    const totalAudio = (Number(s.number_of_audio) || 0) + (Number(s.circle_number_of_audio) || 0);
+    const unavailable = getUnavailable(s);
+    
+    // Проверяем, полностью ли выполнено предложение
+    // completed: текст набран с первого раза (perfect) И все аудио выполнены
+    const isCompleted = unavailable || (totalPerfect > 0 && totalAudio >= REQUIRED_PASSED_COUNT);
+    
+    if (isCompleted) {
+        return 'completed';
+    }
+    
+    // Если не completed, проверяем выбрано ли оно
+    return selectedSentences.includes(s.key) ? 'checked' : 'unchecked';
+}
+
+/**
+ * Обновляет состояние выбора предложения в объекте и синхронизирует с selectedSentences
+ * @param {Sentence} s - Предложение
+ * @param {boolean} forceUpdate - Принудительно обновить состояние (по умолчанию вычисляется автоматически)
+ */
+function updateSentenceSelectionState(s, forceUpdate = false) {
+    if (!s) return;
+    
+    if (forceUpdate || s.selection_state === undefined) {
+        s.selection_state = calculateSentenceSelectionState(s);
+    }
+    
+    // Синхронизируем selectedSentences с состоянием
+    // НЕ удаляем предложения из selectedSentences - они должны оставаться в списке для навигации
+    // Только добавляем новые checked предложения, если их еще нет
+    if ((s.selection_state === 'checked' || s.selection_state === 'completed') && !selectedSentences.includes(s.key)) {
+        selectedSentences.push(s.key);
+    }
+    // Предложения НЕ удаляются из selectedSentences - они остаются в списке с разными состояниями
+}
+
+/**
+ * Рендерит кнопку состояния для строки таблицы
+ * @param {HTMLElement} statusBtn - Элемент кнопки
+ * @param {Sentence} s - Предложение
+ * @param {HTMLElement} row - Строка таблицы (опционально, для добавления классов)
+ */
+function renderSelectionStateButton(statusBtn, s, row = null) {
+    if (!statusBtn || !s) return;
+    
+    // Обновляем состояние в объекте предложения
+    updateSentenceSelectionState(s);
+    
+    const state = s.selection_state || calculateSentenceSelectionState(s);
+    
+    // Очищаем предыдущие классы и атрибуты
+    statusBtn.className = 'sentence-check';
+    statusBtn.dataset.key = s.key;
+    
+    if (state === 'completed') {
+        statusBtn.dataset.checked = 'star';
+        statusBtn.innerHTML = '<i data-lucide="circle-star"></i>';
+        statusBtn.style.cursor = 'not-allowed';
+        if (row) {
+            row.classList.add('sentence-row-completed');
+        }
+    } else if (state === 'checked') {
+        statusBtn.dataset.checked = 'true';
+        statusBtn.innerHTML = '<i data-lucide="circle-check-big"></i>';
+        statusBtn.style.cursor = 'pointer';
+        if (row) {
+            row.classList.remove('sentence-row-completed');
+        }
+    } else { // 'unchecked'
+        statusBtn.dataset.checked = 'false';
+        statusBtn.innerHTML = '<i data-lucide="circle"></i>';
+        statusBtn.style.cursor = 'pointer';
+        if (row) {
+            row.classList.remove('sentence-row-completed');
+        }
+    }
+    
+    // Обновляем иконки Lucide
+    if (window.lucide?.createIcons) {
+        lucide.createIcons();
+    }
+}
+
 const tableSentences = document.querySelector(`#sentences-table tbody`);
 function renderSelectionTable() {
     if (!tableSentences) return;
@@ -741,8 +1036,33 @@ function renderSelectionTable() {
     allSentences.forEach((s) => {
         const row = document.createElement('tr');
 
-        const isChecked = hasPreselection ? selectedSentences.includes(s.key) : true;
-        if (isChecked) {
+        // Инициализируем состояние выбора если его нет
+        if (s.selection_state === undefined) {
+            // При первой загрузке: если есть предвыбор, используем его, иначе все выбрано
+            if (hasPreselection) {
+                s.selection_state = selectedSentences.includes(s.key) ? 'checked' : 'unchecked';
+            } else {
+                // Если нет предвыбора - все предложения выбраны по умолчанию (кроме completed)
+                const isCompleted = calculateSentenceSelectionState(s) === 'completed';
+                s.selection_state = isCompleted ? 'completed' : 'checked';
+            }
+        }
+        
+        // Обновляем состояние на основе текущего прогресса (но не перезаписываем явно установленное checked)
+        const calculatedState = calculateSentenceSelectionState(s);
+        if (calculatedState === 'completed') {
+            s.selection_state = 'completed';
+        } else if (s.selection_state !== 'checked' && s.selection_state !== 'unchecked') {
+            // Если состояние не было явно установлено, используем вычисленное
+            s.selection_state = calculatedState;
+        }
+        
+        // Синхронизируем с selectedSentences
+        updateSentenceSelectionState(s);
+        
+        // Добавляем в обновленный список все предложения (checked и completed)
+        // unchecked тоже остаются в списке для навигации
+        if (s.selection_state === 'checked' || s.selection_state === 'completed' || s.selection_state === 'unchecked') {
             updatedSelection.push(s.key);
         }
 
@@ -750,23 +1070,11 @@ function renderSelectionTable() {
         const totalCorrected = (Number(s.number_of_corrected) || 0) + (Number(s.circle_number_of_corrected) || 0);
         const totalAudio = (Number(s.number_of_audio) || 0) + (Number(s.circle_number_of_audio) || 0);
         const remainingAudio = Math.max(0, getRemainingAudio(s));
-        const completedSentence = getUnavailable(s) || (totalPerfect > 0 && totalAudio >= REQUIRED_PASSED_COUNT);
 
         // Колонка выбора
         const selectCell = document.createElement('td');
         const statusBtn = document.createElement('button');
-        statusBtn.className = 'sentence-check';
-        statusBtn.dataset.key = s.key;
-
-        if (completedSentence) {
-            statusBtn.dataset.checked = 'star';
-            statusBtn.innerHTML = '<i data-lucide="circle-star"></i>';
-            statusBtn.style.cursor = 'not-allowed';
-            row.classList.add('sentence-row-completed');
-        } else {
-            statusBtn.dataset.checked = isChecked ? 'true' : 'false';
-            statusBtn.innerHTML = `<i data-lucide="${isChecked ? 'circle-check-big' : 'circle'}"></i>`;
-        }
+        renderSelectionStateButton(statusBtn, s, row);
         selectCell.appendChild(statusBtn);
 
         // Колонка кода
@@ -793,9 +1101,7 @@ function renderSelectionTable() {
         if (totalAudio > 0) {
             audioHTML += `<span>${totalAudio}</span>`;
         }
-        if (remainingAudio > 0) {
-            audioHTML += `<small>(${remainingAudio})</small>`;
-        }
+        // Убрали число в скобках (remainingAudio) - оно есть в шапке
         audioCell.innerHTML = audioHTML;
 
         // Предложение (оригинал/перевод)
@@ -812,7 +1118,38 @@ function renderSelectionTable() {
         tableSentences.appendChild(row);
     });
 
+    // Обновляем selectedSentences - все предложения остаются в списке
+    // Просто синхронизируем порядок и добавляем новые, если есть
     selectedSentences = Array.from(new Set(updatedSelection));
+    
+    // Убеждаемся, что все предложения из allSentences есть в selectedSentences
+    allSentences.forEach(s => {
+        if (!selectedSentences.includes(s.key)) {
+            selectedSentences.push(s.key);
+        }
+    });
+    
+    // Если после рендеринга selectedSentences пустой, но есть checked предложения - исправляем
+    if (selectedSentences.length === 0) {
+        allSentences.forEach(s => {
+            if (s.selection_state === 'checked') {
+                selectedSentences.push(s.key);
+            }
+        });
+    }
+    
+    // Убеждаемся что selectedSentences не пустой после рендеринга
+    if (selectedSentences.length === 0 && allSentences.length > 0) {
+        // Если ничего не выбрано, но есть предложения - выбираем все не-completed
+        allSentences.forEach(s => {
+            if (s.selection_state !== 'completed') {
+                s.selection_state = 'checked';
+                selectedSentences.push(s.key);
+            }
+        });
+    }
+    
+    console.log('[renderSelectionTable] selectedSentences после рендеринга:', selectedSentences.length, selectedSentences);
 
     if (!tableSentences.dataset.listenerAttached) {
         tableSentences.addEventListener('click', handleSentenceTableClick);
@@ -834,29 +1171,26 @@ function handleSentenceTableClick(e) {
     if (!statusBtn) return;
 
     const key = statusBtn.dataset.key;
-    if (statusBtn.dataset.checked === 'star') {
+    const s = makeByKeyMap(allSentences).get(key);
+    if (!s) return;
+    
+    // Нельзя изменить состояние completed
+    if (s.selection_state === 'completed' || statusBtn.dataset.checked === 'star') {
         return;
     }
-    const isCurrentlyChecked = statusBtn.dataset.checked === 'true';
-    const newState = !isCurrentlyChecked;
-
-    statusBtn.dataset.checked = newState.toString();
-    statusBtn.innerHTML = `<i data-lucide="${newState ? 'circle-check-big' : 'circle'}"></i>`;
-
-    if (newState) {
-        if (!selectedSentences.includes(key)) {
-            selectedSentences.push(key);
-        }
-    } else {
-        selectedSentences = selectedSentences.filter(k => k !== key);
-    }
+    
+    // Переключаем состояние между checked и unchecked
+    const isCurrentlyChecked = s.selection_state === 'checked';
+    s.selection_state = isCurrentlyChecked ? 'unchecked' : 'checked';
+    
+    // Обновляем selectedSentences
+    updateSentenceSelectionState(s);
+    
+    // Перерисовываем кнопку
+    const row = statusBtn.closest('tr');
+    renderSelectionStateButton(statusBtn, s, row);
 
     updateAllCheckboxState();
-
-    if (window.lucide?.createIcons) {
-        lucide.createIcons();
-    }
-
     confirmStartBtn.focus();
 }
 
@@ -911,26 +1245,28 @@ function initializeAllCheckbox() {
 
             document.querySelectorAll('#sentences-table .sentence-check').forEach(checkbox => {
                 const key = checkbox.dataset.key;
-
+                const s = makeByKeyMap(allSentences).get(key);
+                if (!s) return;
+                
+                // НЕ изменяем состояние completed предложений
+                if (s.selection_state === 'completed') {
+                    return;
+                }
+                
+                const row = checkbox.closest('tr');
+                
                 if (newState === 'true') {
-                    checkbox.dataset.checked = 'true';
-                    checkbox.innerHTML = '<i data-lucide="circle-check-big"></i>';
-                    if (!selectedSentences.includes(key)) {
-                        selectedSentences.push(key);
-                    }
+                    s.selection_state = 'checked';
+                    updateSentenceSelectionState(s);
+                    renderSelectionStateButton(checkbox, s, row);
                 } else if (newState === 'false') {
-                    checkbox.dataset.checked = 'false';
-                    checkbox.innerHTML = '<i data-lucide="circle"></i>';
-                    selectedSentences = selectedSentences.filter(k => k !== key);
+                    s.selection_state = 'unchecked';
+                    updateSentenceSelectionState(s);
+                    renderSelectionStateButton(checkbox, s, row);
                 }
             });
 
             updateAllCheckboxState();
-
-            if (window.lucide?.createIcons) {
-                lucide.createIcons();
-            }
-
             confirmStartBtn.focus();
         });
         allCheckbox.dataset.listenerAttached = '1';
@@ -988,6 +1324,17 @@ function initializeResetProgressButton() {
     resetProgressBtn.dataset.listenerAttached = '1';
 }
 
+/**
+ * Очищает черновик (теперь только на сервере, localStorage больше не используется)
+ */
+function clearLocalStorageDraft() {
+    // Функция оставлена для совместимости, но localStorage больше не используется
+    // Черновики хранятся только на сервере
+    if (!currentDictation.id) return;
+    // Можно удалить черновик на сервере, если нужно
+    // Но обычно это делается через deleteResumeState в других местах
+}
+
 function resetDictationProgress() {
     allSentences.forEach(s => {
         s.number_of_perfect = 0;
@@ -996,11 +1343,21 @@ function resetDictationProgress() {
         s.circle_number_of_perfect = 0;
         s.circle_number_of_corrected = 0;
         s.circle_number_of_audio = 0;
+        s.circle_number_of = 0;
+        // Сбрасываем состояние выбора - все становятся checked (кроме completed, но их не будет после сброса)
+        s.selection_state = 'checked';
     });
 
     number_of_perfect = 0;
     number_of_corrected = 0;
     number_of_audio = 0;
+    circle_number = 0;
+    
+    // Очищаем localStorage черновика
+    clearLocalStorageDraft();
+    
+    // Все предложения выбраны после сброса
+    selectedSentences = allSentences.map(s => s.key);
 
     const panel = getProgressPanelInstance();
     if (panel) {
@@ -1016,7 +1373,7 @@ function resetDictationProgress() {
     }
 
     renderSelectionTable();
-    updateStats(showAllStats ? null : circle_number);
+    updateStats();
     showSaveToast('Прогресс по предложениям очищен.');
 }
 
@@ -1028,7 +1385,12 @@ function resetDictationProgress() {
 function getUnavailable(s = currentSentence) {
     // закончена ли работа над текущим предложением
     // Должны набрать REQUIRED_PASSED_COUNT + 1
-    const sum = s.number_of_perfect + s.circle_number_of_perfect - 1 + s.number_of_audio + s.circle_number_of_audio;
+    if (!s) return false;
+    const number_of_perfect = Number(s.number_of_perfect) || 0;
+    const circle_number_of_perfect = Number(s.circle_number_of_perfect) || 0;
+    const number_of_audio = Number(s.number_of_audio) || 0;
+    const circle_number_of_audio = Number(s.circle_number_of_audio) || 0;
+    const sum = number_of_perfect + circle_number_of_perfect - 1 + number_of_audio + circle_number_of_audio;
     return sum === REQUIRED_PASSED_COUNT;
 }
 
@@ -1042,25 +1404,14 @@ function updateTableRowStatus(s) {
     const row = tableSentences.querySelector(`tr button[data-key="${s.key}"]`)?.closest('tr');
     if (!row) return;
 
-    const unavailable = getUnavailable(s);
+    // Обновляем состояние предложения на основе прогресса
+    updateSentenceSelectionState(s, true);
+    
+    // Перерисовываем кнопку состояния
     const statusIcon = row.querySelector('.sentence-check');
-
-    if (unavailable) {
-        statusIcon.style.cursor = 'not-allowed';
-        statusIcon.style.color = 'var(--color-button-gray)';
-        statusIcon.innerHTML = '<i data-lucide="circle-star"></i>';
-        statusIcon.dataset.checked = 'star';
-    } else {
-        statusIcon.style.cursor = 'pointer';
-
-        if (selectedSentences.includes(s.key)) {
-            statusIcon.innerHTML = '<i data-lucide="circle-check-big"></i>';
-        } else {
-            statusIcon.innerHTML = '<i data-lucide="circle"></i>';
-        }
+    if (statusIcon) {
+        renderSelectionStateButton(statusIcon, s, row);
     }
-
-    lucide.createIcons();
 
     const starCell = row.querySelector('td:nth-child(3)');
     const halfStarCell = row.querySelector('td:nth-child(4)');
@@ -1070,6 +1421,7 @@ function updateTableRowStatus(s) {
     const totalCorrected = (Number(s.number_of_corrected) || 0) + (Number(s.circle_number_of_corrected) || 0);
     const totalAudio = (Number(s.number_of_audio) || 0) + (Number(s.circle_number_of_audio) || 0);
     const remainingAudio = getRemainingAudio(s);
+    const unavailable = getUnavailable(s);
 
     if (starCell) {
         const perfectColor = totalPerfect > 0 ? 'var(--color-button-mint)' : 'var(--color-button-gray)';
@@ -1147,15 +1499,36 @@ function prepareGameFromTable() {
 function getSelectedSentences() {
     selectedSentences = [];
 
-    // Находим все отмеченные кнопки в таблице выбора
-    document.querySelectorAll('#sentences-table .sentence-check').forEach(button => {
-        // Проверяем состояние через data-атрибут
-        if (button.dataset.checked === 'true' && button.style.cursor !== 'not-allowed') {
-            selectedSentences.push(button.dataset.key);
+    // Собираем выбранные предложения из таблицы (проверяем DOM)
+    const checkboxes = document.querySelectorAll('#sentences-table .sentence-check');
+    checkboxes.forEach(checkbox => {
+        const key = checkbox.dataset.key;
+        const state = checkbox.dataset.checked;
+        
+        // Добавляем если checked (но не star/completed)
+        if (state === 'true' && key) {
+            const s = makeByKeyMap(allSentences).get(key);
+            if (s) {
+                // Обновляем состояние в объекте предложения
+                s.selection_state = 'checked';
+                if (!selectedSentences.includes(key)) {
+                    selectedSentences.push(key);
+                }
+            }
         }
     });
-
-    // console.log("Selected sentences:", selectedSentences);
+    
+    // Если ничего не выбрано в таблице, но есть предложения с checked состоянием - используем их
+    if (selectedSentences.length === 0) {
+        allSentences.forEach(s => {
+            updateSentenceSelectionState(s, true);
+            if (s.selection_state === 'checked') {
+                selectedSentences.push(s.key);
+            }
+        });
+    }
+    
+    console.log('[getSelectedSentences] Выбрано предложений:', selectedSentences.length, selectedSentences);
 }
 
 // 
@@ -1165,6 +1538,9 @@ function startGame(isResume = false) {
     // Если это продолжение черновика, не увеличиваем круг
     if (!isResume) {
         circle_number++;
+        
+        // При новом круге создаем файл черновика заново (если он был удален при завершении)
+        // Это происходит автоматически при первом сохранении черновика
     }
 
     // Обновляем номер сессии в статистике
@@ -1193,9 +1569,20 @@ function startGame(isResume = false) {
 
     // выбрать из таблицы ключи отмеченных предложений по порядку
     getSelectedSentences();
+    
+    // Если ничего не выбрано, проверяем еще раз и показываем более информативное сообщение
     if (!selectedSentences.length) {
-        alert("Нечего повторять: ничего не отмечено.");
-        return;
+        // Попробуем собрать из DOM еще раз
+        const checkboxes = document.querySelectorAll('#sentences-table .sentence-check[data-checked="true"]');
+        if (checkboxes.length > 0) {
+            selectedSentences = Array.from(checkboxes).map(cb => cb.dataset.key).filter(Boolean);
+            console.log('[startGame] Найдено выбранных предложений в DOM:', selectedSentences.length);
+        }
+        
+        if (!selectedSentences.length) {
+            showNoSelectionModal();
+            return;
+        }
     }
 
     if (circle_number === 1) {
@@ -1220,14 +1607,25 @@ function startGame(isResume = false) {
         // а сейчас результаты надо из круга сложить в общие 
         // а для нового круга обнулить
         allSentences.forEach(s => {
-
-            // общие итоги
-            number_of_perfect += s.circle_number_of_perfect;
+            // ВАЖНО: circle_number_of_perfect может быть только 0 или 1
+            // Если уже было perfect в предыдущих кругах (number_of_perfect = 1), 
+            // то не добавляем еще раз, даже если на текущем круге тоже perfect
+            // Perfect может быть только один раз за весь диктант для каждого предложения
+            
+            // общие итоги - суммируем только если еще не было perfect
+            // number_of_perfect - это глобальная переменная, которая считает КОЛИЧЕСТВО предложений с perfect
+            // s.number_of_perfect - это флаг для конкретного предложения (0 или 1)
+            if (s.number_of_perfect === 0 && s.circle_number_of_perfect === 1) {
+                number_of_perfect += 1; // увеличиваем счетчик предложений с perfect
+                s.number_of_perfect = 1; // устанавливаем флаг perfect для этого предложения
+            }
+            
+            // corrected и audio можно суммировать
             number_of_corrected += s.circle_number_of_corrected;
             number_of_audio += s.circle_number_of_audio;
 
             // в предложении
-            s.number_of_perfect += s.circle_number_of_perfect;
+            // number_of_perfect уже установлен выше (0 или 1)
             s.number_of_corrected += s.circle_number_of_corrected;
             s.number_of_audio += s.circle_number_of_audio;
 
@@ -1251,7 +1649,7 @@ function startGame(isResume = false) {
 
     initTabloSentenceCounter();
     showCurrentSentence(0, 0);//функция загрузки предложения
-    syncCircleButton();       // первичная синхронизация табло итогов
+    updateStats();            // показываем полные итоги
     applyStatusNewCircle(); // кнопка новий цикл знов прозора 
 
     // закриваэмо модалку
@@ -1464,9 +1862,19 @@ function updateAudioPanelVisibility() {
     const answer = document.getElementById('userAudioAnswer');
 
     const R = Number(REQUIRED_PASSED_COUNT ?? 0);
+    
+    // Проверяем, все ли аудио выполнены для текущего предложения
+    const allAudioCompleted = currentSentence && currentSentence.all_audio_completed;
 
     const hide = (el) => { if (el) el.style.display = 'none'; };
     const show = (el) => { if (el) el.style.display = ''; };
+    
+    // Если все аудио выполнены, скрываем панель аудио
+    if (allAudioCompleted && R > 0) {
+        hide(panel);
+        hide(group);
+        return;
+    }
 
     count_percent.textContent = 0;
 
@@ -1529,136 +1937,42 @@ function updateStats(circle = null) {
     const sum = sumRez();
     const panel = getProgressPanelInstance();
 
-    // Вычисляем общие значения
-    let totalPerfect, totalCorrected, totalAudio, totalTotal;
+    // Всегда показываем итоги по всем кругам (убрали переключение между кругами)
+    // итоги общие по всем кругам 
+    const totalPerfect = number_of_perfect + sum.circle_number_of_perfect;
+    const totalCorrected = number_of_corrected + sum.circle_number_of_corrected;
+    const totalAudio = number_of_audio + sum.circle_number_of_audio;
+    const totalTotal = allSentences.length;
     
-    if (circle === null) {
-        // итоги общие по всем кругам 
-        totalPerfect = number_of_perfect + sum.circle_number_of_perfect;
-        totalCorrected = number_of_corrected + sum.circle_number_of_corrected;
-        totalAudio = number_of_audio + sum.circle_number_of_audio;
-        totalTotal = allSentences.length;
-        
-        // в диктанте
-        setText('count-perfect', totalPerfect);
-        setText('count-corrected', totalCorrected);
-        setText('count-audio', totalAudio);
-        setText('count-total', totalTotal);
+    // в диктанте
+    setText('count-perfect', totalPerfect);
+    setText('count-corrected', totalCorrected);
+    setText('count-audio', totalAudio);
+    setText('count-total', totalTotal);
 
-        // в модалке
-        setText('modal-count-perfect', totalPerfect);
-        setText('modal-count-corrected', totalCorrected);
-        setText('modal-count-audio', totalAudio);
-        setText('modal-count-total', totalTotal);
-    } else {
-        // итоги по текущему кругу
-        totalPerfect = sum.circle_number_of_perfect;
-        totalCorrected = sum.circle_number_of_corrected;
-        totalAudio = sum.circle_number_of_audio;
-        totalTotal = selectedSentences.length;
-        
-        // в диктанте
-        setText('count-perfect', totalPerfect);
-        setText('count-corrected', totalCorrected);
-        setText('count-audio', totalAudio);
-        setText('count-total', totalTotal);
-
-        // в модалке
-        setText('modal-count-perfect', totalPerfect);
-        setText('modal-count-corrected', totalCorrected);
-        setText('modal-count-audio', totalAudio);
-        setText('modal-count-total', totalTotal);
-        setText('modal-circle-number', circle_number);
-    }
+    // в модалке
+    setText('modal-count-perfect', totalPerfect);
+    setText('modal-count-corrected', totalCorrected);
+    setText('modal-count-audio', totalAudio);
+    setText('modal-count-total', totalTotal);
 
     // Обновляем статистику в новой системе (ProgressPanel)
     if (panel) {
-        const overallPerfect = circle === null ? totalPerfect : (number_of_perfect + totalPerfect);
-        const overallCorrected = circle === null ? totalCorrected : (number_of_corrected + totalCorrected);
-        const overallAudio = circle === null ? totalAudio : (number_of_audio + totalAudio);
-        
-        panel.setStat('perfect', overallPerfect);
-        panel.setStat('corrected', overallCorrected);
-        panel.setStat('audio', overallAudio);
+        panel.setStat('perfect', totalPerfect);
+        panel.setStat('corrected', totalCorrected);
+        panel.setStat('audio', totalAudio);
         panel.setStat('total', totalTotal);
         panel.setStat('circleNumber', circle_number);
     }
 
     // Обновляем статистику в старой системе (для совместимости)
     if (dictationStatistics) {
-        const overallPerfect = circle === null ? totalPerfect : (number_of_perfect + totalPerfect);
-        const overallCorrected = circle === null ? totalCorrected : (number_of_corrected + totalCorrected);
-        const overallAudio = circle === null ? totalAudio : (number_of_audio + totalAudio);
-        dictationStatistics.updateStats(overallPerfect, overallCorrected, overallAudio, totalTotal);
+        dictationStatistics.updateStats(totalPerfect, totalCorrected, totalAudio, totalTotal);
     }
 };
 
-let showAllStats = false; // режим показа: ALL или текущий круг
-
-function syncCircleButton() {
-    // Получаем элементы динамически (они могут быть созданы через render)
-    const btn = document.getElementById('btn-circle-number');
-    const btnModal = document.getElementById('btn-modal-circle-number');
-    
-    if (!btn || !btnModal) {
-        console.warn('syncCircleButton: элементы кнопок не найдены, возможно еще не отрендерены');
-        return;
-    }
-
-    if (showAllStats) {
-        btn.innerHTML = `<i data-lucide="slack"></i>`;
-        btn.title = 'Показываю итоги по всем кругам. Нажми, чтобы вернуться к текущему кругу.';
-
-        btnModal.innerHTML = `<i data-lucide="slack"></i>`;
-        btnModal.title = 'Показываю итоги по всем кругам. Нажми, чтобы вернуться к текущему кругу.';
-
-        updateStats();
-    } else {
-        btn.innerHTML = `<i data-lucide="iteration-cw"></i><span class="audio-counter">${circle_number}</span>`;
-        btn.title = 'Показываю итоги текущего круга. Нажми, чтобы показать все круги.';
-
-        btnModal.innerHTML = `<i data-lucide="iteration-cw"></i><span class="audio-counter">${circle_number}</span>`;
-        btnModal.title = 'Показываю итоги текущего круга. Нажми, чтобы показать все круги.';
-
-        updateStats(circle_number);
-    }
-    lucide.createIcons();
-    // сразу пересчитываем perfect/corrected/audio/total
-};
-
-
-// Функция для установки обработчиков событий на кнопки круга
-window.setupCircleButtonHandlers = function setupCircleButtonHandlers() {
-    const btn = document.getElementById('btn-circle-number');
-    const btnModal = document.getElementById('btn-modal-circle-number');
-    
-    if (btnModal) {
-        // Удаляем старый обработчик если есть
-        btnModal.replaceWith(btnModal.cloneNode(true));
-        const newBtnModal = document.getElementById('btn-modal-circle-number');
-        newBtnModal.addEventListener('click', () => {
-            showAllStats = !showAllStats;
-            syncCircleButton();
-        });
-    }
-    
-    if (btn) {
-        // Удаляем старый обработчик если есть
-        btn.replaceWith(btn.cloneNode(true));
-        const newBtn = document.getElementById('btn-circle-number');
-        if (newBtn.hasAttribute('disabled')) newBtn.removeAttribute('disabled');
-        newBtn.addEventListener('click', () => {
-            showAllStats = !showAllStats;
-            syncCircleButton();
-        });
-        syncCircleButton(); // первичная синхронизация
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Устанавливаем обработчики после небольшой задержки, чтобы панель успела отрендериться
-    setTimeout(setupCircleButtonHandlers, 100);
-});
+// Убрали переключение между кругами - всегда показываем полные итоги
+// Кнопка переключения кругов больше не используется
 
 
 // --------------- timer ---------------------------------
@@ -1738,73 +2052,37 @@ async function loadLanguageCodes() {
 
 // ===== Табло кнопок навігації по реченнях ========
 function initTabloSentenceCounter() {
-    const container = document.getElementById("sentenceCounter");
-    container.innerHTML = "";
-    // const total = allSentences.length;
-    const total = selectedSentences.length;
-
-    // загальний бокс для кнопок
-    const boxWrapper = document.createElement("div");
-    boxWrapper.classList.add("sentence-box-wrapper");
-
-    // window.sentenceButtons = [];
-    buttonsTablo = [];
-    counterTabloIndex = 0;
-
-    if (total <= MAXVISIBLE) {
-        newTabloBtn(boxWrapper, 1, 0, "button-color-yellow", true);
-        for (let i = 1; i < total; i++) {
-            newTabloBtn(boxWrapper, i + 1, i, "button-color-transparent");
-        }
-    } else {
-        newTabloBtn(boxWrapper, 1, 0, "button-color-yellow", true);
-        for (let i = 1; i < MAXVISIBLE - 2; i++) {
-            newTabloBtn(boxWrapper, i + 1, i, "button-color-transparent");
-        }
-        newTabloBtn(boxWrapper, "...", MAXVISIBLE - 2, "button-color-shadow-transparent");
-        newTabloBtn(boxWrapper, total, MAXVISIBLE - 1, "button-color-transparent");
+    // Блок теперь создан в HTML, только обновляем значения
+    // Инициализируем иконки Lucide
+    if (window.lucide?.createIcons) {
+        lucide.createIcons();
     }
-
-    container.appendChild(boxWrapper);
+    
+    // Сохраняем общее количество выбранных предложений при старте
+    totalSelectedSentences = selectedSentences.length;
+    
+    // Устанавливаем общее количество предложений один раз при старте
+    const btnTotal = document.getElementById("sentenceTotalNumber");
+    if (btnTotal && totalSelectedSentences > 0) {
+        btnTotal.textContent = `/ ${totalSelectedSentences}`;
+    }
+    
+    // Обновляем отображение
+    updateSimpleSentenceCounter();
 }
 
-// окремо створююэмо 9 кнопок. Потім лише будемо змінювати назву
-function newTabloBtn(boxWrapper, lable, index, className, isCurrent = false) {
-    const btn = document.createElement("button");
-    btn.dataset.position = index;
-    if (lable === "...") {
-        btn.textContent = lable;
-        btn.classList.add("button-32-32", "button-color-shadow-transparent");
-    } else {
-        const s = makeByKeyMap(allSentences).get(selectedSentences[parseInt(lable) - 1]);
-        applyStatusClass(btn, s, isCurrent);
-    }
-    btn.onclick = () => {
-        counterTabloIndex_old = counterTabloIndex;
 
-        const s_old = makeByKeyMap(allSentences).get(selectedSentences[currentSentenceIndex]);
-        const btn_old = buttonsTablo[counterTabloIndex_old];
-        applyStatusClass(btn_old, s_old);
-
-        const num = parseInt(btn.textContent);
-        if (!isNaN(num)) {
-            btn.className = '';
-            btn.classList.value = '';
-            btn.classList.add("button-32-32", "button-color-yellow");
-            currentSentenceIndex = num - 1;
-            counterTabloIndex = parseInt(btn.dataset.position);
-            counterTabloBtn = btn;
-            showCurrentSentence(counterTabloIndex, currentSentenceIndex);
-        }
-    };
-    boxWrapper.appendChild(btn);
-    buttonsTablo.push(btn);
-}
-
-function applyStatusClass(btn, s, isCurrent = false) {
+function applyStatusClass(btn, s, isCurrent = false, preserveNumber = false) {
     btn.className = '';
     btn.classList.value = '';
-    btn.innerHTML = s.serial_number;
+    
+    // Если нужно сохранить номер (для табло), используем его, иначе serial_number
+    const displayNumber = preserveNumber && btn.textContent && !isNaN(parseInt(btn.textContent))
+        ? btn.textContent
+        : s.serial_number;
+    
+    // Устанавливаем только текст (номер), иконки добавим позже
+    btn.textContent = displayNumber;
 
     // Базовый класс
     btn.classList.add("button-32-32");
@@ -1871,29 +2149,14 @@ function applyStatusClass(btn, s, isCurrent = false) {
 }
 
 function applyStatusPreviosNext() {
-    checkPreviosDiv.classList.value = '';
-    checkNextDiv.classList.value = '';
-
-    // налево идти некуда -- checkPreviosDiv делаем невидимой
-    if (counterTabloIndex === 0) {
-        checkPreviosDiv.classList.add('button-color-transparent');
-    } else {
-        checkPreviosDiv.classList.add('button-color-yellow');
-    }
-
-    // const maxIndTablo = (selectedSentences.length < MAXVISIBLE) ? (selectedSentences.length - 1): (MAXVISIBLE - 1);
-
-    if (counterTabloIndex === maxIndTablo) {
-        // направо некуда идти
-        checkNextDiv.classList.add('button-color-transparent');
-
-    } else {
-        // направо некуда идти
-        checkNextDiv.classList.add('button-color-yellow');
-    }
-
+    // Кнопки теперь всегда прозрачные (класс задан в HTML), 
+    // видимость управляется через updateSimpleSentenceCounter() с помощью класса .hidden
+    // Не меняем классы кнопок, чтобы сохранить button-color-transparent из HTML
+    
     // Обновляем иконки Lucide
-    lucide.createIcons();
+    if (window.lucide?.createIcons) {
+        lucide.createIcons();
+    }
 
     // setTimeout(() => {
     //     if (window.lucide?.createIcons) {
@@ -1907,11 +2170,12 @@ function applyStatusNewCircle() {
 
     btnNewCircle.classList.value = '';
 
-    if ((sum.circle_number_of_perfect) === selectedSentences.length) {
+    // Используем сохраненное общее количество, а не текущее selectedSentences.length
+    if ((sum.circle_number_of_perfect) === totalSelectedSentences) {
         // все правильные с первого раза
         btnNewCircle.classList.add('button-color-mint');
 
-    } else if ((sum.circle_number_of_corrected + sum.circle_number_of_perfect) === selectedSentences.length) {
+    } else if ((sum.circle_number_of_corrected + sum.circle_number_of_perfect) === totalSelectedSentences) {
         btnNewCircle.classList.add('button-color-lightgreen');
 
     } else {
@@ -1923,73 +2187,30 @@ function applyStatusNewCircle() {
 }
 
 
-function updateTabloSentenceCounter(newTabloIndex, newSentenceIndex) {
-    const total = selectedSentences.length;
-
-    if (!buttonsTablo || buttonsTablo.length === 0) return;
-
-    const visibleLabels = buttonsTablo.map(btn => btn.textContent);// список номеров которые видно на екране сейчас
-    const currentLabel = buttonsTablo[newTabloIndex].textContent;
-    // const b1 = buttonsTablo[1].textContent;
-    // const bn = buttonsTablo[MAXVISIBLE - 2].textContent;
-    if (currentLabel === "...") {
-        let visibleIndices = [];
-
-        if (newSentenceIndex < MAXVISIBLE - 2) {
-            visibleIndices.push(0);
-            for (let i = 1; i < MAXVISIBLE - 2; i++) visibleIndices.push(i);
-            visibleIndices.push("...");
-            visibleIndices.push(total - 1);
-        } else if (newSentenceIndex > total - (MAXVISIBLE - 2)) {
-            visibleIndices.push(0);
-            visibleIndices.push("...");
-            for (let i = total - MAXVISIBLE + 2; i < total; i++) visibleIndices.push(i);
+// Функция обновления простого счетчика предложений (заменяет updateTabloSentenceCounter)
+function updateSimpleSentenceCounter() {
+    
+    if (btnCurrent) {
+        btnCurrent.textContent = (currentSentenceIndex + 1).toString();
+    }
+    
+    // Скрываем стрелку влево, если на первом предложении
+    if (btnPrev) {
+        if (currentSentenceIndex === 0) {
+            btnPrev.classList.add('hidden');
         } else {
-            visibleIndices.push(0);
-            visibleIndices.push("...");
-            for (let i = newSentenceIndex; i < newSentenceIndex + (MAXVISIBLE - 4); i++) {
-                visibleIndices.push(i);
-            }
-            visibleIndices.push("...");
-            visibleIndices.push(total - 1);
+            btnPrev.classList.remove('hidden');
         }
-
-        buttonsTablo.forEach((btn, i) => {
-            const value = visibleIndices[i];
-            if (value === "...") {
-                btn.textContent = "...";
-                btn.className = "button-32-32 button-color-shadow-transparent";
-                btn.disabled = true;
-                btn.removeAttribute("data-position");
-            } else {
-                const s = makeByKeyMap(allSentences).get(selectedSentences[value]);
-                btn.textContent = value + 1;
-                btn.dataset.position = value;
-                btn.disabled = false;
-
-                if (value === newSentenceIndex) {
-                    applyStatusClass(btn, s, true);
-                    counterTabloIndex = i;
-                    counterTabloBtn = btn;
-                } else {
-                    applyStatusClass(btn, s, false);
-                }
-            }
-        });
-
-    } else {
-        // [1] Если текущая кнопка уже на экране — то текущую пререрисовываем без Активности
-        // новую делаем Активной
-        counterTabloIndex = newTabloIndex;
-
-        const s_old = makeByKeyMap(allSentences).get(selectedSentences[currentSentenceIndex]);
-        const btn_old = buttonsTablo[counterTabloIndex_old];
-        applyStatusClass(btn_old, s_old);
-
-        const btn = buttonsTablo[newTabloIndex];
-        counterTabloBtn = btn;
-        const s = makeByKeyMap(allSentences).get(selectedSentences[newSentenceIndex]);
-        applyStatusClass(btn, s, true);
+    }
+    
+    // Скрываем стрелку вправо, если на последнем предложении
+    // Используем сохраненное общее количество, а не текущее selectedSentences.length
+    if (btnNext) {
+        if (currentSentenceIndex >= totalSelectedSentences - 1) {
+            btnNext.classList.add('hidden');
+        } else {
+            btnNext.classList.remove('hidden');
+        }
     }
 }
 
@@ -2014,7 +2235,17 @@ function checkIfAllCompleted() {
     // 1. Все предложения должны быть perfect (набраны с полной звездой)
     // 2. Все аудио должны быть произнесены (для каждого предложения >= REQUIRED_PASSED_COUNT)
     const sum = sumRez();
-    const allPerfect = (number_of_perfect + sum.circle_number_of_perfect) === allSentences.length;
+    
+    // Проверяем perfect: считаем все предложения, которые имеют perfect (number_of_perfect = 1)
+    // ИЛИ имеют perfect на текущем круге (circle_number_of_perfect = 1)
+    let perfectCount = 0;
+    allSentences.forEach(s => {
+        const totalPerfect = (Number(s.number_of_perfect) || 0) + (Number(s.circle_number_of_perfect) || 0);
+        if (totalPerfect > 0) {
+            perfectCount++;
+        }
+    });
+    const allPerfect = perfectCount === allSentences.length;
     
     // Проверяем аудио для каждого предложения
     let allAudioCompleted = true;
@@ -2028,6 +2259,30 @@ function checkIfAllCompleted() {
     
     const allCompleted = allPerfect && allAudioCompleted;
     
+    // Если диктант полностью завершен, показываем модальное окно завершения
+    if (allCompleted) {
+        // Регистрируем завершенный диктант и удаляем черновик
+        registerCompletedDictation();
+        
+        // Сохраняем завершение сессии
+        const panel = getProgressPanelInstance();
+        if (panel) {
+            panel.finish().then(() => {
+                console.log('✅ Сессия завершена и сохранена');
+            });
+        }
+        
+        // Сохраняем завершение сессии (старая система)
+        if (dictationStatistics) {
+            dictationStatistics.endSession(allCompleted);
+        }
+        
+        // Показываем модальное окно завершения
+        showCompletionModal();
+        return;
+    }
+    
+    // Если не полностью завершен, показываем обычное модальное окно списка предложений
     // Сохраняем завершение сессии
     const panel = getProgressPanelInstance();
     if (panel) {
@@ -2142,12 +2397,19 @@ function setRecordStateIcon(name) {
 // Функция для уменьшения счетчика записей
 function decreaseAudioCounter() {
     currentSentence.circle_number_of_audio++;
+    
+    // Обновляем флаг all_audio_completed
+    const totalAudio = (Number(currentSentence.number_of_audio) || 0) + (Number(currentSentence.circle_number_of_audio) || 0);
+    currentSentence.all_audio_completed = totalAudio >= REQUIRED_PASSED_COUNT;
+
+    // Обновляем состояние выбора предложения (может стать completed)
+    updateSentenceSelectionState(currentSentence, true);
 
     // Обновляем отображение счетчика
     setRecordStateIcon('square'); // или текущее состояние
     renderUserAudioTablo();
 
-    syncCircleButton();
+    updateStats();
 
     // в итоговой таблице надо проставить количество оствашихся еще не записаных аудио
     updateTableRowStatus(currentSentence);
@@ -2163,9 +2425,8 @@ function decreaseAudioCounter() {
             recordButton.classList.add('disabled');
         }
 
-        // поставим фиолетовую птичку у "текущего предложения" в "табло предложений"
-        const btn = buttonsTablo[counterTabloIndex];
-        applyStatusClass(btn, currentSentence, true);
+        // Обновляем простой счетчик предложений
+        updateSimpleSentenceCounter();
 
         // курсор на кнопку "следующее предложение" selectedSentences.length
         const sum = sumRez();
@@ -2914,9 +3175,24 @@ async function initializeDictation() {
 
     // Проверяем наличие черновика
     const hasDraft = await loadAndApplyDraft();
+    
+    // Если черновика нет, инициализируем все предложения как checked
+    if (!hasDraft) {
+        allSentences.forEach(s => {
+            if (s.selection_state === undefined) {
+                const calculatedState = calculateSentenceSelectionState(s);
+                s.selection_state = calculatedState === 'completed' ? 'completed' : 'checked';
+            }
+        });
+        // Обновляем selectedSentences
+        selectedSentences = allSentences
+            .filter(s => s.selection_state === 'checked')
+            .map(s => s.key);
+    }
+    
     renderSelectionTable();
     if (hasDraft) {
-        updateStats(showAllStats ? null : circle_number);
+        updateStats();
     }
 
     // Останавливаем таймер при открытии модального окна списка предложений
@@ -2969,6 +3245,9 @@ function showCurrentSentence(showTabloIndex, showSentenceIndex) {
 
     currentSentenceIndex = showSentenceIndex;
     currentSentence = makeByKeyMap(allSentences).get(selectedSentences[currentSentenceIndex]);
+
+    // Обновляем простой счетчик предложений
+    updateSimpleSentenceCounter();
 
     // Сброс предыдущей записи пользователя (чтоб плеер не тащил старый blob) // NEW
     clearUserAudio();                                                                 // NEW
@@ -3049,9 +3328,11 @@ function showCurrentSentence(showTabloIndex, showSentenceIndex) {
 
 
     // включаем кнопку проверки и поле ввода текста
-    const perfect = currentSentence.circle_number_of_perfect + currentSentence.circle_number_of_perfect;
+    // Проверяем perfect: если уже был perfect в предыдущих кругах (number_of_perfect = 1)
+    // ИЛИ есть perfect на текущем круге (circle_number_of_perfect = 1)
+    const perfect = (Number(currentSentence.number_of_perfect) || 0) + (Number(currentSentence.circle_number_of_perfect) || 0);
     const corrected = currentSentence.circle_number_of_corrected;
-    if (perfect === 1) {
+    if (perfect > 0) {
         inputField.innerHTML = currentSentence.text;
         correctAnswerDiv.style.display = "block";
         correctAnswerDiv.textContent = currentSentence.text_translation;
@@ -3086,15 +3367,15 @@ function showCurrentSentence(showTabloIndex, showSentenceIndex) {
 
 // Функция переходу до наступного речення
 function nextSentence() {
-    const total = selectedSentences.length;
-
-    counterTabloIndex_old = counterTabloIndex;
-    let newTabloIndex = counterTabloIndex + 1; // по кнопкам
+    console.log('nextSentence (before)', currentSentenceIndex, totalSelectedSentences);
+    // Используем сохраненное общее количество, а не текущее selectedSentences.length
     let newSentenceIndex = currentSentenceIndex + 1; // по списку выбранных чеком ключей к предложениям
 
-    if (newSentenceIndex < total) {
-        updateTabloSentenceCounter(newTabloIndex, newSentenceIndex);
-        showCurrentSentence(newTabloIndex, newSentenceIndex); // функция загрузки предложения
+    if (newSentenceIndex < totalSelectedSentences) {
+        currentSentenceIndex = newSentenceIndex;
+        console.log('nextSentence (after)', currentSentenceIndex, totalSelectedSentences);
+        updateSimpleSentenceCounter();
+        showCurrentSentence(0, newSentenceIndex); // функция загрузки предложения
     } else {
         // открыть модалку
     }
@@ -3102,13 +3383,12 @@ function nextSentence() {
 
 // Функция переходу до поперднього речення
 function previousSentence() {
-    counterTabloIndex_old = counterTabloIndex;
-    let newTabloIndex = counterTabloIndex - 1; // по кнопкам
     let newSentenceIndex = currentSentenceIndex - 1; // по списку выбранных чеком ключей к предложениям
 
     if (newSentenceIndex >= 0) {
-        updateTabloSentenceCounter(newTabloIndex, newSentenceIndex);
-        showCurrentSentence(newTabloIndex, newSentenceIndex);
+        currentSentenceIndex = newSentenceIndex;
+        updateSimpleSentenceCounter();
+        showCurrentSentence(0, newSentenceIndex);
     }
 }
 
@@ -3165,6 +3445,8 @@ function onloadInitializeDictation() {
     // initializeUser(); // Инициализируем пользователя
     // setupAuthHandlers(); // ДОБАВИТЬ ЭТУ СТРОЧКУ
     setupExitHandlers(); // Настраиваем обработчики выхода
+    setupCompletionModalHandlers(); // Настраиваем обработчики модального окна завершения
+    setupNoSelectionModalHandlers(); // Настраиваем обработчики модального окна предупреждения
 
 
     // Проверка поддерживаемых аудиоформатов
@@ -3186,10 +3468,10 @@ function onloadInitializeDictation() {
 
         circleBtn.addEventListener('click', () => {
             showAllStats = !showAllStats;   // переключаем режим
-            syncCircleButton();             // обновляем подпись и пересчитываем цифры
+            updateStats();             // обновляем подпись и пересчитываем цифры
         });
 
-        syncCircleButton();               // первичная синхронизация
+        updateStats();               // первичная синхронизация
     })();
 
     ensureUserPlayButton();
@@ -3332,7 +3614,57 @@ function onloadInitializeDictation() {
         const inputs = document.querySelectorAll('.play-sequence-input');
 
         inputs.forEach(input => {
-            // Валидация при вводе
+            // Пропускаем поле числа (Повторы аудио) - для него отдельная обработка
+            if (input.type === 'number' || input.id === 'audioRepeatsInput') {
+                // Обработка для поля числа
+                input.addEventListener('input', (e) => {
+                    const value = parseInt(e.target.value, 10);
+                    // Если значение выходит за пределы, ограничиваем его
+                    if (!isNaN(value)) {
+                        if (value < 0) e.target.value = 0;
+                        if (value > 9) e.target.value = 9;
+                    } else if (e.target.value === '' || e.target.value === '-') {
+                        // Разрешаем пустое значение или минус (будет исправлено при blur)
+                        return;
+                    } else {
+                        // Если введено не число, восстанавливаем предыдущее значение
+                        const prevValue = e.target.dataset.prevValue || '3';
+                        e.target.value = prevValue;
+                    }
+                });
+                
+                input.addEventListener('focus', (e) => {
+                    // Сохраняем текущее значение перед изменением
+                    e.target.dataset.prevValue = e.target.value;
+                });
+                
+                input.addEventListener('blur', (e) => {
+                    // Восстанавливаем значение, если оно пустое или невалидное
+                    const value = parseInt(e.target.value, 10);
+                    if (isNaN(value) || value < 0) {
+                        e.target.value = e.target.dataset.prevValue || '3';
+                    } else if (value > 9) {
+                        e.target.value = '9';
+                    }
+                    // Обновляем REQUIRED_PASSED_COUNT
+                    const finalValue = parseInt(e.target.value, 10);
+                    if (!isNaN(finalValue) && finalValue >= 0 && finalValue <= 9) {
+                        REQUIRED_PASSED_COUNT = finalValue;
+                    }
+                });
+                
+                input.addEventListener('change', (e) => {
+                    // При изменении через стрелки также обновляем REQUIRED_PASSED_COUNT
+                    const value = parseInt(e.target.value, 10);
+                    if (!isNaN(value) && value >= 0 && value <= 9) {
+                        REQUIRED_PASSED_COUNT = value;
+                    }
+                });
+                
+                return; // Пропускаем остальную обработку для этого поля
+            }
+
+            // Валидация при вводе (только для текстовых полей)
             input.addEventListener('input', (e) => {
                 validatePlaySequenceInput(e.target);
             });
@@ -4001,7 +4333,15 @@ function check(original, userInput, currentKey) {
     if (!foundError) {
 
         const s = currentSentence;
-        if (textAttemptCount === 0) {
+        
+        // Проверяем, не было ли уже perfect в предыдущих кругах
+        // Если уже был perfect (number_of_perfect = 1), не устанавливаем его повторно
+        // Поле ввода уже должно быть заблокировано в showCurrentSentence
+        if (s.number_of_perfect === 1) {
+            // Уже был perfect - не устанавливаем повторно, но показываем как corrected на текущем круге
+            s.circle_number_of_corrected = 1;
+            disableCheckButton(1);
+        } else if (textAttemptCount === 0) {
             // все виконано ідеально з першої спроби
             s.circle_number_of_perfect = 1;
             s.circle_number_of_corrected = 0;
@@ -4012,17 +4352,27 @@ function check(original, userInput, currentKey) {
             disableCheckButton(1);         // отключить кнопку и нарисовать пол звезды на ней
         }
 
+        // Обновляем состояние выбора предложения (может стать completed)
+        updateSentenceSelectionState(currentSentence, true);
+        
         // Обновить табло предложений и шапку:
-        // поставим звездочку или полузвкздочку у "текущего предложения" в "табло предложений"
-        const btn = buttonsTablo[counterTabloIndex];
-        applyStatusClass(btn, currentSentence, true);
+        // Обновляем простой счетчик предложений
+        updateSimpleSentenceCounter();
         applyStatusNewCircle();
 
         // Обновить табло итогов:
-        syncCircleButton();
+        updateStats();
+        
+        // Обновляем строку в таблице модального окна (если оно открыто)
+        updateTableRowStatus(currentSentence);
 
-        // перевести фокус
-        recordButton.focus();
+        // перевести фокус на кнопку микрофона после завершения всех обновлений DOM
+        // Используем setTimeout чтобы дать время браузеру обновить DOM
+        setTimeout(() => {
+            if (recordButton) {
+                recordButton.focus();
+            }
+        }, 0);
     } else {
         // Ошибка — увеличиваем счётчик попыток
         textAttemptCount++;
@@ -4161,6 +4511,145 @@ function isAllCompleted() {
 }
 
 /**
+ * Регистрирует завершенный диктант в истории и удаляет файл черновика
+ */
+async function registerCompletedDictation() {
+    if (!currentDictation.id || !userManager) {
+        console.warn('[Register] Нельзя зарегистрировать: нет ID диктанта или userManager');
+        return;
+    }
+
+    try {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const monthKey = parseInt(`${year}${month}`);
+        const dateKey = parseInt(`${year}${month}${day}`);
+
+        // Сохраняем в историю через API
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+            console.warn('[Register] Нет токена, пропускаем сохранение в историю');
+            return;
+        }
+
+        // Получаем email пользователя
+        let userEmail = '';
+        if (userManager && userManager.getCurrentUser) {
+            const user = userManager.getCurrentUser();
+            userEmail = user?.email || '';
+        } else if (userManager && userManager.email) {
+            userEmail = userManager.email;
+        }
+
+        // Загружаем текущую историю за месяц
+        const historyResponse = await fetch(`/user/api/history/${monthKey}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        let historyData = { id_user: userEmail, month: monthKey, statistics: [], statistics_sentenses: [] };
+        if (historyResponse.ok) {
+            const loaded = await historyResponse.json();
+            // Сохраняем все поля из загруженных данных, включая statistics_sentenses
+            // Не проверяем loaded.statistics, так как может быть только statistics_sentenses
+            if (loaded) {
+                historyData = {
+                    id_user: loaded.id_user || userEmail,
+                    month: loaded.month || monthKey,
+                    statistics: Array.isArray(loaded.statistics) ? loaded.statistics : [],
+                    statistics_sentenses: Array.isArray(loaded.statistics_sentenses) ? loaded.statistics_sentenses : []
+                };
+            }
+        }
+
+        // Добавляем запись в statistics_sentenses (если такого поля нет, создаем)
+        // Убеждаемся, что statistics_sentenses всегда массив
+        if (!Array.isArray(historyData.statistics_sentenses)) {
+            historyData.statistics_sentenses = [];
+        }
+
+        // Находим все записи для этого диктанта за сегодня
+        const todayEntries = historyData.statistics_sentenses.filter(
+            entry => entry.dictation_id === currentDictation.id && entry.date === dateKey
+        );
+
+        // Определяем номер выполнения (1 для первого раза, увеличиваем на 1 для каждого нового)
+        let nextNumber = 1;
+        if (todayEntries.length > 0) {
+            // Находим максимальный номер среди записей за сегодня
+            const maxNumber = Math.max(...todayEntries.map(e => e.number || 0));
+            nextNumber = maxNumber + 1;
+        }
+
+        // Получаем статистику и время выполнения
+        const sum = sumRez();
+        const totalPerfect = number_of_perfect + sum.circle_number_of_perfect;
+        const totalCorrected = number_of_corrected + sum.circle_number_of_corrected;
+        const totalAudio = number_of_audio + sum.circle_number_of_audio;
+        
+        // Получаем общее время выполнения диктанта
+        const timerSnapshot = getProgressTimerSnapshot();
+        const totalTimeMs = getTimerDisplayMs(timerSnapshot);
+        
+        // Получаем текущее время (время победы) в формате HH:MM:SS
+        const timeKey = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        
+        // Формируем новую запись для истории
+        const historyEntry = {
+            date: dateKey,
+            dictation_id: currentDictation.id,
+            number: nextNumber,
+            time: timeKey,                    // время победы (HH:MM:SS)
+            perfect: totalPerfect,             // количество звезд (perfect)
+            corrected: totalCorrected,         // количество полузвезд (corrected)
+            audio: totalAudio,                 // количество аудио
+            total_time_ms: totalTimeMs        // общее время выполнения в миллисекундах
+        };
+
+        console.log('[Register] Регистрируем завершенный диктант:', historyEntry);
+
+        // Добавляем новую запись (каждое выполнение - отдельная запись)
+        historyData.statistics_sentenses.push(historyEntry);
+
+        // Сохраняем обновленную историю
+        const saveResponse = await fetch(`/user/api/history/${monthKey}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(historyData)
+        });
+
+        if (saveResponse.ok) {
+            console.log('[Register] ✅ Завершенный диктант зарегистрирован в истории');
+        } else {
+            console.error('[Register] ❌ Ошибка сохранения в историю:', await saveResponse.text());
+        }
+
+        // Удаляем файл черновика
+        if (dictationStatistics) {
+            try {
+                await dictationStatistics.deleteResumeState(currentDictation.id);
+                console.log('[Register] ✅ Файл черновика удален');
+            } catch (error) {
+                console.warn('[Register] ⚠️ Не удалось удалить черновик:', error);
+            }
+        }
+
+        // Черновик удален с сервера, localStorage больше не используется
+
+    } catch (error) {
+        console.error('[Register] ❌ Ошибка регистрации завершенного диктанта:', error);
+    }
+}
+
+/**
  * Сохранение черновика диктанта
  */
 async function saveDictationDraft() {
@@ -4178,13 +4667,17 @@ async function saveDictationDraft() {
     // Собираем прогресс по предложениям (только измененные поля)
     const perSentence = {};
     allSentences.forEach(s => {
+        // Обновляем состояние перед сохранением
+        updateSentenceSelectionState(s, true);
+        
         const hasProgress = s.number_of_perfect > 0 || 
                            s.number_of_corrected > 0 || 
                            s.number_of_audio > 0 ||
                            s.circle_number_of > 0 ||
                            s.circle_number_of_perfect > 0 ||
                            s.circle_number_of_corrected > 0 ||
-                           s.circle_number_of_audio > 0;
+                           s.circle_number_of_audio > 0 ||
+                           s.selection_state !== undefined;
 
         if (hasProgress) {
             perSentence[s.key] = {
@@ -4194,7 +4687,8 @@ async function saveDictationDraft() {
                 circle_number_of: s.circle_number_of || 0,
                 circle_number_of_perfect: s.circle_number_of_perfect || 0,
                 circle_number_of_corrected: s.circle_number_of_corrected || 0,
-                circle_number_of_audio: s.circle_number_of_audio || 0
+                circle_number_of_audio: s.circle_number_of_audio || 0,
+                selection_state: s.selection_state || 'unchecked'
             };
         }
     });
@@ -4227,14 +4721,6 @@ async function saveDictationDraft() {
     };
 
     try {
-        const localKey = `dictationDraft_${currentDictation.id}`;
-        const stateForLocal = { ...state, local_saved_at: Date.now() };
-        localStorage.setItem(localKey, JSON.stringify(stateForLocal));
-    } catch (error) {
-        console.warn('[Draft] saveDictationDraft: не удалось сохранить черновик в localStorage', error);
-    }
-
-    try {
         const result = await dictationStatistics.saveResumeState(currentDictation.id, state);
         console.log('[Draft] saveDictationDraft: completed', { success: !!result });
         return result;
@@ -4246,9 +4732,19 @@ async function saveDictationDraft() {
 
 /**
  * Загрузка и применение черновика
+ * @param {boolean} forceClear - Принудительно очистить черновик перед загрузкой
  */
-async function loadAndApplyDraft() {
+async function loadAndApplyDraft(forceClear = false) {
     if (!dictationStatistics || !currentDictation.id) {
+        return false;
+    }
+
+    // Если нужно принудительно очистить черновик
+    if (forceClear) {
+        clearLocalStorageDraft();
+        if (dictationStatistics && dictationStatistics.deleteResumeState) {
+            await dictationStatistics.deleteResumeState(currentDictation.id);
+        }
         return false;
     }
 
@@ -4256,20 +4752,7 @@ async function loadAndApplyDraft() {
     if (panel) panel._suppressDirty = true;
 
     try {
-        let draft = await dictationStatistics.loadResumeState(currentDictation.id);
-
-        if (!draft) {
-            try {
-                const localKey = `dictationDraft_${currentDictation.id}`;
-                const localRaw = localStorage.getItem(localKey);
-                if (localRaw) {
-                    draft = JSON.parse(localRaw);
-                    console.log('[Draft] loadAndApplyDraft: использован локальный черновик');
-                }
-            } catch (error) {
-                console.warn('[Draft] loadAndApplyDraft: ошибка чтения локального черновика', error);
-            }
-        }
+        const draft = await dictationStatistics.loadResumeState(currentDictation.id);
 
         if (!draft) {
             if (panel) {
@@ -4328,17 +4811,47 @@ async function loadAndApplyDraft() {
                 if (progress.circle_number_of_perfect !== undefined) s.circle_number_of_perfect = progress.circle_number_of_perfect;
                 if (progress.circle_number_of_corrected !== undefined) s.circle_number_of_corrected = progress.circle_number_of_corrected;
                 if (progress.circle_number_of_audio !== undefined) s.circle_number_of_audio = progress.circle_number_of_audio;
+                // НЕ восстанавливаем selection_state из черновика - он будет пересчитан ниже
+                // Это позволяет избежать проблем с unchecked состояниями
             }
         });
     }
 
-    // Восстанавливаем selectedSentences на основе circle_number_of
+    // Обновляем состояния всех предложений на основе текущего прогресса
+    allSentences.forEach(s => {
+        // Сначала вычисляем состояние на основе прогресса
+        const calculatedState = calculateSentenceSelectionState(s);
+        
+        // Если предложение completed - устанавливаем completed
+        if (calculatedState === 'completed') {
+            s.selection_state = 'completed';
+        } else {
+            // Если предложение не completed, проверяем что было в черновике
+            const draftState = draft.per_sentence && draft.per_sentence[s.key] 
+                ? draft.per_sentence[s.key].selection_state 
+                : undefined;
+            
+            // Если в черновике было checked - используем его, иначе делаем checked по умолчанию
+            if (draftState === 'checked' || draftState === undefined || s.selection_state === undefined) {
+                s.selection_state = 'checked';
+            }
+            // Если было unchecked - оставляем unchecked (пользователь явно снял галочку)
+        }
+        
+        updateSentenceSelectionState(s, true);
+    });
+
+    // Восстанавливаем selectedSentences на основе selection_state
     selectedSentences = [];
     allSentences.forEach(s => {
-        if (s.circle_number_of > 0) {
-            selectedSentences.push(s.key);
+        if (s.selection_state === 'checked' || (s.circle_number_of > 0 && s.selection_state !== 'completed')) {
+            if (!selectedSentences.includes(s.key)) {
+                selectedSentences.push(s.key);
+            }
         }
     });
+    
+    console.log('[loadAndApplyDraft] Восстановлено selectedSentences:', selectedSentences.length, selectedSentences);
 
     // Восстанавливаем current_index
         if (draft.current_index !== undefined && draft.current_index < selectedSentences.length) {
@@ -4346,6 +4859,20 @@ async function loadAndApplyDraft() {
         } else {
             currentSentenceIndex = 0;
         }
+
+        // После загрузки черновика обновляем selectedSentences еще раз
+        // чтобы убедиться что все checked предложения включены
+        selectedSentences = [];
+        allSentences.forEach(s => {
+            updateSentenceSelectionState(s, true);
+            if (s.selection_state === 'checked') {
+                if (!selectedSentences.includes(s.key)) {
+                    selectedSentences.push(s.key);
+                }
+            }
+        });
+        
+        console.log('[loadAndApplyDraft] Финальный selectedSentences:', selectedSentences.length, selectedSentences);
 
         if (panel) {
             panel.markClean();
@@ -4572,7 +5099,57 @@ function initPlaySequenceInputs() {
     const inputs = document.querySelectorAll('.play-sequence-input');
 
     inputs.forEach(input => {
-        // Валидация при вводе
+        // Пропускаем поле числа (Повторы аудио) - для него отдельная обработка
+        if (input.type === 'number' || input.id === 'audioRepeatsInput') {
+            // Обработка для поля числа
+            input.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value, 10);
+                // Если значение выходит за пределы, ограничиваем его
+                if (!isNaN(value)) {
+                    if (value < 0) e.target.value = 0;
+                    if (value > 9) e.target.value = 9;
+                } else if (e.target.value === '' || e.target.value === '-') {
+                    // Разрешаем пустое значение или минус (будет исправлено при blur)
+                    return;
+                } else {
+                    // Если введено не число, восстанавливаем предыдущее значение
+                    const prevValue = e.target.dataset.prevValue || '3';
+                    e.target.value = prevValue;
+                }
+            });
+            
+            input.addEventListener('focus', (e) => {
+                // Сохраняем текущее значение перед изменением
+                e.target.dataset.prevValue = e.target.value;
+            });
+            
+            input.addEventListener('blur', (e) => {
+                // Восстанавливаем значение, если оно пустое или невалидное
+                const value = parseInt(e.target.value, 10);
+                if (isNaN(value) || value < 0) {
+                    e.target.value = e.target.dataset.prevValue || '3';
+                } else if (value > 9) {
+                    e.target.value = '9';
+                }
+                // Обновляем REQUIRED_PASSED_COUNT
+                const finalValue = parseInt(e.target.value, 10);
+                if (!isNaN(finalValue) && finalValue >= 0 && finalValue <= 9) {
+                    REQUIRED_PASSED_COUNT = finalValue;
+                }
+            });
+            
+            input.addEventListener('change', (e) => {
+                // При изменении через стрелки также обновляем REQUIRED_PASSED_COUNT
+                const value = parseInt(e.target.value, 10);
+                if (!isNaN(value) && value >= 0 && value <= 9) {
+                    REQUIRED_PASSED_COUNT = value;
+                }
+            });
+            
+            return; // Пропускаем остальную обработку для этого поля
+        }
+
+        // Валидация при вводе (только для текстовых полей)
         input.addEventListener('input', (e) => {
             validatePlaySequenceInput(e.target);
         });

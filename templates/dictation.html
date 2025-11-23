@@ -202,6 +202,44 @@
         </div>
     </div>
 
+    <!-- Модальное окно завершения диктанта -->
+    <div id="completionModal" class="modal" style="display: none;">
+        <div class="modal-content completion-modal-content">
+            <div class="completion-header">
+                <i data-lucide="award" class="completion-icon"></i>
+                <h2>Поздравляем!</h2>
+            </div>
+            <p class="completion-message">Вы успешно завершили диктант!</p>
+            <div class="completion-buttons">
+                <button id="completionExitBtn" class="button-color-yellow">
+                    <i data-lucide="log-out"></i>
+                    Выйти
+                </button>
+                <button id="completionRetryBtn" class="button-color-green">
+                    <i data-lucide="repeat"></i>
+                    Пройти еще раз
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно предупреждения о невыбранных предложениях -->
+    <div id="noSelectionModal" class="modal" style="display: none;">
+        <div class="modal-content warning-modal-content">
+            <div class="warning-header">
+                <i data-lucide="alert-circle" class="warning-icon"></i>
+                <h2>Ничего не отмечено!</h2>
+            </div>
+            <p class="warning-message">Пожалуйста, отметьте предложения для работы в таблице выше.</p>
+            <div class="warning-buttons">
+                <button id="noSelectionOkBtn" class="button-color-green">
+                    <i data-lucide="check"></i>
+                    Понятно
+                </button>
+            </div>
+        </div>
+    </div>
+
 
 
     <div class="panel">
@@ -220,13 +258,16 @@
             <!-- Строка с панелями навигации и результатов -->
             <div class="panels-row">
                 <div class="button-group">
-                    <button id="checkPrevios" class="button-color-yellow" onclick="previousSentence()">
+                    <button id="checkPrevios" class="button-color-transparent" onclick="previousSentence()">
                         <i data-lucide="arrow-left"></i>
                     </button>
                     <div class="sentence-counter" id="sentenceCounter">
-                        <!-- будет подставлено из JS -->
+                        <div class="sentence-counter-simple">
+                            <button id="sentenceCurrentNumber" class="sentence-current-number">1</button>
+                            <span id="sentenceTotalNumber" class="sentence-total-number">/ 0</span>
+                        </div>
                     </div>
-                    <button id="checkNext" class="button-color-yellow" onclick="nextSentence()">
+                    <button id="checkNext" class="button-color-transparent" onclick="nextSentence()">
                         <i data-lucide="arrow-right"></i>
                     </button>
                     <button id="btn-new-circle" class="button-32-32" onclick="checkIfAllCompleted()">

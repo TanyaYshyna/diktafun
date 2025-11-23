@@ -426,6 +426,11 @@ def api_save_history(month_identifier):
             data['month'] = int(month_identifier)
         if 'statistics' not in data:
             data['statistics'] = []
+        # Убеждаемся, что statistics_sentenses всегда массив
+        if 'statistics_sentenses' not in data:
+            data['statistics_sentenses'] = []
+        elif not isinstance(data['statistics_sentenses'], list):
+            data['statistics_sentenses'] = []
         
         # Сохраняем файл
         with open(filepath, 'w', encoding='utf-8') as f:

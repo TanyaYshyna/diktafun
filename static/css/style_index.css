@@ -357,6 +357,33 @@ body {
   margin-top: 4px;
 }
 
+.short-completion-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-button-yellow, #fbbf24);
+  color: var(--color-button-text-yellow, #1f2933);
+  border-radius: 12px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+}
+
+.short-completion-badge i {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.5;
+}
+
+.short-completion-badge .completion-count {
+  line-height: 1;
+}
+
 /* Мета-информация */
 .short-meta {
   font-size: 11px;

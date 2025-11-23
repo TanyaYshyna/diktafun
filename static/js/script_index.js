@@ -340,6 +340,17 @@ function createCardDOM(d) {
         card.appendChild(diktBadge);
     }
 
+    // Добавляем медальку с количеством полных выполнений
+    const completionCount = countDictationCompletions(d.id);
+    if (completionCount > 0) {
+        const medalBadge = document.createElement('div');
+        medalBadge.className = 'short-completion-badge';
+        medalBadge.title = `Выполнено полностью: ${completionCount} раз`;
+        medalBadge.setAttribute('aria-label', `Выполнено полностью: ${completionCount} раз`);
+        medalBadge.innerHTML = `<i data-lucide="award"></i><span class="completion-count">${completionCount}</span>`;
+        card.appendChild(medalBadge);
+    }
+
     // <div class="short-meta">Язык ... • Уровень ...</div>
     const meta = document.createElement('div');
     meta.className = 'short-meta';
@@ -569,6 +580,7 @@ function createSimpleLanguageDisplay() {
 
 // ================ все диктанты в массив ========================
 let allDictations = [];
+let allHistoryData = {}; // Кэш всей истории для подсчета выполнений
 
 function loadDictations() {
     // console.log("🔄 Загружаем диктанты...");
@@ -583,6 +595,70 @@ function loadDictations() {
             allDictations = data;
         })
         .catch(err => console.error("❌ Ошибка загрузки диктантов:", err));
+}
+
+/**
+ * Загрузить всю историю пользователя для подсчета выполнений
+ */
+async function loadAllHistory() {
+    try {
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+            console.log('⚠️ Токен не найден, пропускаем загрузку истории');
+            return {};
+        }
+
+        const response = await fetch('/user/api/history/all', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 422) {
+                console.log('⚠️ Ошибка аутентификации при загрузке истории');
+                return {};
+            }
+            throw new Error(`Failed to load all history: ${response.statusText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('❌ Ошибка загрузки всей истории:', error);
+        return {};
+    }
+}
+
+/**
+ * Подсчитать количество полных выполнений диктанта по всем файлам истории
+ * @param {string} dictationId - ID диктанта
+ * @returns {number} - Количество полных выполнений
+ */
+function countDictationCompletions(dictationId) {
+    if (!dictationId || !allHistoryData) {
+        return 0;
+    }
+
+    let totalCount = 0;
+
+    // Проходим по всем месяцам в истории
+    for (const monthKey in allHistoryData) {
+        const monthData = allHistoryData[monthKey];
+        if (!monthData || !monthData.statistics_sentenses) {
+            continue;
+        }
+
+        // Считаем все записи для этого диктанта
+        const entries = monthData.statistics_sentenses.filter(
+            entry => entry.dictation_id === dictationId
+        );
+
+        // Суммируем number из всех записей (каждая запись - одно выполнение)
+        totalCount += entries.length;
+    }
+
+    return totalCount;
 }
 
 
@@ -1732,12 +1808,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (!window.USER_LANGUAGE_DATA.isAuthenticated) {
                         showAuthBanner();
                     }
-                    // Загружаем диктанты и инициализируем дерево
-                    return loadDictations().then(() => {
+                    // Загружаем диктанты и историю параллельно
+                    return Promise.all([
+                        loadDictations(),
+                        loadAllHistory().then(history => {
+                            allHistoryData = history;
+                            console.log('✅ История загружена для подсчета выполнений');
+                        })
+                    ]).then(() => {
                         initFancyTree();
                         setupPanelResizer();
                         setupTreeButtons();
                         setupImportButton();
+                        // Перерисовываем карточки после загрузки истории
+                        if (categoriesTree && categoriesTree.getActiveNode()) {
+                            const node = categoriesTree.getActiveNode();
+                            const ids = node.data.dictations || [];
+                            const filteredDictations = allDictations.filter(d => ids.includes(d.id));
+                            renderDictationsGrid(filteredDictations);
+                        }
                     });
                 }).catch(error => {
                     console.error('Ошибка инициализации:', error);

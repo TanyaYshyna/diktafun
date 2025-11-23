@@ -397,75 +397,90 @@ body.playing-audio::after {
 /* КНОПКИ НАВИГАЦИИ ПРЕДЛОЖЕНИЙ НАЧАЛО */
 
 /* Общий вид кнопки */
-.sentence-box-wrapper {
+/* Простой счетчик предложений */
+.sentence-counter-simple {
   display: flex;
-  gap: 6px;
-  margin-bottom: 5px;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Общий вид всех кнопок */
-.sentence-box {
+.sentence-nav-btn {
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  font-weight: bold;
-  /* font-size: 14px;
-  border-radius: 6px; */
-
-  background-color: var(--color-panel-bg);
-  /* светлый фон */
-  color: var(--text-color);
-  /* основной текст */
-  cursor: default;
-  pointer-events: auto;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-/* Стандартная кнопка (задание не выполнено) */
-.box-default {
-  border: 1px solid var(--neutral-border-color);
-  /* серая рамка */
-}
-
-/* Выполнено с первого раза */
-.box-done {
-  background-color: var(--color-button-mint);
-  color: var(--color-button-text-mint);
-  /* border: 1px solid var(--primary-color);*/
-  /* голубая рамка */
-  color: var(--primary-color);
-  /* голубая цифра */
-}
-
-/* Выполнено с ошибками */
-.box-partial {
-  background-color: var(--color-button-lightgreen);
-  color: var(--color-button-text-lightgreen);
-  border: 1px solid var(--success-color);
-  /* зелёная рамка */
-  color: var(--success-color);
-  /* зелёная цифра */
-}
-
-/* Кнопка-пропуск */
-.box-gap {
-  border: none;
-  background-color: transparent;
-  color: var(--gap-text-color);
-  /* серые точки “…” */
-}
-
-/* Текущая кнопка */
-.box-current {
+.sentence-nav-btn:hover {
   background-color: var(--color-button-yellow);
   color: var(--color-button-text-yellow);
-  border: 0 3px 0 0 solid var(--color-button-text-yellow) !important;
-  /* красная рамка */
+  border-color: var(--color-button-yellow);
 }
 
-/* КНОПКИ НАВИГАЦИИ ПРЕДЛОЖЕНИЙ КОНЕЦ */
+.sentence-nav-btn:active {
+  transform: scale(0.95);
+}
+
+/* Скрытие стрелок в начале/конце */
+.sentence-nav-btn.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.sentence-current-number {
+  background: transparent;
+  border: none;
+  min-width: auto;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--color-button-text-gray);
+  padding: 0;
+  cursor: default;
+}
+
+.sentence-total-number {
+  display: flex;
+  align-items: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-button-text-gray);
+  padding: 0;
+}
+
+.sentence-list-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sentence-list-btn:hover {
+  background-color: var(--color-button-mint);
+  color: var(--color-button-text-mint);
+  border-color: var(--color-button-mint);
+}
+
+.sentence-list-btn:active {
+  transform: scale(0.95);
+}
 
 
 /* Модальное окно окончания диктанта НАЧАЛО */
@@ -510,6 +525,145 @@ body.playing-audio::after {
   opacity: 0.5;
   pointer-events: none;
 }
+
+/* Модальное окно завершения диктанта */
+.completion-modal-content {
+  max-width: 500px;
+  text-align: center;
+  padding: 40px 30px;
+}
+
+.completion-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.completion-icon {
+  width: 80px;
+  height: 80px;
+  color: var(--color-button-mint);
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.completion-header h2 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.completion-message {
+  font-size: 18px;
+  color: var(--color-text-secondary);
+  margin: 0 0 30px 0;
+  line-height: 1.6;
+}
+
+.completion-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.completion-buttons button {
+  flex: 1;
+  min-width: 150px;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.completion-buttons button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Модальное окно предупреждения о невыбранных предложениях */
+.warning-modal-content {
+  max-width: 450px;
+  text-align: center;
+  padding: 40px 30px;
+}
+
+.warning-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.warning-icon {
+  width: 70px;
+  height: 70px;
+  color: var(--color-button-yellow, #f59e0b);
+  animation: scaleIn 0.5s ease-out;
+}
+
+.warning-header h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.warning-message {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  margin: 0 0 30px 0;
+  line-height: 1.6;
+}
+
+.warning-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.warning-buttons button {
+  flex: 1;
+  min-width: 150px;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.warning-buttons button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 /* 
 .sentence-row-completed {
   background-color: var(--color-button-gray-20, rgba(0, 0, 0, 0.05));
@@ -1384,66 +1538,7 @@ body.playing-audio::after {
 }
 
 
-/* Индикаторы в углах ---------------------------------------------------*/
-/* Стили для иконок статуса */
-.status-icon-corner {
-  position: absolute;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  /* Иконки под номером */
-}
-
-/* Номер поверх иконок */
-.button-32-32 span {
-  position: relative;
-  z-index: 2;
-  /* Номер выше иконок */
-}
-
-/* Размеры контейнеров */
-.text-status-perfect,
-.text-status-corrected {
-  width: 20px;
-  height: 20px;
-  top: 0px;
-  left: 0px;
-}
-
-.audio-status-done {
-  width: 16px;
-  height: 16px;
-  bottom: 1px;
-  left: 1px;
-}
-
-/* Увеличиваем размер SVG иконок */
-.status-icon-corner svg {
-  width: 18px !important;
-  height: 18px !important;
-}
-
-.audio-status-done svg {
-  width: 18px !important;
-  height: 18px !important;
-}
-
-/* Цвета */
-.text-status-perfect {
-  color: var(--color-button-shadow-mint);
-}
-.text-status-corrected {
-  color: var(--color-button-shadow-lightgreen);
-}
-
-.audio-status-perfect {
-  color: var(--color-button-shadow-mint);
-}
-.audio-status-corrected {
-  color: var(--color-button-shadow-lightgreen);
-}
+/* Стили для иконок статуса удалены - больше не используются в простом счетчике предложений */
 
 /* Активная кнопка */
 .button-active {
@@ -1996,7 +2091,13 @@ body.playing-audio::after {
   width: 22px;
   height: 50px;
   padding: 0; /* убираем внутренние отступы */
- 
+  transition: all 0.2s ease;
+}
+
+#checkPrevios.hidden,
+#checkNext.hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* Поля ввода для аудио сначала ошибка и вкрнце ---------------------------------------------------*/
@@ -2009,6 +2110,8 @@ body.playing-audio::after {
     background-color: var(--color-background-light);
     border-radius: 8px;
     border: 1px solid var(--color-border);
+    min-width: calc(100% + 20px);
+    width: calc(100% + 20px);
 }
 
 .play-sequence-item {
@@ -2036,6 +2139,26 @@ body.playing-audio::after {
     width: 40px;
     text-align: center;
     text-transform: lowercase;
+}
+
+/* Специальный стиль для поля числа (Повторы аудио) */
+.play-sequence-input[type="number"] {
+    width: 60px;
+    padding-right: 5px;
+    text-transform: none;
+}
+
+/* Скрываем стрелки у number input в Chrome, Safari, Edge */
+.play-sequence-input[type="number"]::-webkit-outer-spin-button,
+.play-sequence-input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Скрываем стрелки у number input в Firefox */
+.play-sequence-input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 .play-sequence-input:focus {
