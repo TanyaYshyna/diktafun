@@ -3965,6 +3965,171 @@ const NUM_WORDS_SET = new Set([
     "сімдесят", "вісімдесят", "дев'яносто", "сто", "тисяча"
 ]);
 
+// === СЛОВАРЬ ЭКВИВАЛЕНТНОСТЕЙ: СОКРАЩЕНИЯ ↔ ПОЛНЫЕ ФОРМЫ ===
+// Ключ: сокращение (без апострофа, так как simplifyText их убирает)
+// Значение: массив полных слов
+// ПРИМЕЧАНИЕ: Словарь можно расширять по мере необходимости
+const CONTRACTIONS_DICT = {
+    // I am / I'm
+    "im": ["i", "am"],
+    // You are / You're
+    "youre": ["you", "are"],
+    // He is / He's
+    "hes": ["he", "is"],
+    // She is / She's
+    "shes": ["she", "is"],
+    // It is / It's
+    "its": ["it", "is"],
+    // We are / We're
+    "were": ["we", "are"],
+    // They are / They're
+    "theyre": ["they", "are"],
+    // I have / I've
+    "ive": ["i", "have"],
+    // You have / You've
+    "youve": ["you", "have"],
+    // We have / We've
+    "weve": ["we", "have"],
+    // They have / They've
+    "theyve": ["they", "have"],
+    // I had / I'd
+    "id": ["i", "had"],
+    // You had / You'd
+    "youd": ["you", "had"],
+    // He had / He'd
+    "hed": ["he", "had"],
+    // She had / She'd
+    "shed": ["she", "had"],
+    // We had / We'd
+    "wed": ["we", "had"],
+    // They had / They'd
+    "theyd": ["they", "had"],
+    // I will / I'll
+    "ill": ["i", "will"],
+    // You will / You'll
+    "youll": ["you", "will"],
+    // He will / He'll
+    "hell": ["he", "will"],
+    // She will / She'll
+    "shell": ["she", "will"],
+    // We will / We'll
+    "well": ["we", "will"],
+    // They will / They'll
+    "theyll": ["they", "will"],
+    // I would / I'd (может быть и had, но чаще would)
+    // уже есть "id": ["i", "had"], но добавим альтернативу
+    // Do not / Don't
+    "dont": ["do", "not"],
+    // Does not / Doesn't
+    "doesnt": ["does", "not"],
+    // Did not / Didn't
+    "didnt": ["did", "not"],
+    // Will not / Won't
+    "wont": ["will", "not"],
+    // Would not / Wouldn't
+    "wouldnt": ["would", "not"],
+    // Should not / Shouldn't
+    "shouldnt": ["should", "not"],
+    // Could not / Couldn't
+    "couldnt": ["could", "not"],
+    // Cannot / Can't
+    "cant": ["can", "not"],
+    // Is not / Isn't
+    "isnt": ["is", "not"],
+    // Are not / Aren't
+    "arent": ["are", "not"],
+    // Was not / Wasn't
+    "wasnt": ["was", "not"],
+    // Were not / Weren't
+    "werent": ["were", "not"],
+    // Has not / Hasn't
+    "hasnt": ["has", "not"],
+    // Have not / Haven't
+    "havent": ["have", "not"],
+    // Had not / Hadn't
+    "hadnt": ["had", "not"],
+    // That is / That's
+    "thats": ["that", "is"],
+    // There is / There's
+    "theres": ["there", "is"],
+    // Here is / Here's
+    "heres": ["here", "is"],
+    // Where is / Where's
+    "wheres": ["where", "is"],
+    // What is / What's
+    "whats": ["what", "is"],
+    // Who is / Who's
+    "whos": ["who", "is"],
+    // How is / How's
+    "hows": ["how", "is"],
+    // When is / When's
+    "whens": ["when", "is"],
+    // Why is / Why's
+    "whys": ["why", "is"],
+    // Let us / Let's
+    "lets": ["let", "us"],
+    // You are / You're (уже есть выше, но для полноты)
+    // I am / I'm (уже есть выше)
+};
+
+/**
+ * Проверяет, эквивалентны ли два слова с учетом сокращений
+ * @param {string} word1 - первое слово (уже нормализованное, без апострофов)
+ * @param {string} word2 - второе слово (уже нормализованное, без апострофов)
+ * @returns {boolean} - true если слова эквивалентны
+ */
+function areWordsEquivalent(word1, word2) {
+    if (!word1 || !word2) return false;
+    if (word1 === word2) return true;
+    
+    // Проверяем, является ли word1 сокращением word2
+    const expansion1 = CONTRACTIONS_DICT[word1];
+    if (expansion1 && expansion1.length === 1 && expansion1[0] === word2) {
+        return true;
+    }
+    
+    // Проверяем, является ли word2 сокращением word1
+    const expansion2 = CONTRACTIONS_DICT[word2];
+    if (expansion2 && expansion2.length === 1 && expansion2[0] === word1) {
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * Проверяет, эквивалентна ли последовательность слов сокращению или наоборот
+ * @param {string} word - одно слово (сокращение или полная форма)
+ * @param {string[]} words - массив слов (полная форма или сокращение)
+ * @returns {boolean} - true если эквивалентны
+ */
+function areWordSequencesEquivalent(word, words) {
+    if (!word || !words || words.length === 0) return false;
+    
+    // Если одно слово и один элемент массива - простая проверка
+    if (words.length === 1) {
+        return areWordsEquivalent(word, words[0]);
+    }
+    
+    // Проверяем, является ли word сокращением для массива words
+    const expansion = CONTRACTIONS_DICT[word];
+    if (expansion && expansion.length === words.length) {
+        // Проверяем поэлементно
+        for (let i = 0; i < expansion.length; i++) {
+            if (expansion[i] !== words[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // Проверяем обратное: может быть words[0] + words[1] = сокращение для word
+    // Но это сложнее, так как нужно проверить все возможные комбинации
+    // Для простоты пока не реализуем этот случай
+    
+    return false;
+}
+
 function simplifyText(text) {
     return (text || "")
         .normalize('NFKC')          // унификация Юникода
@@ -4457,16 +4622,85 @@ function check(original, userInput, currentKey) {
             userVerified.push({ type: "missing", text: fullWordOrig });
             i++;
         } else {
-            // Любое несовпадение считаем ошибкой — пользователь должен набрать ВСЁ
-            const errorIndex = findFirstErrorIndex(wordOrig || "", wordUser || "");
-            userVerified.push({
-                type: "error",
-                userText: fullWordUser,
-                correctText: fullWordOrig,
-                errorIndex: errorIndex
-            });
-            i++; j++;
-            foundError = true; // ← ключ: пропуск/несовпадение — это ошибка, а не «мягкий» missing
+            // Проверяем эквивалентности сокращений перед тем, как считать ошибкой
+            let isEquivalent = false;
+            
+            // Случай 1: Оригинал - сокращение (одно слово), пользователь - полная форма (два слова)
+            // Например: оригинал "I'm" (im), пользователь "I am" (i, am)
+            const expansionOrig = CONTRACTIONS_DICT[wordOrig];
+            if (expansionOrig && j + expansionOrig.length <= simplUser.length) {
+                // Проверяем, совпадает ли расширение сокращения со следующими словами пользователя
+                let matches = true;
+                for (let k = 0; k < expansionOrig.length; k++) {
+                    if (simplUser[j + k] !== expansionOrig[k]) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches) {
+                    // Эквивалентны! Обрабатываем как правильный ответ
+                    userVerified.push({ type: "correct", text: fullWordOrig });
+                    i++; // переходим к следующему слову в оригинале
+                    // Переходим на количество слов в расширении
+                    for (let k = 0; k < expansionOrig.length; k++) {
+                        j++;
+                    }
+                    isEquivalent = true;
+                }
+            }
+            
+            // Случай 2: Пользователь - сокращение (одно слово), оригинал - полная форма (два слова)
+            // Например: пользователь "I'm" (im), оригинал "I am" (i, am)
+            if (!isEquivalent) {
+                const expansionUser = CONTRACTIONS_DICT[wordUser];
+                if (expansionUser && i + expansionUser.length <= simplOriginal.length) {
+                    // Проверяем, совпадает ли расширение сокращения со следующими словами оригинала
+                    let matches = true;
+                    for (let k = 0; k < expansionUser.length; k++) {
+                        if (simplOriginal[i + k] !== expansionUser[k]) {
+                            matches = false;
+                            break;
+                        }
+                    }
+                    if (matches) {
+                        // Эквивалентны! Обрабатываем как правильный ответ
+                        // Показываем полную форму из оригинала
+                        let fullText = "";
+                        for (let k = 0; k < expansionUser.length; k++) {
+                            if (k > 0) fullText += " ";
+                            fullText += originalWords[i + k] || "";
+                        }
+                        userVerified.push({ type: "correct", text: fullText });
+                        // Переходим на количество слов в расширении в оригинале
+                        for (let k = 0; k < expansionUser.length; k++) {
+                            i++;
+                        }
+                        j++; // переходим к следующему слову у пользователя
+                        isEquivalent = true;
+                    }
+                }
+            }
+            
+            // Случай 3: Оба - одно слово, но одно может быть сокращением другого (редкий случай)
+            // Например: "its" vs "it is" уже обработано выше, но на всякий случай
+            if (!isEquivalent && areWordsEquivalent(wordOrig, wordUser)) {
+                userVerified.push({ type: "correct", text: fullWordOrig });
+                i++; j++;
+                isEquivalent = true;
+            }
+            
+            // Если не эквивалентны - это ошибка
+            if (!isEquivalent) {
+                const errorIndex = findFirstErrorIndex(wordOrig || "", wordUser || "");
+                userVerified.push({
+                    type: "error",
+                    userText: fullWordUser,
+                    correctText: fullWordOrig,
+                    errorIndex: errorIndex
+                });
+                i++; j++;
+                foundError = true; // ← ключ: пропуск/несовпадение — это ошибка, а не «мягкий» missing
+            }
         }
 
     }

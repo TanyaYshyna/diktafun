@@ -121,12 +121,12 @@
     },
     {
       "audio": 0,
-      "corrected": 3,
+      "corrected": 0,
       "date": 20251125,
-      "end": 0,
+      "perfect": 0,
+      "timer_seconds": 195,
       "id_diktation": "dicta_1761748844334",
-      "perfect": 8,
-      "timer_seconds": 377
+      "end": 0
     }
   ],
   "statistics_sentenses": [
@@ -195,11 +195,11 @@
       "total_time_ms": 197430
     },
     {
+      "audio": 0,
+      "corrected": 3,
       "date": 20251125,
       "dictation_id": "dicta_1761748844334",
       "perfect": 10,
-      "corrected": 3,
-      "audio": 0,
       "total_time_ms": 416541
     }
   ]
