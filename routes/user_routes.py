@@ -4,6 +4,7 @@ import io
 import base64
 import os
 import json
+import shutil
 from datetime import datetime
 import uuid
 from flask import Blueprint, request, jsonify, render_template, send_file
@@ -229,6 +230,19 @@ def api_update_profile():
         if 'current_learning' in updates:
             user_data['current_learning'] = updates['current_learning']
         
+        # Обновляем настройки аудио
+        if 'audio_start' in updates:
+            user_data['audio_start'] = updates['audio_start']
+        
+        if 'audio_typo' in updates:
+            user_data['audio_typo'] = updates['audio_typo']
+        
+        if 'audio_success' in updates:
+            user_data['audio_success'] = updates['audio_success']
+        
+        if 'audio_repeats' in updates:
+            user_data['audio_repeats'] = updates['audio_repeats']
+        
         # Сохраняем обновленные данные
         save_user_info(current_email, user_data)
         
@@ -395,11 +409,44 @@ def api_get_history(month_identifier):
             return jsonify({
                 'id_user': current_email,
                 'month': int(month_identifier),
-                'statistics': []
+                'statistics': [],
+                'statistics_sentenses': []
             })
         
-        with open(filepath, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        # Читаем файл с обработкой ошибок JSON
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f'❌ [API_GET_HISTORY] Ошибка парсинга JSON в файле {filepath}: {e}')
+            # Пытаемся восстановить структуру - читаем файл как текст и пытаемся исправить
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                # Ищем последнюю валидную закрывающую скобку
+                last_valid_brace = content.rfind('}')
+                if last_valid_brace > 0:
+                    # Пытаемся извлечь валидную часть
+                    valid_content = content[:last_valid_brace + 1]
+                    data = json.loads(valid_content)
+                    print(f'⚠️ [API_GET_HISTORY] Восстановлена структура из поврежденного файла')
+                else:
+                    raise
+            except:
+                # Если не удалось восстановить, возвращаем пустую структуру
+                print(f'❌ [API_GET_HISTORY] Не удалось восстановить файл, возвращаем пустую структуру')
+                data = {
+                    'id_user': current_email,
+                    'month': int(month_identifier),
+                    'statistics': [],
+                    'statistics_sentenses': []
+                }
+        
+        # Убеждаемся, что все необходимые поля присутствуют
+        if 'statistics' not in data:
+            data['statistics'] = []
+        if 'statistics_sentenses' not in data:
+            data['statistics_sentenses'] = []
         
         return jsonify(data)
         
@@ -419,6 +466,9 @@ def api_save_history(month_identifier):
         
         data = request.get_json()
         
+        print(f'📊 [API_SAVE_HISTORY] Сохранение истории для месяца: {month_identifier}')
+        print(f'📊 [API_SAVE_HISTORY] Полученные данные: statistics={len(data.get("statistics", []))} записей, statistics_sentenses={len(data.get("statistics_sentenses", []))} записей')
+        
         # Убеждаемся что структура правильная
         if 'id_user' not in data:
             data['id_user'] = current_email
@@ -426,15 +476,27 @@ def api_save_history(month_identifier):
             data['month'] = int(month_identifier)
         if 'statistics' not in data:
             data['statistics'] = []
+        elif not isinstance(data['statistics'], list):
+            data['statistics'] = []
         # Убеждаемся, что statistics_sentenses всегда массив
         if 'statistics_sentenses' not in data:
             data['statistics_sentenses'] = []
         elif not isinstance(data['statistics_sentenses'], list):
             data['statistics_sentenses'] = []
         
-        # Сохраняем файл
+        # Валидируем структуру перед сохранением
+        if not isinstance(data, dict):
+            print(f'❌ [API_SAVE_HISTORY] Некорректный формат данных: ожидается dict, получено {type(data)}')
+            return jsonify({'error': 'Invalid data format'}), 400
+        
+        # Убеждаемся, что директория существует перед созданием файла
+        os.makedirs(history_folder, exist_ok=True)
+        
+        # Сохраняем файл (полная перезапись)
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f'✅ [API_SAVE_HISTORY] Файл успешно сохранен: {filepath}')
+        print(f'✅ [API_SAVE_HISTORY] Финальная структура: statistics={len(data.get("statistics", []))} записей, statistics_sentenses={len(data.get("statistics_sentenses", []))} записей')
         
         return jsonify({'message': 'History saved successfully', 'data': data})
         

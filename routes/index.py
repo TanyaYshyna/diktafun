@@ -148,6 +148,24 @@ def resolve_language_context(categories_data, key):
     return None, None
 
 
+def find_dictation_languages(categories_data, dictation_id):
+    """
+    Находит языковую пару (оригинальный / перевод) для указанного dictation_id
+    """
+    if not dictation_id:
+        return None, None
+
+    for node in iter_nodes(categories_data):
+        data = node.get("data") or {}
+        dictations = data.get("dictations")
+        if isinstance(dictations, list) and dictation_id in dictations:
+            lang_original = data.get("language_original")
+            lang_translation = data.get("language_translation")
+            return lang_original, lang_translation
+
+    return None, None
+
+
 def generate_category_key(parent_key, existing_keys):
     base = f"{parent_key}_"
     counter = 0
@@ -585,6 +603,7 @@ def dictations_list():
     base_path = os.path.join(current_app.static_folder, "data", "dictations")
     # print(f"❌❌❌ base_path: {base_path}")
     result = []
+    categories_data = load_categories()
 
     for folder in os.listdir(base_path):
         folder_path = os.path.join(base_path, folder)
@@ -594,15 +613,64 @@ def dictations_list():
             try:
                 with open(info_path, "r", encoding="utf-8") as f:
                     info = json.load(f)
-                    cover_url = get_cover_url_for_id(info.get("id"), info.get("language_original"))
+                    dictation_id = info.get("id")
+                    cover_url = get_cover_url_for_id(dictation_id, info.get("language_original"))
+
+                    # Определяем языковую пару
+                    language_original = info.get("language_original") or ""
+                    language_translation = info.get("language_translation") or ""
+                    if (not language_translation) or (not language_original):
+                        lang_orig_cat, lang_trans_cat = find_dictation_languages(categories_data, dictation_id)
+                        if lang_orig_cat:
+                            language_original = lang_orig_cat
+                        if lang_trans_cat:
+                            language_translation = lang_trans_cat
+
+                    # Дополнительный fallback: проверяем директории с предложениями
+                    language_dirs = []
+                    for sub in os.listdir(folder_path):
+                        sub_path = os.path.join(folder_path, sub)
+                        if not os.path.isdir(sub_path):
+                            continue
+                        sentences_file = os.path.join(sub_path, "sentences.json")
+                        if os.path.isfile(sentences_file):
+                            language_dirs.append(sub)
+
+                    if not language_original and language_dirs:
+                        language_original = language_dirs[0]
+
+                    if not language_translation:
+                        for lang_dir in language_dirs:
+                            if lang_dir != language_original:
+                                language_translation = lang_dir
+                                break
+                    
+                    # Получаем количество предложений из info.json (если есть), иначе считаем из sentences.json
+                    sentences_count = info.get("sentences_count", 0)
+                    if sentences_count == 0 and language_original:
+                        # Fallback: считаем из sentences.json если в info.json нет поля или оно равно 0
+                        sentences_path = os.path.join(folder_path, language_original, "sentences.json")
+                        if os.path.exists(sentences_path):
+                            try:
+                                with open(sentences_path, "r", encoding="utf-8") as sf:
+                                    sentences_data = json.load(sf)
+                                    sentences = sentences_data.get("sentences", [])
+                                    sentences_count = len(sentences) if isinstance(sentences, list) else 0
+                            except Exception as e:
+                                print(f"⚠️ Ошибка при чтении {sentences_path}: {e}")
+                    
                     result.append({
-                        "id": info.get("id"),
+                        "id": dictation_id,
                         "title": info.get("title"),
                         "parent_key": info.get("parent_key"),
-                        "language": info.get("language_original"),
+                        "language": language_original,
+                        "language_original": language_original,
+                        "language_translation": language_translation,
+                        "translations": language_translation,
                         "languages": info.get("languages"),
                         "level": info.get("level"),
-                        "cover_url": cover_url
+                        "cover_url": cover_url,
+                        "sentences_count": sentences_count
                     })
             except Exception as e:
                     print(f"⚠️ Ошибка при чтении {info_path}: {e}")

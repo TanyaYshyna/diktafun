@@ -6,207 +6,201 @@
       "audio": 3,
       "corrected": 1,
       "date": 20251105,
-      "end": false,
-      "id_diktation": "dicta_1760946618800",
-      "number": 1,
       "perfect": 0
     },
     {
       "audio": 3,
       "corrected": 2,
       "date": 20251105,
-      "end": false,
-      "id_diktation": "dicta_1760946618800",
-      "number": 2,
       "perfect": 0
     },
     {
       "audio": 3,
       "corrected": 3,
       "date": 20251105,
-      "end": 0,
-      "id_diktation": "dicta_1760946618800",
-      "number": 3,
       "perfect": 0
     },
     {
       "audio": 3,
       "corrected": 1,
       "date": 20251106,
-      "end": 2,
-      "id_diktation": "dicta_1762070781697",
       "perfect": 1
     },
     {
       "audio": 29,
       "corrected": 28,
       "date": 20251108,
-      "end": 0,
-      "id_diktation": "dicta_1760946618800",
-      "perfect": 6,
-      "total": 2
-    },
-    {
-      "audio": null,
-      "corrected": null,
-      "date": 20251109,
-      "end": 0,
-      "id_diktation": "dicta_1760946618800",
-      "perfect": null,
-      "total": 3
+      "perfect": 6
     },
     {
       "audio": 303,
       "corrected": 136,
       "date": 20251110,
-      "end": 0,
-      "id_diktation": "dicta_1762070781697",
-      "perfect": 81,
-      "total": 32
+      "perfect": 81
     },
     {
       "audio": 495,
       "corrected": 257,
       "date": 20251111,
-      "end": 0,
-      "id_diktation": "dicta_1762070781697",
-      "perfect": 154,
-      "total": 32
+      "perfect": 154
     },
     {
       "audio": 297,
       "corrected": 140,
       "date": 20251113,
-      "end": 1,
-      "id_diktation": "dicta_1761748765243",
-      "perfect": 95,
-      "total": 10
+      "perfect": 95
     },
     {
       "audio": 36,
       "corrected": 21,
       "date": 20251116,
-      "end": 0,
-      "id_diktation": "dicta_1762070781697",
-      "perfect": 12,
-      "timer_seconds": 554,
-      "total": 2
+      "perfect": 12
     },
     {
       "audio": 0,
       "corrected": 0,
       "date": 20251117,
-      "end": 0,
-      "id_diktation": "dicta_1762070781697",
       "perfect": 0
     },
     {
       "audio": 0,
       "corrected": 0,
       "date": 20251119,
-      "end": 0,
-      "id_diktation": "dicta_1762070781697",
       "perfect": 0
     },
     {
       "audio": 0,
       "corrected": 0,
       "date": 20251120,
-      "end": 0,
-      "id_diktation": "dicta_1761748765243",
-      "perfect": 0,
-      "timer_seconds": 0,
-      "total": 10
+      "perfect": 0
     },
     {
       "audio": 15,
       "corrected": 5,
       "date": 20251122,
-      "end": 0,
-      "id_diktation": "dicta_1760946618800",
-      "perfect": 4,
-      "timer_seconds": 0
+      "perfect": 4
     },
     {
       "audio": 0,
       "corrected": 0,
       "date": 20251122,
-      "end": 0,
-      "id_diktation": "dicta_1761748765243",
-      "perfect": 0,
-      "timer_seconds": 0,
-      "total": 8
+      "perfect": 0
     },
     {
       "audio": 0,
       "corrected": 0,
       "date": 20251122,
-      "end": 0,
-      "id_diktation": "dicta_1761748844334",
-      "perfect": 0,
-      "timer_seconds": 0
+      "perfect": 0
     },
     {
-      "audio": 0,
-      "corrected": 7,
+      "audio": 10,
+      "corrected": 5,
       "date": 20251123,
-      "end": 2,
-      "id_diktation": "dicta_1761748765243",
-      "perfect": 10,
-      "timer_seconds": 778,
-      "total": 10
+      "perfect": 10
     },
     {
       "audio": 12,
       "corrected": 10,
       "date": 20251123,
-      "end": 2,
-      "id_diktation": "dicta_1761748844334",
-      "perfect": 10,
-      "timer_seconds": 790,
-      "total": 10
+      "perfect": 10
     },
     {
       "audio": 0,
       "corrected": 0,
       "date": 20251123,
-      "end": 0,
+      "perfect": 0
+    },
+    {
+      "audio": 10,
+      "corrected": 6,
+      "date": 20251124,
+      "end": 2,
       "id_diktation": "dicta_1761748666932",
-      "perfect": 0,
-      "timer_seconds": 516,
-      "total": 10
+      "perfect": 10,
+      "timer_seconds": 562
+    },
+    {
+      "audio": 0,
+      "corrected": 3,
+      "date": 20251125,
+      "end": 0,
+      "id_diktation": "dicta_1761748844334",
+      "perfect": 8,
+      "timer_seconds": 377
     }
   ],
   "statistics_sentenses": [
     {
+      "audio": 20,
+      "corrected": 33,
+      "date": 20251122,
+      "dictation_id": "dicta_1761748765243",
+      "perfect": 10,
+      "total_time_ms": 543166
+    },
+    {
+      "audio": 10,
+      "corrected": 18,
       "date": 20251123,
       "dictation_id": "dicta_1761748765243",
-      "number": 1,
-      "time": "13:34:21",
       "perfect": 10,
-      "corrected": 33,
-      "audio": 20,
       "total_time_ms": 543166
     },
     {
+      "audio": 30,
+      "corrected": 13,
       "date": 20251123,
       "dictation_id": "dicta_1761748844334",
-      "number": 1,
-      "time": "13:34:21",
       "perfect": 10,
-      "corrected": 13,
-      "audio": 30,
       "total_time_ms": 543166
     },
     {
+      "audio": 10,
+      "corrected": 3,
       "date": 20251123,
       "dictation_id": "dicta_1761748666932",
-      "number": 1,
-      "time": "13:34:21",
+      "perfect": 10,
+      "total_time_ms": 543166
+    },
+    {
+      "audio": 10,
+      "corrected": 2,
+      "date": 20251124,
+      "dictation_id": "dicta_1761748765243",
+      "perfect": 10,
+      "total_time_ms": 608695
+    },
+    {
+      "audio": 10,
+      "corrected": 10,
+      "date": 20251124,
+      "dictation_id": "dicta_1761748844334",
+      "perfect": 10,
+      "total_time_ms": 839903
+    },
+    {
+      "audio": 10,
+      "corrected": 6,
+      "date": 20251124,
+      "dictation_id": "dicta_1761748666932",
+      "perfect": 10,
+      "total_time_ms": 562430
+    },
+    {
+      "audio": 0,
+      "corrected": 3,
+      "date": 20251125,
+      "dictation_id": "dicta_1761748666932",
+      "perfect": 10,
+      "total_time_ms": 197430
+    },
+    {
+      "date": 20251125,
+      "dictation_id": "dicta_1761748844334",
       "perfect": 10,
       "corrected": 3,
-      "audio": 10,
-      "total_time_ms": 543166
+      "audio": 0,
+      "total_time_ms": 416541
     }
   ]
 }

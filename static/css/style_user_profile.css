@@ -115,7 +115,7 @@
     padding: 10px 12px;
     border: 1px solid #ced4da;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 20px;
     box-sizing: border-box;
     background: #fff;
 }
@@ -189,6 +189,139 @@
     padding: 4px 0;
 }
 
+/* Стили для настроек аудио в профиле */
+#userAudioSettingsContainer input,
+#userAudioSettingsContainer .play-sequence-input,
+#userAudioSettingsContainer input[type="text"],
+#userAudioSettingsContainer input[type="number"],
+#userAudioSettingsContainer .audio-settings-table input,
+#userAudioSettingsContainer .audio-settings-table .play-sequence-input {
+    font-size: 20px !important;
+}
+
+/* Ширина полей ввода для текстовых полей (oto, o, ot) */
+#userAudioSettingsContainer .audio-settings-input input[type="text"],
+#userAudioSettingsContainer .audio-settings-input .play-sequence-input[type="text"],
+#userAudioSettingsContainer .audio-settings-table input[type="text"],
+#userAudioSettingsContainer input[type="text"].play-sequence-input {
+    width: 60px !important;
+    max-width: 60px !important;
+    min-width: 60px !important;
+}
+
+/* Убираем все обводки у ячеек таблицы настроек аудио */
+#userAudioSettingsContainer .audio-settings-table td,
+#userAudioSettingsContainer .audio-settings-table tr,
+#userAudioSettingsContainer .audio-settings-table {
+    border: none !important;
+}
+
+/* Добавляем отступы к ячейкам */
+#userAudioSettingsContainer .audio-settings-label,
+.form-section #userAudioSettingsContainer .audio-settings-label {
+    padding: 8px 4px 8px 0 !important;
+    text-align: right !important;
+}
+
+#userAudioSettingsContainer .audio-settings-label label,
+.form-section #userAudioSettingsContainer .audio-settings-label label {
+    text-align: right !important;
+    display: block;
+}
+
+#userAudioSettingsContainer .audio-settings-input {
+    padding: 8px 0 8px 4px !important;
+}
+
+/* Отступы между строками таблицы */
+#userAudioSettingsContainer .audio-settings-table tr {
+    margin-bottom: 4px !important;
+}
+
+#userAudioSettingsContainer .audio-settings-table tr:last-child {
+    margin-bottom: 0 !important;
+}
+
+#userAudioSettingsContainer .audio-settings-table tr td {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+}
+
+#userAudioSettingsContainer .audio-settings-table tr td.audio-settings-input {
+    padding-left: 0 !important;
+    padding-right: 8px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+}
+
+/* Заголовок "Аудио проигрываем:" по центру */
+#userAudioSettingsContainer .audio-settings-title,
+.form-section #userAudioSettingsContainer .audio-settings-title {
+    text-align: center !important;
+}
+
+/* Отступы между полями ввода в строке */
+#userAudioSettingsContainer .audio-settings-input .play-sequence-input {
+    margin-right: 8px !important;
+    margin-bottom: 8px !important;
+    border: 1px solid #ced4da !important;
+    border-radius: 8px !important;
+    padding: 10px 12px !important;
+    background: #fff !important;
+    box-sizing: border-box !important;
+}
+
+#userAudioSettingsContainer .audio-settings-input .play-sequence-input:focus {
+    outline: none !important;
+    border-color: var(--color-button-text-pink) !important;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25) !important;
+}
+
+#userAudioSettingsContainer .audio-settings-input .play-sequence-input:last-child {
+    margin-right: 0 !important;
+}
+
+/* Стили для таблицы настроек аудио в профиле */
+#userAudioSettingsContainer .audio-settings-main-table {
+    width: auto !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    table-layout: auto !important;
+}
+
+#userAudioSettingsContainer .audio-settings-column {
+    width: auto !important;
+    vertical-align: top !important;
+    padding: 8px 10px 8px 16px !important;
+    white-space: nowrap !important;
+}
+
+/* Переопределяем padding из style_dictation.css - максимальная специфичность */
+.form-section #userAudioSettingsContainer .audio-settings-main-table td.audio-explanations-column,
+.form-section #userAudioSettingsContainer .audio-settings-main-table .audio-explanations-column,
+#userAudioSettingsContainer .audio-explanations-column,
+.form-section #userAudioSettingsContainer .audio-explanations-column,
+body .form-section #userAudioSettingsContainer .audio-explanations-column {
+    width: auto !important;
+    min-width: 200px !important;
+    vertical-align: top !important;
+    padding-left: 20px !important;
+    padding-right: 0 !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+}
+
+/* Убираем обводку вокруг настроек аудио в профиле */
+#userAudioSettingsContainer .audio-settings-frame,
+.form-section .audio-settings-frame,
+.form-section #userAudioSettingsContainer .audio-settings-frame {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
 .profile-language-list .language-item {
     padding: 8px 12px;
 }
@@ -235,6 +368,53 @@
 /* Стили для секций формы */
 .form-section {
     margin-bottom: 30px;
+}
+
+.form-section table:not(.audio-settings-main-table):not(.audio-settings-table) {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 20px 0 !important;
+    table-layout: auto !important;
+}
+
+.form-section .audio-settings-main-table,
+.form-section #userAudioSettingsContainer .audio-settings-main-table {
+    width: auto !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    table-layout: auto !important;
+}
+
+.form-section .audio-settings-main-table td:not(.audio-settings-column):not(.audio-explanations-column),
+.form-section #userAudioSettingsContainer .audio-settings-main-table td:not(.audio-settings-column):not(.audio-explanations-column) {
+    padding: 0 10px 0 0 !important;
+}
+
+.form-section .audio-settings-main-table td:last-child:not(.audio-settings-column):not(.audio-explanations-column),
+.form-section #userAudioSettingsContainer .audio-settings-main-table td:last-child:not(.audio-settings-column):not(.audio-explanations-column) {
+    padding-right: 0 !important;
+    padding-left: 10px !important;
+}
+
+.form-section .audio-settings-column,
+.form-section #userAudioSettingsContainer .audio-settings-column {
+    width: auto !important;
+    vertical-align: top !important;
+    padding: 8px 10px 8px 20px !important;
+    white-space: nowrap !important;
+}
+
+/* Более специфичное правило для перекрытия style_dictation.css */
+.form-section .audio-settings-main-table td.audio-explanations-column,
+.form-section #userAudioSettingsContainer .audio-settings-main-table td.audio-explanations-column,
+.form-section .audio-settings-main-table .audio-explanations-column,
+.form-section #userAudioSettingsContainer .audio-settings-main-table .audio-explanations-column,
+.form-section .audio-explanations-column,
+.form-section #userAudioSettingsContainer .audio-explanations-column {
+    width: auto !important;
+    min-width: 200px !important;
+    vertical-align: top !important;
+    padding: 8px 0 8px 20px !important;
 }
 
 .form-section h3 {
@@ -368,4 +548,10 @@
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
+}
+
+/* Финальное переопределение для audio-explanations-column - максимальная специфичность */
+body .form-section #userAudioSettingsContainer .audio-settings-main-table td.audio-explanations-column,
+body .form-section #userAudioSettingsContainer .audio-explanations-column {
+    padding-left: 20px !important;
 }

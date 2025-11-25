@@ -10,7 +10,8 @@ class DictationStatistics {
         this.history = new Map(); // Map<month, data>
         this.saveInterval = null;
         this.saveCounter = 0;
-        this.SAVE_INTERVAL = 5; // Сохранять каждые 5 заданий
+        this.SAVE_INTERVAL = 5; // Сохранять каждые 5 заданий (TODO: вынести в настройки пользователя)
+        this.lastSavedStats = { perfect: 0, corrected: 0, audio: 0 }; // Последние сохраненные значения для вычисления дельты
         this.listeners = [];
         this._lastSaveOk = true; // признак успешного последнего сохранения
         
@@ -97,14 +98,16 @@ class DictationStatistics {
         const today = this.formatDate(now);
         const month = this.getMonthKey(now);
         
-        // Находим последнюю запись для этого диктанта (по дате)
+        // Находим последнюю запись за сегодня (по дате)
+        // В "statistics" теперь нет id_diktation, наработки суммируются по дате
         let lastSession = null;
 
         // Проверяем текущий месяц
         const currentMonthData = this.history.get(month);
         if (currentMonthData && currentMonthData.statistics) {
             currentMonthData.statistics.forEach(stat => {
-                if (stat.id_diktation === this.dictationId && stat.date === today) {
+                // Ищем только по дате (в "statistics" нет id_diktation)
+                if (stat.date === today) {
                     lastSession = stat;
                 }
             });
@@ -112,19 +115,33 @@ class DictationStatistics {
 
         // Инициализируем текущую сессию
         // Если есть существующая сессия за сегодня, загружаем её данные
+        // id_diktation и end используются только для внутренней работы, не сохраняются в "statistics"
         if (lastSession) {
+            const savedPerfect = parseInt(lastSession.perfect || 0);
+            const savedCorrected = parseInt(lastSession.corrected || 0);
+            const savedAudio = parseInt(lastSession.audio || 0);
+            
+            // Запоминаем последние сохраненные значения для вычисления дельты
+            this.lastSavedStats = {
+                perfect: savedPerfect,
+                corrected: savedCorrected,
+                audio: savedAudio
+            };
+            
             this.currentSession = {
-                id_diktation: this.dictationId,
+                id_diktation: this.dictationId, // для внутренней работы
                 date: today,
-                end: parseInt(lastSession.end || 0), // сохраняем счетчик завершений
-                perfect: parseInt(lastSession.perfect || 0),
-                corrected: parseInt(lastSession.corrected || 0),
-                audio: parseInt(lastSession.audio || 0),
-                total: parseInt(lastSession.total || 0)
+                end: 0, // счетчик завершений не сохраняется в "statistics", начинаем с 0
+                perfect: savedPerfect,
+                corrected: savedCorrected,
+                audio: savedAudio,
+                total: 0 // total не сохраняется в истории
             };
         } else {
+            // Новая сессия - начинаем с нуля
+            this.lastSavedStats = { perfect: 0, corrected: 0, audio: 0 };
             this.currentSession = {
-                id_diktation: this.dictationId,
+                id_diktation: this.dictationId, // для внутренней работы
                 date: today,
                 end: 0, // счетчик завершений диктанта
                 perfect: 0,
@@ -195,6 +212,7 @@ class DictationStatistics {
 
     /**
      * Сохранение текущей сессии в историю
+     * Сохраняет только дельту (разницу) от последнего сохранения, чтобы избежать двойного подсчета
      */
     async saveToHistory() {
         console.log('[DS] saveToHistory: saveToHistory');
@@ -218,9 +236,24 @@ class DictationStatistics {
             // Обновляем дату на сегодня, если она изменилась
             this.currentSession.date = today;
             
-            // Создаем копию без timer для отправки на сервер
-            const sessionToSave = { ...this.currentSession };
-            delete sessionToSave.timer; // Убираем timer из данных для сохранения
+            // Вычисляем дельту (разницу) от последнего сохранения
+            const deltaPerfect = this.currentSession.perfect - this.lastSavedStats.perfect;
+            const deltaCorrected = this.currentSession.corrected - this.lastSavedStats.corrected;
+            const deltaAudio = this.currentSession.audio - this.lastSavedStats.audio;
+            
+            console.log('[DS] saveToHistory: дельта от последнего сохранения', {
+                perfect: `${this.lastSavedStats.perfect} -> ${this.currentSession.perfect} (дельта: ${deltaPerfect})`,
+                corrected: `${this.lastSavedStats.corrected} -> ${this.currentSession.corrected} (дельта: ${deltaCorrected})`,
+                audio: `${this.lastSavedStats.audio} -> ${this.currentSession.audio} (дельта: ${deltaAudio})`
+            });
+            
+            // Создаем объект с дельтой для отправки на сервер
+            const sessionToSave = {
+                date: today,
+                perfect: deltaPerfect,
+                corrected: deltaCorrected,
+                audio: deltaAudio
+            };
             
             // Преобразуем месяц в строку для API
             const monthStr = String(month);
@@ -246,6 +279,14 @@ class DictationStatistics {
             if (response.ok) {
                 this._lastSaveOk = true;
                 console.log('[DS] saveToHistory: server responded OK');
+                
+                // Обновляем последние сохраненные значения после успешного сохранения
+                this.lastSavedStats = {
+                    perfect: this.currentSession.perfect,
+                    corrected: this.currentSession.corrected,
+                    audio: this.currentSession.audio
+                };
+                
                 // Обновляем локальную копию истории
                 if (!this.history.has(month)) {
                     this.history.set(month, {
@@ -257,19 +298,26 @@ class DictationStatistics {
 
                 const monthData = this.history.get(month);
                 // Находим существующую запись или создаем новую
-                // Ищем по id_diktation и date (без number)
+                // Ищем только по date (в "statistics" нет id_diktation)
                 const existingIndex = monthData.statistics.findIndex(
-                    s => s.id_diktation === this.currentSession.id_diktation && 
-                         s.date === this.currentSession.date
+                    s => s.date === this.currentSession.date
                 );
 
+                // Создаем копию без полей, которые не сохраняются в "statistics"
+                const statToSave = {
+                    date: this.currentSession.date,
+                    perfect: this.currentSession.perfect,
+                    corrected: this.currentSession.corrected,
+                    audio: this.currentSession.audio
+                };
+
                 if (existingIndex >= 0) {
-                    monthData.statistics[existingIndex] = { ...this.currentSession };
+                    monthData.statistics[existingIndex] = statToSave;
                 } else {
-                    monthData.statistics.push({ ...this.currentSession });
+                    monthData.statistics.push(statToSave);
                 }
 
-                console.log('✅ Статистика сохранена');
+                console.log('✅ Статистика сохранена, обновлены lastSavedStats:', this.lastSavedStats);
                 // уведомим слушателей
                 this.updateUI();
             } else {

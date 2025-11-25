@@ -47,7 +47,8 @@ class UserActivityHistory {
                 this.monthData = {
                     id_user: '',
                     month: parseInt(this.getMonthIdentifier()),
-                    statistics: []
+                    statistics: [],
+                    statistics_sentenses: []
                 };
                 return this.monthData;
             }
@@ -66,7 +67,8 @@ class UserActivityHistory {
                     this.monthData = {
                         id_user: '',
                         month: parseInt(this.getMonthIdentifier()),
-                        statistics: []
+                        statistics: [],
+                        statistics_sentenses: []
                     };
                     return this.monthData;
                 }
@@ -79,15 +81,22 @@ class UserActivityHistory {
             if (!this.monthData.statistics) {
                 this.monthData.statistics = [];
             }
+            
+            // Убеждаемся, что statistics_sentenses существует (важно сохранить при следующем сохранении)
+            if (!this.monthData.statistics_sentenses) {
+                this.monthData.statistics_sentenses = [];
+            }
 
             return this.monthData;
         } catch (error) {
             console.error('Error loading history:', error);
-            // Возвращаем пустую структуру при ошибке
+            // Возвращаем пустую структуру при ошибке, но сохраняем statistics_sentenses если они были
+            const existingSentenses = this.monthData?.statistics_sentenses || [];
             this.monthData = {
                 id_user: '',
                 month: parseInt(this.getMonthIdentifier()),
-                statistics: []
+                statistics: [],
+                statistics_sentenses: existingSentenses
             };
             return this.monthData;
         }
@@ -135,8 +144,10 @@ class UserActivityHistory {
         if (!this.monthData || !this.monthData.statistics) return null;
 
         const dateId = this.getDateIdentifier();
+        // В "statistics" теперь нет id_diktation, наработки суммируются по дате
+        // Ищем только по дате (наработки за день, независимо от диктанта)
         const todaySession = this.monthData.statistics.find(stat => {
-            return stat.id_diktation === dictationId && stat.date === dateId;
+            return stat.date === dateId;
         });
 
         return todaySession;
@@ -173,6 +184,16 @@ class UserActivityHistory {
                 this.monthData.statistics.push(sessionToSave);
             }
 
+            // Убеждаемся, что отправляем полную структуру со всеми полями
+            const dataToSave = {
+                id_user: this.monthData.id_user || '',
+                month: this.monthData.month || parseInt(this.currentMonthIdentifier),
+                statistics: this.monthData.statistics || [],
+                statistics_sentenses: this.monthData.statistics_sentenses || []
+            };
+            
+            console.log(`[UserActivityHistory] Сохранение: statistics=${dataToSave.statistics.length}, statistics_sentenses=${dataToSave.statistics_sentenses.length}`);
+            
             // Сохраняем файл
             const response = await fetch(`${this.apiBase}/history/${this.currentMonthIdentifier}`, {
                 method: 'POST',
@@ -180,7 +201,7 @@ class UserActivityHistory {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(this.monthData)
+                body: JSON.stringify(dataToSave)
             });
 
             if (!response.ok) {
@@ -188,12 +209,28 @@ class UserActivityHistory {
                     console.warn('⚠️ Ошибка аутентификации при сохранении истории');
                     return false;
                 }
-                throw new Error(`Failed to save history: ${response.statusText}`);
+                
+                // Пытаемся получить детали ошибки от сервера
+                let errorMessage = response.statusText;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                    }
+                } catch (e) {
+                    // Игнорируем ошибку парсинга JSON
+                }
+                
+                console.error(`❌ Ошибка сохранения истории (${response.status}):`, errorMessage);
+                // Не бросаем исключение, просто возвращаем false
+                // Это не должно блокировать работу приложения
+                return false;
             }
 
             return true;
         } catch (error) {
-            console.error('Error saving session:', error);
+            console.error('❌ Ошибка при сохранении сессии (не критично, работа продолжается):', error);
+            // Возвращаем false, но не прерываем выполнение
             return false;
         }
     }

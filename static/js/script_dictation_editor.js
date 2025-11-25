@@ -26,6 +26,7 @@ let currentDictation = {
     safe_email: '',  // имя папки пользователся в виде test_at_example_dot_com
     language_original: '',
     language_translation: '',
+    level: 'A1',
     category_key: '', // ключ категории в дереве
     category_title: '', // название категории
     category_path: '', // путь к категории в дереве
@@ -70,6 +71,10 @@ let workingData = {
         audio_user_shared_end: 0
     }
 };
+
+const LEVEL_OPTIONS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+let levelSelectWrapper = null;
+let levelSelectOutsideHandler = null;
 
 let currentTabName = 'general';
 let explanationVisible = false;
@@ -239,6 +244,8 @@ function initNewDictation(safe_email, initData) {
     const language_original = categoryInfo.language_original || 'en';
     const language_translation = categoryInfo.language_translation || 'ru';
 
+    const initialLevel = (initData && initData.level) ? initData.level : 'A1';
+
     // Получаем safe_email из initData
     currentDictation = {
         id: dictation_id,
@@ -246,6 +253,7 @@ function initNewDictation(safe_email, initData) {
         safe_email: safe_email,
         language_original: language_original,
         language_translation: language_translation,
+        level: initialLevel,
         category_key: categoryInfo.key || '',
         category_title: categoryInfo.title || '',
         category_path: categoryInfo.path || '',
@@ -285,6 +293,8 @@ function initNewDictation(safe_email, initData) {
     // Обновляем отображение пути к диктанту
     updateDictationPathDisplay();
 
+    initLevelSelector(initialLevel);
+
 
     // TODO: зачем это?
     // Сброс значения input (без добавления нового обработчика)
@@ -293,6 +303,76 @@ function initNewDictation(safe_email, initData) {
     //     input.value = '';
     // }
 
+}
+
+function initLevelSelector(initialLevel = 'A1') {
+    const wrapper = document.getElementById('levelSelectControl');
+    if (!wrapper) {
+        return;
+    }
+
+    levelSelectWrapper = wrapper;
+
+    const button = wrapper.querySelector('.speed-select-button');
+    const valueEl = wrapper.querySelector('.level-select-value');
+    const list = wrapper.querySelector('.speed-options');
+
+    if (!button || !valueEl || !list) {
+        return;
+    }
+
+    let optionElements = Array.from(list.querySelectorAll('li'));
+    if (optionElements.length === 0) {
+        LEVEL_OPTIONS.forEach(levelOption => {
+            const li = document.createElement('li');
+            li.dataset.value = levelOption;
+            li.textContent = levelOption;
+            list.appendChild(li);
+        });
+        optionElements = Array.from(list.querySelectorAll('li'));
+    }
+
+    const setLevelValue = (value) => {
+        const normalized = LEVEL_OPTIONS.includes(value) ? value : 'A1';
+        currentDictation.level = normalized;
+        valueEl.textContent = normalized;
+        optionElements.forEach(li => {
+            li.classList.toggle('selected', li.dataset.value === normalized);
+        });
+    };
+
+    if (!wrapper.dataset.initialized) {
+        optionElements.forEach(li => {
+            li.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setLevelValue(li.dataset.value);
+                wrapper.classList.remove('open');
+            });
+        });
+
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            wrapper.classList.toggle('open');
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        if (!levelSelectOutsideHandler) {
+            levelSelectOutsideHandler = (event) => {
+                if (levelSelectWrapper && !levelSelectWrapper.contains(event.target)) {
+                    levelSelectWrapper.classList.remove('open');
+                }
+            };
+            document.addEventListener('click', levelSelectOutsideHandler);
+        }
+
+        wrapper.dataset.initialized = 'true';
+    }
+
+    setLevelValue(initialLevel);
 }
 
 
@@ -319,12 +399,15 @@ async function loadExistingDictation(initData) {
     const categoryDataStr = sessionStorage.getItem('selectedCategoryForDictation');
     const categoryInfo = categoryDataStr ? JSON.parse(categoryDataStr) : {};
 
+    const resolvedLevel = level || 'A1';
+
     currentDictation = {
         id: dictation_id,
         isNew: false,
         safe_email: safe_email,
         language_original: original_language,
         language_translation: translation_language,
+        level: resolvedLevel,
         audio_words: audio_words,
         category_key: categoryInfo.key || '',
         category_title: categoryInfo.title || '',
@@ -358,6 +441,8 @@ async function loadExistingDictation(initData) {
     } else {
         await loadCoverForExistingDictation(dictation_id, original_language);
     }
+
+    initLevelSelector(resolvedLevel);
 
     // Показываем путь к категории если есть (данные уже загружены из info.json)
     if (currentDictation.category_path) {

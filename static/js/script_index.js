@@ -303,6 +303,7 @@ function createCardDOM(d) {
     // <article class="short-card">
     const card = document.createElement('article');
     card.className = 'short-card';
+    card.dataset.dictationId = d.id; // Сохраняем ID для обновления медалек
 
     // Цвет рамки из JSON: d.color, например "var(--color-button-orange)" или "#aabbcc"
     if (d.color) card.style.setProperty('--card-accent', d.color);
@@ -332,32 +333,160 @@ function createCardDOM(d) {
     h3.appendChild(titleLink);
     card.appendChild(h3);
 
+    // Получаем количество предложений (загружаем асинхронно если нужно)
+    const sentencesCount = d.sentences_count || d.sentences?.length || 0;
+    
+    // Создаем контейнер для ID и количества предложений
+    const idContainer = document.createElement('div');
+    idContainer.className = 'short-id-container';
+    
+    // Стопка бумаг - количество предложений (перед ID) - всегда видна
+    const papersIcon = document.createElement('div');
+    papersIcon.className = 'short-sentences-count';
+    papersIcon.title = `Количество предложений: ${sentencesCount || 0}`;
+    papersIcon.innerHTML = `<i data-lucide="layers"></i><span>${sentencesCount || 0}</span>`;
+    idContainer.appendChild(papersIcon);
+    
+    // ID диктанта
     const diktNumber = d.Dikt_numer || d.dikt_numer || d.id;
     if (diktNumber) {
         const diktBadge = document.createElement('div');
         diktBadge.className = 'short-dikt-number';
         diktBadge.textContent = diktNumber;
-        card.appendChild(diktBadge);
+        idContainer.appendChild(diktBadge);
     }
+    
+    // Контейнер всегда добавляется (хотя бы с количеством предложений)
+    card.appendChild(idContainer);
 
-    // Добавляем медальку с количеством полных выполнений
-    const completionCount = countDictationCompletions(d.id);
-    if (completionCount > 0) {
-        const medalBadge = document.createElement('div');
-        medalBadge.className = 'short-completion-badge';
-        medalBadge.title = `Выполнено полностью: ${completionCount} раз`;
-        medalBadge.setAttribute('aria-label', `Выполнено полностью: ${completionCount} раз`);
-        medalBadge.innerHTML = `<i data-lucide="award"></i><span class="completion-count">${completionCount}</span>`;
-        card.appendChild(medalBadge);
-    }
+    // Медалька с количеством выполнений будет добавлена функцией updateCompletionBadges()
+    // после загрузки истории (не создаем здесь, так как история может быть еще не загружена)
 
-    // <div class="short-meta">Язык ... • Уровень ...</div>
+    // Добавляем статистику диктанта (асинхронно)
+    const statsContainer = document.createElement('div');
+    statsContainer.className = 'short-stats';
+    statsContainer.innerHTML = '<div class="stats-placeholder"></div>';
+    card.appendChild(statsContainer);
+
+    // Загружаем статистику асинхронно
+    // Статистика показывается ТОЛЬКО если есть незаконченный документ (черновик)
+    const renderStatsIcons = (stats = {}) => {
+        const metrics = [
+            {
+                className: 'stat-icon stat-icon-perfect',
+                icon: 'star',
+                value: Number(stats.perfect) || 0,
+                title: 'Звезд'
+            },
+            {
+                className: 'stat-icon stat-icon-corrected',
+                icon: 'star-half',
+                value: Number(stats.corrected) || 0,
+                title: 'Полузвезд'
+            },
+            {
+                className: 'stat-icon stat-icon-audio',
+                icon: 'mic',
+                value: Number(stats.audio) || 0,
+                title: 'Аудио'
+            }
+        ];
+
+        const hasProgress = metrics.some(metric => metric.value > 0);
+
+        if (!hasProgress) {
+            statsContainer.innerHTML = '<div class="stats-placeholder"></div>';
+            return;
+        }
+
+        statsContainer.innerHTML = '';
+        const statsIcons = document.createElement('div');
+        statsIcons.className = 'stats-icons';
+
+        metrics.forEach(metric => {
+            const el = document.createElement('div');
+            el.className = metric.className;
+            el.title = `${metric.title}: ${metric.value}`;
+            el.innerHTML = `<i data-lucide="${metric.icon}"></i><span>${metric.value}</span>`;
+            statsIcons.appendChild(el);
+        });
+
+        statsContainer.appendChild(statsIcons);
+
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    };
+    
+    getDictationStats(d.id)
+        .then(stats => renderStatsIcons(stats))
+        .catch(error => {
+            console.warn('Ошибка загрузки статистики для диктанта:', d.id, error);
+            renderStatsIcons({ perfect: 0, corrected: 0, audio: 0 });
+        });
+
+    // <div class="short-meta">Флаги языков • Уровень ...</div>
     const meta = document.createElement('div');
     meta.className = 'short-meta';
-    const langLeft = d.langIcon || d.language_original || '';
-    const langRight = d.translations || d.language_translation || '';
-    meta.textContent = `Язык: ${langLeft} ⇒ ${langRight} • Уровень: ${d.level || '—'}`;
+    
+    // Создаем контейнер для флагов
+    const flagsContainer = document.createElement('span');
+    flagsContainer.className = 'short-lang-flags';
+    
+    // Получаем языки из разных возможных полей
+    const langOriginal = d.language_original || d.language || d.langIcon || '';
+    const langTranslation = d.language_translation || d.translations || '';
+    
+    // Используем готовый компонент LanguageSelector (если загружен)
+    if (window.LanguageManager && typeof LanguageSelector !== 'undefined' && langOriginal) {
+        try {
+            const languageData = window.LanguageManager.getLanguageData ? window.LanguageManager.getLanguageData() : null;
+            if (languageData) {
+                const tempContainer = document.createElement('div');
+                new LanguageSelector({
+                    container: tempContainer,
+                    mode: 'flag-combo',
+                    nativeLanguage: langTranslation,
+                    currentLearning: langOriginal,
+                    languageData
+                });
+                flagsContainer.innerHTML = tempContainer.innerHTML;
+                
+                // Заменяем текстовую стрелку на иконку Lucide
+                const separator = flagsContainer.querySelector('.flag-separator');
+                if (separator) {
+                    separator.innerHTML = '<i data-lucide="arrow-big-right"></i>';
+                }
+            } else {
+                flagsContainer.textContent = langTranslation
+                    ? `${langOriginal} ⇒ ${langTranslation}`
+                    : langOriginal;
+            }
+        } catch (error) {
+            console.warn('Ошибка создания флагов для', langOriginal, langTranslation, ':', error);
+            flagsContainer.textContent = langTranslation
+                ? `${langOriginal} ⇒ ${langTranslation}`
+                : langOriginal;
+        }
+    } else {
+        // Fallback: текстовое представление языков
+        flagsContainer.textContent = langTranslation
+            ? `${langOriginal} ⇒ ${langTranslation}`
+            : langOriginal;
+    }
+    
+    meta.appendChild(flagsContainer);
+    
+    // Уровень
+    const levelSpan = document.createElement('span');
+    levelSpan.className = 'short-level';
+    levelSpan.textContent = d.level || '—';
+    meta.appendChild(levelSpan);
+    
     card.appendChild(meta);
+    
+    // Сохраняем ID диктанта в data-атрибуте для обновления медалек
+    card.dataset.dictationId = d.id;
 
     const actions = document.createElement('div');
     actions.className = 'short-actions';
@@ -414,6 +543,69 @@ function createCardDOM(d) {
     return card;
 }
 
+// Обновить медальки на всех карточках
+function updateCompletionBadges() {
+    if (!GRID) {
+        console.log('[updateCompletionBadges] GRID не найден');
+        return;
+    }
+    
+    const cards = GRID.querySelectorAll('.short-card');
+    console.log(`[updateCompletionBadges] Найдено ${cards.length} карточек для обновления`);
+    
+    if (!allHistoryData || Object.keys(allHistoryData).length === 0) {
+        console.log('[updateCompletionBadges] История не загружена, пропускаем обновление медалек');
+        return;
+    }
+    
+    cards.forEach(card => {
+        const dictationId = card.dataset.dictationId;
+        if (!dictationId) {
+            console.log('[updateCompletionBadges] Карточка без dictationId');
+            return;
+        }
+        
+        const completionCount = countDictationCompletions(dictationId);
+        let badge = card.querySelector('.short-completion-badge');
+        
+        if (completionCount > 0) {
+            if (!badge) {
+                // Создаем новую медальку
+                badge = document.createElement('div');
+                badge.className = 'short-completion-badge';
+                badge.dataset.dictationId = dictationId; // Сохраняем ID для обработчика
+                card.appendChild(badge);
+                console.log(`[updateCompletionBadges] Создана медалька для диктанта ${dictationId}: ${completionCount} выполнений`);
+                
+                // Добавляем обработчик клика только один раз при создании
+                badge.style.cursor = 'pointer';
+                badge.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const clickedDictationId = e.currentTarget.dataset.dictationId;
+                    if (clickedDictationId && typeof DictationsReport !== 'undefined') {
+                        await DictationsReport.open(clickedDictationId);
+                    }
+                });
+            } else {
+                console.log(`[updateCompletionBadges] Обновлена медалька для диктанта ${dictationId}: ${completionCount} выполнений`);
+            }
+            badge.title = `Выполнено полностью: ${completionCount} раз. Кликните, чтобы открыть отчет по этому диктанту`;
+            badge.setAttribute('aria-label', `Выполнено полностью: ${completionCount} раз. Кликните, чтобы открыть отчет по этому диктанту`);
+            badge.innerHTML = `<i data-lucide="award"></i><span class="completion-count">${completionCount}</span>`;
+        } else if (badge) {
+            // Удаляем медальку, если выполнений нет
+            badge.remove();
+            console.log(`[updateCompletionBadges] Удалена медалька для диктанта ${dictationId} (нет выполнений)`);
+        }
+    });
+    
+    // Обновить иконки Lucide
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
+}
+
 // Отрисовать всю сетку
 function renderDictationsGrid(dictations) {
     if (!GRID) {
@@ -430,6 +622,17 @@ function renderDictationsGrid(dictations) {
     // Обновить иконки Lucide (если библиотека подключена на странице)
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
+    }
+    
+    // Обновляем медальки после рендеринга (если история уже загружена)
+    if (allHistoryData && typeof allHistoryData === 'object' && Object.keys(allHistoryData).length > 0) {
+        setTimeout(() => {
+            updateCompletionBadges();
+            // Обновляем иконки Lucide после добавления медалек
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        }, 50);
     }
 }
 
@@ -636,7 +839,13 @@ async function loadAllHistory() {
  * @returns {number} - Количество полных выполнений
  */
 function countDictationCompletions(dictationId) {
-    if (!dictationId || !allHistoryData) {
+    if (!dictationId) {
+        return 0;
+    }
+    
+    // Если история еще не загружена, возвращаем 0
+    if (!allHistoryData || typeof allHistoryData !== 'object' || Object.keys(allHistoryData).length === 0) {
+        console.log(`[countDictationCompletions] История не загружена для диктанта ${dictationId}`);
         return 0;
     }
 
@@ -645,20 +854,100 @@ function countDictationCompletions(dictationId) {
     // Проходим по всем месяцам в истории
     for (const monthKey in allHistoryData) {
         const monthData = allHistoryData[monthKey];
-        if (!monthData || !monthData.statistics_sentenses) {
+        if (!monthData) {
+            continue;
+        }
+        
+        // Проверяем наличие statistics_sentenses
+        if (!monthData.statistics_sentenses || !Array.isArray(monthData.statistics_sentenses)) {
             continue;
         }
 
         // Считаем все записи для этого диктанта
+        // Каждая запись в statistics_sentenses - одно полное выполнение диктанта
         const entries = monthData.statistics_sentenses.filter(
-            entry => entry.dictation_id === dictationId
+            entry => entry && entry.dictation_id === dictationId
         );
 
-        // Суммируем number из всех записей (каждая запись - одно выполнение)
+        // Просто считаем количество записей (каждая запись - одно выполнение)
         totalCount += entries.length;
     }
 
+    if (totalCount > 0) {
+        console.log(`[countDictationCompletions] Диктант ${dictationId}: найдено ${totalCount} выполнений`);
+    }
+
     return totalCount;
+}
+
+/**
+ * Получить статистику диктанта из истории (perfect, corrected, audio)
+ * @param {string} dictationId - ID диктанта
+ * @returns {Object} - Объект с полями {perfect, corrected, audio, hasDraft}
+ */
+async function getDictationStats(dictationId) {
+    if (!dictationId) {
+        return { perfect: 0, corrected: 0, audio: 0, hasDraft: false };
+    }
+
+    const token = localStorage.getItem('jwt_token');
+    const isAuthenticated = window.UM && typeof window.UM.isAuthenticated === 'function' && window.UM.isAuthenticated();
+    if (!token || !isAuthenticated) {
+        return { perfect: 0, corrected: 0, audio: 0, hasDraft: false };
+    }
+
+    try {
+        const response = await fetch(`/api/statistics/dictation_state/${dictationId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const state = data.state;
+            if (state) {
+                const draftStats = computeDraftStatistics(state);
+                draftStats.hasDraft = true;
+                return draftStats;
+            }
+        } else if (response.status === 401) {
+            console.warn('Не авторизован для получения состояния диктанта');
+        }
+    } catch (error) {
+        console.warn('Ошибка получения черновика диктанта:', error);
+    }
+
+    return { perfect: 0, corrected: 0, audio: 0, hasDraft: false };
+}
+
+function computeDraftStatistics(state) {
+    const perSentence = state.per_sentence || {};
+    let perfect = 0;
+    let corrected = 0;
+    let audio = 0;
+
+    const toNumber = (value) => Number(value) || 0;
+
+    // Если есть агрегированные значения - добавляем их как базу
+    perfect += toNumber(state.number_of_perfect);
+    corrected += toNumber(state.number_of_corrected);
+    audio += toNumber(state.number_of_audio);
+
+    Object.values(perSentence).forEach(sentence => {
+        perfect += toNumber(sentence.number_of_perfect) + toNumber(sentence.circle_number_of_perfect);
+        corrected += toNumber(sentence.number_of_corrected) + toNumber(sentence.circle_number_of_corrected);
+        audio += toNumber(sentence.number_of_audio) + toNumber(sentence.circle_number_of_audio);
+    });
+
+    return {
+        perfect,
+        corrected,
+        audio,
+        hasDraft: false
+    };
 }
 
 
@@ -1785,6 +2074,54 @@ function setupImportButton() {
     });
 }
 
+// Инициализация кнопки статистики
+function setupStatisticsButton() {
+    const showStatisticsBtn = document.getElementById('showStatisticsBtn');
+    const statisticsDropdown = document.getElementById('statisticsDropdown');
+    const showGeneralStatisticsBtn = document.getElementById('showGeneralStatisticsBtn');
+    const showDictationsReportBtn = document.getElementById('showDictationsReportBtn');
+
+    if (!showStatisticsBtn || !statisticsDropdown) return;
+
+    // Показываем/скрываем выпадающее меню
+    showStatisticsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = statisticsDropdown.style.display === 'block';
+        statisticsDropdown.style.display = isVisible ? 'none' : 'block';
+    });
+
+    // Закрываем меню при клике вне его
+    document.addEventListener('click', (e) => {
+        if (!showStatisticsBtn.contains(e.target) && !statisticsDropdown.contains(e.target)) {
+            statisticsDropdown.style.display = 'none';
+        }
+    });
+
+    // Общая история работы
+    if (showGeneralStatisticsBtn) {
+        showGeneralStatisticsBtn.addEventListener('click', async () => {
+            statisticsDropdown.style.display = 'none';
+            if (window.activityHistory && typeof StatisticsReport !== 'undefined') {
+                await StatisticsReport.open(window.activityHistory);
+            } else {
+                alert('История активности еще не загружена');
+            }
+        });
+    }
+
+    // Отчет о выполненных диктантах
+    if (showDictationsReportBtn) {
+        showDictationsReportBtn.addEventListener('click', async () => {
+            statisticsDropdown.style.display = 'none';
+            if (typeof DictationsReport !== 'undefined') {
+                await DictationsReport.open();
+            } else {
+                alert('Модуль отчетов еще не загружен');
+            }
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 
     try {
@@ -1801,6 +2138,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     initializeLanguageSelector();
                     initializeLanguageFilter();
                     fitFancyTreeHeight();
+                    setupStatisticsButton();
+                    
+                    // Инициализируем activityHistory для статистики
+                    if (typeof UserActivityHistory !== 'undefined' && !window.activityHistory) {
+                        window.activityHistory = new UserActivityHistory('/user/api');
+                    }
                     
                     // Восстанавливаем позицию в дереве после возврата с создания диктанта
                     restoreTreePosition();
@@ -1813,7 +2156,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         loadDictations(),
                         loadAllHistory().then(history => {
                             allHistoryData = history;
-                            console.log('✅ История загружена для подсчета выполнений');
+                            console.log('✅ История загружена для подсчета выполнений:', Object.keys(history).length, 'месяцев');
+                            // Обновляем медальки после загрузки истории
+                            setTimeout(() => {
+                                updateCompletionBadges();
+                                console.log('✅ Медальки обновлены после загрузки истории');
+                            }, 100);
                         })
                     ]).then(() => {
                         initFancyTree();
@@ -1826,6 +2174,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             const ids = node.data.dictations || [];
                             const filteredDictations = allDictations.filter(d => ids.includes(d.id));
                             renderDictationsGrid(filteredDictations);
+                            // Обновляем медальки после перерисовки
+                            setTimeout(() => updateCompletionBadges(), 100);
+                        } else {
+                            // Обновляем медальки на всех существующих карточках
+                            updateCompletionBadges();
                         }
                     });
                 }).catch(error => {

@@ -71,10 +71,10 @@
             </div>
         </div>
 
-        <!-- Настройки аудио (заглушка для будущего) -->
+        <!-- Настройки аудио для диктантов -->
         <div class="form-section">
             <h3>Настройки аудио для диктантов</h3>
-            <p>Настройки по умолчанию для генерации аудио будут доступны в следующем обновлении.</p>
+            <div id="userAudioSettingsContainer"></div>
         </div>
 
         <!-- Отчеты по обучению (заглушка для будущего) -->
@@ -127,6 +127,7 @@
     <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/language_selector.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/audio_settings_panel.js') }}"></script>
     <script src="{{ url_for('static', filename='js/script_user_profile.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {

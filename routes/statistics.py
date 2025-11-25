@@ -112,16 +112,16 @@ def save_history():
         # - end - счетчик завершений: суммируем если входящая запись завершена (end > 0), иначе берем существующее
 
         stats_list = history_data.get('statistics', [])
-        incoming_id = statistics.get('id_diktation')
         incoming_date = statistics.get('date')
         
-        print(f'📊 [SAVE_HISTORY] Ищем запись: id_diktation={incoming_id}, date={incoming_date}')
+        print(f'📊 [SAVE_HISTORY] Ищем запись: date={incoming_date}')
         print(f'📊 [SAVE_HISTORY] Текущее количество записей в истории: {len(stats_list)}')
-        print(f'📊 [SAVE_HISTORY] Входящая статистика: perfect={statistics.get("perfect")}, corrected={statistics.get("corrected")}, audio={statistics.get("audio")}, end={statistics.get("end")}')
+        print(f'📊 [SAVE_HISTORY] Входящая статистика: perfect={statistics.get("perfect")}, corrected={statistics.get("corrected")}, audio={statistics.get("audio")}')
         
+        # В "statistics" ищем запись только по дате (наработки суммируются по дате, независимо от диктанта)
         idx_same_day = None
         for i, stat in enumerate(stats_list):
-            if stat.get('id_diktation') == incoming_id and stat.get('date') == incoming_date:
+            if stat.get('date') == incoming_date:
                 idx_same_day = i
                 print(f'📊 [SAVE_HISTORY] Найдена существующая запись с индексом {i}: {stat}')
                 break
@@ -130,12 +130,12 @@ def save_history():
             # Первая запись за день — добавляем как есть
             print(f'📊 [SAVE_HISTORY] Новая запись за день - добавляем')
             new_stat = statistics.copy()
-            # end - счетчик завершений: если пришло boolean, конвертируем в число
-            end_value = new_stat.get('end', 0)
-            if isinstance(end_value, bool):
-                new_stat['end'] = 1 if end_value else 0
-            else:
-                new_stat['end'] = int(end_value) if end_value else 0
+            # Убираем поля, которые не должны быть в "statistics" (оставляем только date, perfect, corrected, audio)
+            # Эти поля остаются только в "statistics_sentenses"
+            new_stat.pop('end', None)
+            new_stat.pop('id_diktation', None)
+            new_stat.pop('number', None)
+            new_stat.pop('total', None)  # total - это просто число предложений, не нужно в истории
             stats_list.append(new_stat)
             print(f'📊 [SAVE_HISTORY] Добавлена новая запись: {new_stat}')
         else:
@@ -154,29 +154,14 @@ def save_history():
             merged['perfect'] = old_perfect + new_perfect
             merged['corrected'] = old_corrected + new_corrected
             merged['audio'] = old_audio + new_audio
-            # total берём максимум из двух (кол-во предложений на круге/выборке)
-            merged['total'] = max(int(existing.get('total', 0)), int(statistics.get('total', 0)))
+            # total не сохраняем - это просто число предложений, не нужно в истории
 
-            # end - счетчик завершений: суммируем при завершении
-            existing_end = int(existing.get('end', 0) or 0)
-            incoming_end = statistics.get('end', 0)
-            # Если входящее значение boolean, конвертируем
-            if isinstance(incoming_end, bool):
-                incoming_end = 1 if incoming_end else 0
-            else:
-                incoming_end = int(incoming_end or 0)
-            
-            print(f'📊 [SAVE_HISTORY] Суммирование: perfect {old_perfect}+{new_perfect}={merged["perfect"]}, corrected {old_corrected}+{new_corrected}={merged["corrected"]}, audio {old_audio}+{new_audio}={merged["audio"]}')
-            print(f'📊 [SAVE_HISTORY] Счетчик завершений: existing_end={existing_end}, incoming_end={incoming_end}')
-            
-            # Если входящая запись завершена (end > 0), увеличиваем счетчик
-            if incoming_end > 0:
-                merged['end'] = existing_end + incoming_end
-                print(f'📊 [SAVE_HISTORY] Увеличиваем счетчик завершений: {existing_end} + {incoming_end} = {merged["end"]}')
-            else:
-                # Если не завершена, оставляем существующее значение
-                merged['end'] = existing_end
-                print(f'📊 [SAVE_HISTORY] Сохраняем существующий счетчик завершений: {existing_end}')
+            # Убираем поля, которые не должны быть в "statistics" (оставляем только date, perfect, corrected, audio)
+            # Эти поля остаются только в "statistics_sentenses"
+            merged.pop('end', None)
+            merged.pop('id_diktation', None)
+            merged.pop('number', None)
+            merged.pop('total', None)  # total - это просто число предложений, не нужно в истории
 
             stats_list[idx_same_day] = merged
             print(f'📊 [SAVE_HISTORY] Обновленная запись: {merged}')

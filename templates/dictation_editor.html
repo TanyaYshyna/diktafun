@@ -107,7 +107,25 @@
                                         }}:</label>
                                     <input class="text-input" type="text" id="title_translation" required>
                                 </div>
-                                <label id="dictation-id">Новый диктант: </label>
+                                <div class="form-group-line level-select-group">
+                                    <label for="levelSelectControl" class="level-label">Уровень:</label>
+                                    <div id="levelSelectControl" class="custom-speed-select level-select">
+                                        <button type="button" class="speed-select-button">
+                                            <span class="level-select-value">{{ level or 'A1' }}</span>
+                                            <span class="speed-arrow" data-lucide="chevron-down"></span>
+                                        </button>
+                                        <ul class="speed-options">
+                                            {% set levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] %}
+                                            {% for option in levels %}
+                                            <li data-value="{{ option }}"
+                                                class="{% if (level or 'A1') == option %}selected{% endif %}">
+                                                {{ option }}
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    <span id="dictation-id">Новый диктант: </span>
+                                </div>
 
                             </div>
                         </div>

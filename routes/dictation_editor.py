@@ -647,21 +647,29 @@ def save_dictation_final():
         final_path = os.path.join('static', 'data', 'dictations', dictation_id)
         os.makedirs(final_path, exist_ok=True)
 
+        # Создаем sentences.json для каждого языка и подсчитываем количество предложений
+        sentences_data = data.get('sentences', {})
+        sentences_count = 0
+        
+        # Подсчитываем количество предложений из языка оригинала
+        language_original = data.get("language_original")
+        if language_original and language_original in sentences_data:
+            lang_sentences = sentences_data[language_original].get("sentences", [])
+            sentences_count = len(lang_sentences) if isinstance(lang_sentences, list) else 0
+
         # Создаем info.json
         info = {
             "id": dictation_id,
-            "language_original": data.get("language_original"),
+            "language_original": language_original,
             "title": data.get("title"),
             "level": data.get("level"),
             "is_dialog": data.get("is_dialog", False),
-            "speakers": data.get("speakers", {})
+            "speakers": data.get("speakers", {}),
+            "sentences_count": sentences_count
         }
         info_path = os.path.join(final_path, 'info.json')
         with open(info_path, 'w', encoding='utf-8') as f:
             json.dump(info, f, ensure_ascii=False, indent=2)
-
-        # Создаем sentences.json для каждого языка
-        sentences_data = data.get('sentences', {})
         
         for lang, lang_data in sentences_data.items():
             if not lang_data:

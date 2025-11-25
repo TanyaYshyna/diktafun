@@ -3,6 +3,206 @@ body {
   height: 100%;
 }
 
+/* Выпадающее меню статистики */
+.statistics-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.statistics-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--color-panel-bg, #fff);
+  border: 1px solid var(--color-border, #dee2e6);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 240px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.statistics-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text, #1f2933);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.statistics-dropdown-item:hover {
+  background-color: var(--color-background-soft, #f8f9fa);
+}
+
+.statistics-dropdown-item i {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+/* Модальное окно статистики - должно быть поверх всего */
+#statistics-modal,
+#dictations-report-modal {
+  display: flex;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000 !important;
+  background-color: #ffffff;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#statistics-modal .modal-content,
+#dictations-report-modal .modal-content {
+  position: relative;
+  z-index: 10001;
+  margin: auto;
+}
+
+/* Стили статистики перенесены в style.css (общие для всех страниц) */
+
+/* Стили для отчета о выполненных диктантах */
+.dictations-report-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-top: 20px;
+  min-height: 0; /* Важно для flex-контейнера */
+}
+
+.dictations-report-footer {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border, #dee2e6);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dictations-report-footer button {
+  min-width: 120px;
+}
+
+.dictation-report-item {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: var(--color-background-soft, #f8f9fa);
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #dee2e6);
+}
+
+.dictation-report-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: var(--color-text, #1f2933);
+}
+
+.dictation-language {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-button-text-gray, #6b7280);
+  margin-left: 8px;
+}
+
+.dictation-completions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.completion-item {
+  padding: 15px;
+  background: var(--color-panel-bg, #fff);
+  border-radius: 6px;
+  border: 1px solid var(--color-border-light, #e9ecef);
+}
+
+.completion-date {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text, #1f2933);
+  margin-bottom: 10px;
+}
+
+.completion-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.stat-label {
+  min-width: 80px;
+  font-weight: 500;
+  color: var(--color-button-text-gray, #6b7280);
+}
+
+.stat-value {
+  min-width: 30px;
+  font-weight: 600;
+  color: var(--color-text, #1f2933);
+  text-align: right;
+}
+
+.stat-bar-container {
+  flex: 1;
+  height: 20px;
+  background: var(--color-background-soft, #f0f0f0);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.stat-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.stat-bar.perfect-bar {
+  background: var(--color-button-mint, #6ee7b7);
+}
+
+.stat-bar.corrected-bar {
+  background: var(--color-button-lightgreen, #86efac);
+}
+
+.stat-bar.audio-bar {
+  background: var(--color-button-purple, #a78bfa);
+}
+
+.language-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.language-controls label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text, #1f2933);
+}
+
 #container-tree-cards {
   min-height: 0;
   display: flex;
@@ -350,11 +550,113 @@ body {
   width: 100%;
 }
 
+/* Контейнер для ID и количества предложений */
+.short-id-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.short-sentences-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-button-text-gray);
+}
+
+.short-sentences-count i {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2;
+}
+
 .short-dikt-number {
   font-size: 11px;
   font-weight: 600;
   color: var(--color-button-text-gray);
-  margin-top: 4px;
+  margin-left: auto;
+  text-align: right;
+}
+
+/* Статистика на карточке */
+.short-stats {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  min-height: 20px;
+}
+
+.stats-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.stat-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-button-text-gray);
+  padding: 2px 5px;
+  background: transparent;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.stat-icon i {
+  width: 10px;
+  height: 10px;
+  stroke-width: 2;
+}
+
+.stat-icon span {
+  line-height: 1;
+  font-size: 16px;
+}
+
+.stats-placeholder {
+  min-height: 18px;
+}
+
+/* Мятный цвет для звезды (perfect) */
+.stat-icon-perfect {
+  color: var(--color-button-mint);
+}
+
+.stat-icon-perfect i {
+  color: var(--color-button-mint);
+  fill: var(--color-button-mint);
+}
+
+/* Светло-зеленый цвет для полузвезды (corrected) */
+.stat-icon-corrected {
+  color: var(--color-button-lightgreen);
+}
+
+.stat-icon-corrected i {
+  color: var(--color-button-lightgreen);
+  fill: var(--color-button-lightgreen);
+}
+
+/* Фиолетовый цвет для микрофона (audio) */
+.stat-icon-audio {
+  color: var(--color-button-purple);
+}
+
+.stat-icon-audio i {
+  color: var(--color-button-purple);
+  fill: var(--color-button-purple);
+}
+
+.stats-loading {
+  font-size: 10px;
+  color: var(--color-button-text-gray);
+  opacity: 0.6;
 }
 
 .short-completion-badge {
@@ -391,6 +693,45 @@ body {
   line-height: 1.2;
   margin-top: auto;
   /* Прижимаем к низу карточки */
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.short-meta .short-level {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--color-button-text-gray);
+}
+
+.short-lang-flags {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.short-lang-flags img {
+  width: 24px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.flag-separator {
+  font-size: 12px;
+  color: var(--color-button-text-gray);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -2px;
+  margin-right: -2px;
+}
+
+.flag-separator i {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
 }
 
 .short-actions {

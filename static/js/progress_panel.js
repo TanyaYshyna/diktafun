@@ -245,16 +245,15 @@ class ProgressPanel {
         
         if (todaySession) {
             // Восстанавливаем статистику из истории
+            // В "statistics" теперь нет полей "number" и "end", только date, perfect, corrected, audio, total
             this.stats.perfect = todaySession.perfect || 0;
             this.stats.corrected = todaySession.corrected || 0;
             this.stats.audio = todaySession.audio || 0;
-            this.stats.circleNumber = todaySession.number || 0;
+            this.stats.circleNumber = 0; // "number" больше не сохраняется в "statistics"
             
-            // Если сессия не завершена, продолжаем ее
-            if (!todaySession.end) {
-                this.history.startSession(dictationId);
-                this.history.currentSession = { ...todaySession };
-            }
+            // Продолжаем сессию (в "statistics" нет поля "end" для проверки завершения)
+            this.history.startSession(dictationId);
+            this.history.currentSession = { ...todaySession };
         } else {
             // Начинаем новую сессию
             this.history.startSession(dictationId);
@@ -687,19 +686,27 @@ class ProgressPanel {
      * Завершить сессию и сохранить
      */
     async finish() {
-        this.stopTimer();
-        
-        if (this.history.currentSession) {
-            this.history.updateSession({
-                end: true
-            });
-            const ok = await this.history.finishSession();
-            this._lastSaveOk = !!ok;
-            if (ok) this._dirty = false;
+        try {
+            this.stopTimer();
+            
+            if (this.history.currentSession) {
+                this.history.updateSession({
+                    end: true
+                });
+                const ok = await this.history.finishSession();
+                this._lastSaveOk = !!ok;
+                if (ok) this._dirty = false;
+                this.updateUnsavedIndicators();
+                return !!ok;
+            }
+            return false;
+        } catch (error) {
+            console.error('❌ Ошибка при завершении сессии (не критично, работа продолжается):', error);
+            // Возвращаем false, но не прерываем выполнение
+            this._lastSaveOk = false;
             this.updateUnsavedIndicators();
-            return !!ok;
+            return false;
         }
-        return false;
     }
 
     /**

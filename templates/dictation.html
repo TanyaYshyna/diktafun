@@ -73,35 +73,7 @@
                         <!-- <td rowspan="2">1111</td> -->
                         <td rowspan="2">
                             <!-- Поля для настройки последовательности воспроизведения -->
-                            <div class="play-sequence-container">
-                                <label>Аудио проигрываем:</label>
-                                <div class="play-sequence-item">
-                                    <label>при старте:</label>
-                                    <input type="text" id="playSequenceStart" class="play-sequence-input" maxlength="5"
-                                        placeholder="oto" pattern="[to]*"
-                                        title="Используйте только буквы 't' (translation) и 'o' (original)">
-                                </div>
-                                <div class="play-sequence-item">
-                                    <label>при ошибке:</label>
-                                    <input type="text" id="playSequenceTypo" class="play-sequence-input" maxlength="5"
-                                        placeholder="o" pattern="[to]*"
-                                        title="Используйте только буквы 't' (translation) и 'o' (original)">
-                                </div>
-                                <div class="play-sequence-item">
-                                    <label>при успехе:</label>
-                                    <input type="text" id="playSequenceSuccess" class="play-sequence-input"
-                                        maxlength="5" placeholder="ot" pattern="[to]*"
-                                        title="Используйте только буквы 't' (translation) и 'o' (original)">
-                                </div>
-                                <div class="play-sequence-item">
-                                    <label>
-                                        <i data-lucide="mic"></i>
-                                        Повторы аудио:
-                                    </label>
-                                    <input type="number" id="audioRepeatsInput" class="play-sequence-input" min="0" max="9" value="3"
-                                        title="Количество повторов аудио (по умолчанию 3)">
-                                </div>
-                            </div>
+                            <div id="audioSettingsContainer"></div>
 
                         </td>
                         <!-- <td>2222</td> -->
@@ -171,7 +143,8 @@
                     <thead>
                         <tr>
                             <th>Выбор</th>
-                            <th>Код</th>
+                            <th>Номер строки</th>
+                            <th class="hidden-column">Код</th>
                             <th><i data-lucide="star"></i></th>
                             <th><i data-lucide="star-half"></i></th>
                             <th><i data-lucide="mic"></i></th>
@@ -386,6 +359,7 @@
     <script id="language-data" type="application/json">
     {{ language_data | tojson | safe }}
     </script>
+    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
     <!-- Audio runtime must be loaded before UI wrapper -->
@@ -395,6 +369,7 @@
     <script src="{{ url_for('static', filename='js/user_activity_history.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dictation_statistics.js') }}"></script>
     <script src="{{ url_for('static', filename='js/progress_panel.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/audio_settings_panel.js') }}"></script>
     <script src="{{ url_for('static', filename='js/statistics_report.js') }}"></script>
     <script src="{{ url_for('static', filename='js/virtual_keyboard.js') }}"></script>
 

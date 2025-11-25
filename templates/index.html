@@ -37,6 +37,22 @@
                 <div class="streak">
                     <i data-lucide="flame"></i> <span class="streak-days">0</span>
                 </div>
+                <div class="statistics-dropdown-wrapper">
+                    <button id="showStatisticsBtn" class="statistics-btn" title="Статистика">
+                        <i data-lucide="bar-chart-3"></i>
+                        <span>Статистика</span>
+                    </button>
+                    <div class="statistics-dropdown" id="statisticsDropdown" style="display: none;">
+                        <button class="statistics-dropdown-item" id="showGeneralStatisticsBtn">
+                            <i data-lucide="activity"></i>
+                            <span>Общая история работы</span>
+                        </button>
+                        <button class="statistics-dropdown-item" id="showDictationsReportBtn">
+                            <i data-lucide="file-text"></i>
+                            <span>Отчет о выполненных диктантах</span>
+                        </button>
+                    </div>
+                </div>
                 <button id="logoutBtn" class="logout-btn">Выйти</button>
             </div>
         </div>
@@ -109,9 +125,13 @@
     <script id="language-data" type="application/json">
     {{ language_data | tojson | safe }}
     </script>
+    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/language_selector.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/user_activity_history.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/statistics_report.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dictations_report.js') }}"></script>
     <script src="{{ url_for('static', filename='js/script_index.js') }}"></script>
 
     <script>

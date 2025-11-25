@@ -76,9 +76,47 @@ let circleBtnModal = document.getElementById('btn-modal-circle-number');
 const audio = null;
 const audio_tr = null;
 
+// Настройки аудио - загружаются из данных пользователя или значения по умолчанию
 let playSequenceStart = "oto";  // Для старта предложения (o=оригинал, t=перевод)
 let playSequenceTypo = "o";  // Для старта предложения (o=оригинал, t=перевод)
 let playSequenceSuccess = "ot"; // Для правильного ответа (можно изменить на "o" или "to")
+
+// Функция для загрузки настроек аудио из данных пользователя
+async function loadAudioSettingsFromUser() {
+    // Пробуем получить UM из разных источников
+    let um = window.UM || userManager;
+    
+    // Если UM не инициализирован, ждем его инициализации
+    if (!um || !um.isInitialized) {
+        // Ждем до 5 секунд, пока UM инициализируется
+        for (let i = 0; i < 50; i++) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            um = window.UM || userManager;
+            if (um && um.isInitialized && um.userData) {
+                break;
+            }
+        }
+    }
+    
+    if (um && um.userData) {
+        const userData = um.userData;
+        
+        if (userData.audio_start !== undefined && userData.audio_start !== null && userData.audio_start !== '') {
+            playSequenceStart = userData.audio_start;
+        }
+        if (userData.audio_typo !== undefined && userData.audio_typo !== null && userData.audio_typo !== '') {
+            playSequenceTypo = userData.audio_typo;
+        }
+        if (userData.audio_success !== undefined && userData.audio_success !== null && userData.audio_success !== '') {
+            playSequenceSuccess = userData.audio_success;
+        }
+        if (userData.audio_repeats !== undefined && userData.audio_repeats !== null) {
+            const parsedValue = parseInt(userData.audio_repeats, 10);
+            // Используем ?? вместо ||, чтобы 0 не заменялся на 3
+            REQUIRED_PASSED_COUNT = (!isNaN(parsedValue) && parsedValue >= 0) ? parsedValue : 3;
+        }
+    }
+}
 
 /**
  * @typedef {Object} Sentence
@@ -771,9 +809,20 @@ async function loadProgress() {
 
 
 // Функция паузы игры
-function pauseGame() {
+function pauseGame(isInactivityPause = false) {
     // Если уже на паузе - ничего не делаем
     if (pauseModal.style.display === 'flex') return;
+
+    // Если пауза из-за бездействия, вычитаем время бездействия из накопленного времени
+    if (isInactivityPause) {
+        const panel = getProgressPanelInstance();
+        if (panel && panel.timerState) {
+            // Вычитаем время бездействия из накопленного времени
+            const inactivityTime = currentInactivityTimeout || INACTIVITY_TIMEOUT_DEFAULT;
+            panel.timerState.dictationAccumulatedMs = Math.max(0, panel.timerState.dictationAccumulatedMs - inactivityTime);
+            console.log('[pauseGame] Вычтено время бездействия:', inactivityTime, 'мс');
+        }
+    }
 
     // Останавливаем основной таймер
     stopTimer();
@@ -886,7 +935,7 @@ function resetInactivityTimer() {
     if (pauseModal.style.display !== 'flex' && startModal.style.display !== 'flex') {
         inactivityTimer = setTimeout(() => {
             console.log('⏱️ Таймер бездействия: открываем модальное окно паузы');
-            pauseGame();
+            pauseGame(true); // Передаем true, чтобы указать, что пауза из-за бездействия
         }, currentInactivityTimeout);
     }
 }
@@ -894,24 +943,11 @@ function resetInactivityTimer() {
 
 // Обновленная функция отображения времени
 function updateDictationTimerDisplay(elapsed, element = dictationTimerElement) {
-    // Проверяем, что elapsed является валидным числом
-    const elapsedMs = Number(elapsed) || 0;
-    let s = elapsedMs / 1000;
-    let d = Math.floor(s / 86400);
-    s = s - d * 86400;
-    let h = Math.floor(s / 3600);
-    s = s - h * 3600;
-    let m = Math.floor(s / 60);
-    s = Math.floor(s % 60);
-
-    let time_text = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-    if (d > 0) {
-        time_text = `${d}:` + time_text;
-    }
-
+    const time_text = window.TimeUtils.formatDuration(elapsed);
     if (element) {
         element.textContent = time_text;
     }
+    return time_text;
 }
 
 
@@ -1077,8 +1113,14 @@ function renderSelectionTable() {
         renderSelectionStateButton(statusBtn, s, row);
         selectCell.appendChild(statusBtn);
 
-        // Колонка кода
+        // Колонка номера строки (код преобразованный в число + 1)
+        const rowNumberCell = document.createElement('td');
+        const rowNumber = parseInt(s.key, 10) + 1;
+        rowNumberCell.textContent = rowNumber;
+
+        // Колонка кода (скрытая)
         const codeCell = document.createElement('td');
+        codeCell.className = 'hidden-column';
         codeCell.textContent = s.key;
         codeCell.style.fontFamily = 'monospace';
         codeCell.style.fontSize = '12px';
@@ -1109,6 +1151,7 @@ function renderSelectionTable() {
         tdText.textContent = s.text;
 
         row.appendChild(selectCell);
+        row.appendChild(rowNumberCell);
         row.appendChild(codeCell);
         row.appendChild(perfectCell);
         row.appendChild(correctedCell);
@@ -1558,12 +1601,18 @@ function startGame(isResume = false) {
     playSequenceTypo = sequences.typo;
     playSequenceSuccess = sequences.success;
 
-    // Обновляем REQUIRED_PASSED_COUNT из поля ввода
-    const audioRepeatsInput = document.getElementById('audioRepeatsInput');
-    if (audioRepeatsInput) {
-        const value = parseInt(audioRepeatsInput.value, 10);
-        if (!isNaN(value) && value >= 0 && value <= 9) {
-            REQUIRED_PASSED_COUNT = value;
+    // Обновляем REQUIRED_PASSED_COUNT из панели настроек или поля ввода
+    if (audioSettingsPanel && audioSettingsPanel.isInitialized) {
+        const settings = audioSettingsPanel.getSettings();
+        // Используем ?? вместо ||, чтобы 0 не заменялся на 3
+        REQUIRED_PASSED_COUNT = (settings.repeats !== undefined && settings.repeats !== null) ? settings.repeats : 3;
+    } else {
+        const audioRepeatsInput = document.getElementById('audioRepeatsInput');
+        if (audioRepeatsInput) {
+            const value = parseInt(audioRepeatsInput.value, 10);
+            if (!isNaN(value) && value >= 0 && value <= 9) {
+                REQUIRED_PASSED_COUNT = value;
+            }
         }
     }
 
@@ -2030,11 +2079,27 @@ function timeDisplay(ms) {
 async function loadLanguageCodes() {
     try {
         // Используем LanguageManager для получения country_cod_url
-
-        if (window.LanguageManager && typeof window.LanguageManager.getCountryCodeUrl === 'function') {
+        if (window.LanguageManager && typeof window.LanguageManager.getCountryCodeUrl === 'function' && currentDictation && currentDictation.language_original) {
             langCodeUrl = window.LanguageManager.getCountryCodeUrl(currentDictation.language_original);
         } else {
-            // Fallback если LanguageManager не доступен
+            // Fallback если LanguageManager не доступен или currentDictation не загружен
+            if (currentDictation && currentDictation.language_original) {
+                // Пытаемся определить язык по коду языка
+                const langCode = currentDictation.language_original.toLowerCase();
+                if (langCode.startsWith('en')) {
+                    langCodeUrl = 'en-US';
+                } else if (langCode.startsWith('ru')) {
+                    langCodeUrl = 'ru-RU';
+                } else {
+                    langCodeUrl = 'en-US'; // По умолчанию английский
+                }
+            } else {
+                langCodeUrl = 'en-US'; // По умолчанию английский
+            }
+        }
+
+        // Убеждаемся, что langCodeUrl не пустой
+        if (!langCodeUrl || langCodeUrl === '') {
             langCodeUrl = 'en-US';
         }
 
@@ -2046,6 +2111,9 @@ async function loadLanguageCodes() {
         initSpeechRecognition();
     } catch (error) {
         console.error('Ошибка загрузки языковых кодов:', error);
+        // В случае ошибки устанавливаем язык по умолчанию
+        langCodeUrl = 'en-US';
+        initSpeechRecognition();
     }
 }
 
@@ -2288,6 +2356,9 @@ function checkIfAllCompleted() {
     if (panel) {
         panel.finish().then(() => {
             console.log('✅ Сессия завершена и сохранена');
+        }).catch((error) => {
+            console.warn('⚠️ Не удалось сохранить сессию при завершении (не критично):', error);
+            // Продолжаем работу, ошибка не блокирует завершение диктанта
         });
     }
     
@@ -2989,59 +3060,94 @@ function stopVisualization() {
 // ===== Аудио-функционал КОНЕЦ =====
 
 async function setupVirtualKeyboard(langCode) {
-    if (!virtualKeyboardContainer || typeof window.VirtualKeyboard !== 'function') {
-        return;
-    }
+    try {
+        if (!virtualKeyboardContainer || typeof window.VirtualKeyboard !== 'function') {
+            return;
+        }
 
-    const normalizedLang = (langCode || currentDictation.language_original || 'en').toLowerCase();
+        const normalizedLang = (langCode || currentDictation.language_original || 'en').toLowerCase();
 
-    if (!virtualKeyboardInstance) {
-        virtualKeyboardInstance = new window.VirtualKeyboard(virtualKeyboardContainer, {
-            layoutManager: window.KeyboardLayoutManager,
-            languageManager: window.LanguageManager,
-            langCode: normalizedLang
-        });
-    } else {
-        await virtualKeyboardInstance.setLanguage(normalizedLang);
-    }
+        if (!virtualKeyboardInstance) {
+            virtualKeyboardInstance = new window.VirtualKeyboard(virtualKeyboardContainer, {
+                layoutManager: window.KeyboardLayoutManager,
+                languageManager: window.LanguageManager,
+                langCode: normalizedLang
+            });
+        } else {
+            await virtualKeyboardInstance.setLanguage(normalizedLang);
+        }
 
-    if (virtualKeyboardToggle && !virtualKeyboardToggle.dataset.listenerAttached) {
-        virtualKeyboardToggle.addEventListener('change', async (event) => {
-            if (!virtualKeyboardInstance) {
-                return;
-            }
+        if (virtualKeyboardToggle && !virtualKeyboardToggle.dataset.listenerAttached) {
+            virtualKeyboardToggle.addEventListener('change', async (event) => {
+                try {
+                    if (!virtualKeyboardInstance) {
+                        return;
+                    }
 
-            const isChecked = Boolean(event.target.checked);
-            const langForRender = (currentDictation.language_original || normalizedLang).toLowerCase();
-            await virtualKeyboardInstance.setLanguage(langForRender);
+                    const isChecked = Boolean(event.target.checked);
+                    const langForRender = (currentDictation.language_original || normalizedLang).toLowerCase();
+                    await virtualKeyboardInstance.setLanguage(langForRender);
 
-            if (isChecked) {
-                await virtualKeyboardInstance.show();
-            } else {
-                virtualKeyboardInstance.hide();
-            }
-        });
-        virtualKeyboardToggle.dataset.listenerAttached = 'true';
-    }
+                    if (isChecked) {
+                        await virtualKeyboardInstance.show();
+                    } else {
+                        virtualKeyboardInstance.hide();
+                    }
+                } catch (error) {
+                    console.error('❌ Ошибка при переключении виртуальной клавиатуры:', error);
+                    // Скрываем клавиатуру при ошибке
+                    if (virtualKeyboardToggle) {
+                        virtualKeyboardToggle.checked = false;
+                    }
+                    if (virtualKeyboardInstance && typeof virtualKeyboardInstance.hide === 'function') {
+                        virtualKeyboardInstance.hide();
+                    }
+                }
+            });
+            virtualKeyboardToggle.dataset.listenerAttached = 'true';
+        }
 
-    if (virtualKeyboardToggle && virtualKeyboardToggle.checked) {
-        await virtualKeyboardInstance.show();
-    } else if (virtualKeyboardInstance) {
-        virtualKeyboardInstance.hide();
+        if (virtualKeyboardToggle && virtualKeyboardToggle.checked) {
+            await virtualKeyboardInstance.show();
+        } else if (virtualKeyboardInstance) {
+            virtualKeyboardInstance.hide();
+        }
+    } catch (error) {
+        console.error('❌ Ошибка инициализации виртуальной клавиатуры:', error);
+        // Скрываем чекбокс клавиатуры при ошибке, чтобы пользователь не пытался её использовать
+        if (virtualKeyboardToggle) {
+            virtualKeyboardToggle.checked = false;
+            virtualKeyboardToggle.disabled = true;
+            virtualKeyboardToggle.title = 'Виртуальная клавиатура недоступна';
+        }
+        // Скрываем контейнер клавиатуры
+        if (virtualKeyboardContainer) {
+            virtualKeyboardContainer.style.display = 'none';
+            virtualKeyboardContainer.setAttribute('hidden', 'true');
+        }
     }
 }
 
 
 function hideVirtualKeyboardIfActive() {
-    if (virtualKeyboardToggle) {
-        virtualKeyboardToggle.checked = false;
-    }
+    try {
+        if (virtualKeyboardToggle) {
+            virtualKeyboardToggle.checked = false;
+        }
 
-    if (virtualKeyboardInstance && typeof virtualKeyboardInstance.hide === 'function') {
-        virtualKeyboardInstance.hide();
-    } else if (virtualKeyboardContainer) {
-        virtualKeyboardContainer.setAttribute('hidden', 'true');
-        virtualKeyboardContainer.style.display = 'none';
+        if (virtualKeyboardInstance && typeof virtualKeyboardInstance.hide === 'function') {
+            virtualKeyboardInstance.hide();
+        } else if (virtualKeyboardContainer) {
+            virtualKeyboardContainer.setAttribute('hidden', 'true');
+            virtualKeyboardContainer.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('❌ Ошибка при скрытии виртуальной клавиатуры:', error);
+        // Принудительно скрываем контейнер при ошибке
+        if (virtualKeyboardContainer) {
+            virtualKeyboardContainer.setAttribute('hidden', 'true');
+            virtualKeyboardContainer.style.display = 'none';
+        }
     }
 }
 
@@ -3143,6 +3249,18 @@ function loadDictationData() {
         currentDictation.language_original = dictationDataElement.dataset.languageOriginal || '';
         currentDictation.language_translation = dictationDataElement.dataset.languageTranslation || '';
         currentDictation.title_orig = dictationDataElement.dataset.titleOrig || '';
+        
+        // Логируем для отладки
+        console.log('📝 Загружен язык из data-атрибутов:', {
+            language_original: currentDictation.language_original,
+            language_translation: currentDictation.language_translation,
+            dictationId: currentDictation.id
+        });
+        
+        if (!currentDictation.language_original) {
+            console.warn('⚠️ language_original пустой! Проверьте data-language-original в HTML');
+        }
+        
         applyInputDirection(currentDictation.language_original);
         // Используем LanguageManager для получения country_cod_url
         if (window.LanguageManager && typeof window.LanguageManager.getCountryCodeUrl === 'function') {
@@ -3166,14 +3284,25 @@ function loadDictationData() {
 async function initializeDictation() {
     // Сначала загружаем данные
     console.log('=======================initializeDictation:');
+    
+    // Загружаем настройки аудио из данных пользователя (до загрузки черновика)
+    await loadAudioSettingsFromUser();
+    
     if (!loadDictationData()) {
         alert('Ошибка загрузки данных диктанта');
         return;
     }
 
-    await setupVirtualKeyboard(currentDictation.language_original);
+    // Инициализируем виртуальную клавиатуру с обработкой ошибок
+    // Если клавиатура не загрузится, это не должно блокировать работу диктанта
+    try {
+        await setupVirtualKeyboard(currentDictation.language_original);
+    } catch (error) {
+        console.error('❌ Критическая ошибка при инициализации виртуальной клавиатуры:', error);
+        // Продолжаем работу без клавиатуры
+    }
 
-    // Проверяем наличие черновика
+    // Проверяем наличие черновика (черновик может перезаписать настройки пользователя)
     const hasDraft = await loadAndApplyDraft();
     
     // Если черновика нет, инициализируем все предложения как checked
@@ -3427,7 +3556,7 @@ function recordAudio() {
 // Инициализация при загрузке -------------------------------------------------------
 // startNewGame
 // document.addEventListener("DOMContentLoaded", function () {
-function onloadInitializeDictation() {
+async function onloadInitializeDictation() {
     console.log('=======================document.addEventListener("DOMContentLoaded", function () {:');
     // Инициализируем диалоговые метаданные из data-атрибутов
     const dataNode = document.getElementById('dictation-data');
@@ -3439,7 +3568,9 @@ function onloadInitializeDictation() {
             dictationSpeakers = {};
         }
     }
-    initializeDictation();
+    // Ждем завершения initializeDictation, чтобы currentDictation.language_original был установлен
+    await initializeDictation();
+    // Теперь вызываем loadLanguageCodes после того, как данные диктанта загружены
     loadLanguageCodes();
     // userManager.init(); 
     // initializeUser(); // Инициализируем пользователя
@@ -3701,9 +3832,20 @@ function onloadInitializeDictation() {
     }
 
     // Установка значений по умолчанию для последовательностей воспроизведения
-    document.getElementById('playSequenceStart').value = playSequenceStart;
-    document.getElementById('playSequenceTypo').value = playSequenceTypo;
-    document.getElementById('playSequenceSuccess').value = playSequenceSuccess;
+    // Проверяем существование элементов перед установкой значений
+    const playSequenceStartEl = document.getElementById('playSequenceStart');
+    const playSequenceTypoEl = document.getElementById('playSequenceTypo');
+    const playSequenceSuccessEl = document.getElementById('playSequenceSuccess');
+    
+    if (playSequenceStartEl) {
+        playSequenceStartEl.value = playSequenceStart;
+    }
+    if (playSequenceTypoEl) {
+        playSequenceTypoEl.value = playSequenceTypo;
+    }
+    if (playSequenceSuccessEl) {
+        playSequenceSuccessEl.value = playSequenceSuccess;
+    }
 
     initPlaySequenceInputs();
 
@@ -4573,38 +4715,21 @@ async function registerCompletedDictation() {
             historyData.statistics_sentenses = [];
         }
 
-        // Находим все записи для этого диктанта за сегодня
-        const todayEntries = historyData.statistics_sentenses.filter(
-            entry => entry.dictation_id === currentDictation.id && entry.date === dateKey
-        );
-
-        // Определяем номер выполнения (1 для первого раза, увеличиваем на 1 для каждого нового)
-        let nextNumber = 1;
-        if (todayEntries.length > 0) {
-            // Находим максимальный номер среди записей за сегодня
-            const maxNumber = Math.max(...todayEntries.map(e => e.number || 0));
-            nextNumber = maxNumber + 1;
-        }
-
         // Получаем статистику и время выполнения
         const sum = sumRez();
         const totalPerfect = number_of_perfect + sum.circle_number_of_perfect;
         const totalCorrected = number_of_corrected + sum.circle_number_of_corrected;
         const totalAudio = number_of_audio + sum.circle_number_of_audio;
         
-        // Получаем общее время выполнения диктанта
+        // Получаем общее время выполнения диктанта (накопленное время работы)
         const timerSnapshot = getProgressTimerSnapshot();
-        const totalTimeMs = getTimerDisplayMs(timerSnapshot);
-        
-        // Получаем текущее время (время победы) в формате HH:MM:SS
-        const timeKey = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        const totalTimeMs = timerSnapshot.accumulatedMs || 0;
         
         // Формируем новую запись для истории
+        // Для каждого завершения диктанта создается одна запись (без number и time)
         const historyEntry = {
             date: dateKey,
             dictation_id: currentDictation.id,
-            number: nextNumber,
-            time: timeKey,                    // время победы (HH:MM:SS)
             perfect: totalPerfect,             // количество звезд (perfect)
             corrected: totalCorrected,         // количество полузвезд (corrected)
             audio: totalAudio,                 // количество аудио
@@ -4615,6 +4740,13 @@ async function registerCompletedDictation() {
 
         // Добавляем новую запись (каждое выполнение - отдельная запись)
         historyData.statistics_sentenses.push(historyEntry);
+
+        console.log('[Register] 📊 Данные для сохранения:', {
+            month: historyData.month,
+            statistics_count: historyData.statistics.length,
+            statistics_sentenses_count: historyData.statistics_sentenses.length,
+            last_entry: historyEntry
+        });
 
         // Сохраняем обновленную историю
         const saveResponse = await fetch(`/user/api/history/${monthKey}`, {
@@ -4705,6 +4837,18 @@ async function saveDictationDraft() {
         currentIndex: currentSentenceIndex || 0
     });
 
+    // Получаем настройки аудио из панели или из глобальных переменных
+    let audioRepeats = REQUIRED_PASSED_COUNT;
+    if (audioSettingsPanel && audioSettingsPanel.isInitialized) {
+        const settings = audioSettingsPanel.getSettings();
+        // Используем явную проверку, чтобы 0 не заменялся на 3
+        audioRepeats = (settings.repeats !== undefined && settings.repeats !== null) ? settings.repeats : 3;
+    }
+
+    // Получаем накопленное время работы над диктантом
+    const timerSnapshot = getProgressTimerSnapshot();
+    const accumulatedMs = timerSnapshot.accumulatedMs || 0;
+
     const state = {
         dictation_id: currentDictation.id,
         circle_number: circle_number,
@@ -4712,12 +4856,15 @@ async function saveDictationDraft() {
         playSequenceStart: sequences.start || playSequenceStart,
         playSequenceTypo: sequences.typo || playSequenceTypo,
         playSequenceSuccess: sequences.success || playSequenceSuccess,
+        audio_repeats: audioRepeats,
         is_mixed: isMixed,
         per_sentence: perSentence,
         // Общие счетчики
         number_of_perfect: number_of_perfect,
         number_of_corrected: number_of_corrected,
-        number_of_audio: number_of_audio
+        number_of_audio: number_of_audio,
+        // Накопленное время работы над диктантом (в миллисекундах)
+        dictation_accumulated_ms: accumulatedMs
     };
 
     try {
@@ -4762,17 +4909,43 @@ async function loadAndApplyDraft(forceClear = false) {
         }
 
     // Восстанавливаем настройки
-    if (draft.playSequenceStart) {
-        playSequenceStart = draft.playSequenceStart;
-        document.getElementById('playSequenceStart').value = draft.playSequenceStart;
-    }
-    if (draft.playSequenceTypo) {
-        playSequenceTypo = draft.playSequenceTypo;
-        document.getElementById('playSequenceTypo').value = draft.playSequenceTypo;
-    }
-    if (draft.playSequenceSuccess) {
-        playSequenceSuccess = draft.playSequenceSuccess;
-        document.getElementById('playSequenceSuccess').value = draft.playSequenceSuccess;
+    if (draft.playSequenceStart || draft.playSequenceTypo || draft.playSequenceSuccess || draft.audio_repeats !== undefined) {
+        if (audioSettingsPanel && audioSettingsPanel.isInitialized) {
+            audioSettingsPanel.setSettings({
+                start: draft.playSequenceStart || playSequenceStart || 'oto',
+                typo: draft.playSequenceTypo || playSequenceTypo || 'o',
+                success: draft.playSequenceSuccess || playSequenceSuccess || 'ot',
+                repeats: draft.audio_repeats !== undefined ? draft.audio_repeats : (REQUIRED_PASSED_COUNT !== undefined ? REQUIRED_PASSED_COUNT : 3)
+            });
+            // Обновляем глобальные переменные
+            const settings = audioSettingsPanel.getSettings();
+            playSequenceStart = settings.start;
+            playSequenceTypo = settings.typo;
+            playSequenceSuccess = settings.success;
+            REQUIRED_PASSED_COUNT = settings.repeats;
+        } else {
+            // Fallback на старый способ
+            if (draft.playSequenceStart) {
+                playSequenceStart = draft.playSequenceStart;
+                const el = document.getElementById('playSequenceStart');
+                if (el) el.value = draft.playSequenceStart;
+            }
+            if (draft.playSequenceTypo) {
+                playSequenceTypo = draft.playSequenceTypo;
+                const el = document.getElementById('playSequenceTypo');
+                if (el) el.value = draft.playSequenceTypo;
+            }
+            if (draft.playSequenceSuccess) {
+                playSequenceSuccess = draft.playSequenceSuccess;
+                const el = document.getElementById('playSequenceSuccess');
+                if (el) el.value = draft.playSequenceSuccess;
+            }
+            if (draft.audio_repeats !== undefined) {
+                REQUIRED_PASSED_COUNT = draft.audio_repeats;
+                const el = document.getElementById('audioRepeatsInput');
+                if (el) el.value = draft.audio_repeats;
+            }
+        }
     }
     if (draft.is_mixed !== undefined && mixControl) {
         mixControl.dataset.checked = draft.is_mixed ? 'true' : 'false';
@@ -4873,6 +5046,15 @@ async function loadAndApplyDraft(forceClear = false) {
         });
         
         console.log('[loadAndApplyDraft] Финальный selectedSentences:', selectedSentences.length, selectedSentences);
+
+        // Восстанавливаем накопленное время работы над диктантом
+        if (draft.dictation_accumulated_ms !== undefined && panel) {
+            const accumulatedMs = parseInt(draft.dictation_accumulated_ms) || 0;
+            if (panel.timerState) {
+                panel.timerState.dictationAccumulatedMs = accumulatedMs;
+                console.log('[loadAndApplyDraft] Восстановлено накопленное время:', accumulatedMs, 'мс');
+            }
+        }
 
         if (panel) {
             panel.markClean();
@@ -5169,23 +5351,74 @@ function initPlaySequenceInputs() {
     });
 }
 
+// Глобальная переменная для панели настроек аудио
+let audioSettingsPanel = null;
+
 // Функция для получения значений
 function getPlaySequenceValues() {
+    // Если панель инициализирована, используем её значения
+    if (audioSettingsPanel && audioSettingsPanel.isInitialized) {
+        const settings = audioSettingsPanel.getSettings();
+        return {
+            start: settings.start || 'oto',
+            typo: settings.typo || 'o',
+            success: settings.success || 'ot'
+        };
+    }
+    
+    // Fallback на старый способ (для обратной совместимости)
+    const startEl = document.getElementById('playSequenceStart');
+    const typoEl = document.getElementById('playSequenceTypo');
+    const successEl = document.getElementById('playSequenceSuccess');
+    
     return {
-        start: document.getElementById('playSequenceStart').value || 'oto',
-        typo: document.getElementById('playSequenceTypo').value || 'o',
-        success: document.getElementById('playSequenceSuccess').value || 'ot'
+        start: startEl ? startEl.value || 'oto' : 'oto',
+        typo: typoEl ? typoEl.value || 'o' : 'o',
+        success: successEl ? successEl.value || 'ot' : 'ot'
     };
 }
 
 // Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', function () {
-    initPlaySequenceInputs();
-
-    // Установка значений по умолчанию
-    document.getElementById('playSequenceStart').value = playSequenceStart;
-    document.getElementById('playSequenceTypo').value = playSequenceTypo;
-    document.getElementById('playSequenceSuccess').value = playSequenceSuccess;
+document.addEventListener('DOMContentLoaded', async function () {
+    // Загружаем настройки аудио из данных пользователя (асинхронно)
+    await loadAudioSettingsFromUser();
+    
+    // Инициализируем панель настроек аудио
+    const container = document.getElementById('audioSettingsContainer');
+    if (container && typeof AudioSettingsPanel !== 'undefined') {
+        audioSettingsPanel = new AudioSettingsPanel({
+            container: container,
+            mode: 'inline',
+            showExplanations: false,
+            onSettingsChange: (settings) => {
+                // Обновляем глобальные переменные
+                playSequenceStart = settings.start || 'oto';
+                playSequenceTypo = settings.typo || 'o';
+                playSequenceSuccess = settings.success || 'ot';
+                // Используем явную проверку, чтобы 0 не заменялся на 3
+                REQUIRED_PASSED_COUNT = (settings.repeats !== undefined && settings.repeats !== null) ? settings.repeats : 3;
+            }
+        });
+        
+        // Загружаем настройки из данных пользователя (или значения по умолчанию)
+        audioSettingsPanel.setSettings({
+            start: playSequenceStart,
+            typo: playSequenceTypo,
+            success: playSequenceSuccess,
+            repeats: REQUIRED_PASSED_COUNT
+        });
+        
+        audioSettingsPanel.init();
+    } else {
+        // Fallback на старый способ
+        initPlaySequenceInputs();
+        const startEl = document.getElementById('playSequenceStart');
+        const typoEl = document.getElementById('playSequenceTypo');
+        const successEl = document.getElementById('playSequenceSuccess');
+        if (startEl) startEl.value = playSequenceStart;
+        if (typoEl) typoEl.value = playSequenceTypo;
+        if (successEl) successEl.value = playSequenceSuccess;
+    }
 });
 
 // обработчики событий для отслеживания активности:-----------------------------------------------

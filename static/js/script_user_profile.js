@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         loadUserData();
         initializeLanguageSelector();
+        initializeAudioSettings();
         setupFormListeners();
         initializeTopbarControls();
 
@@ -40,7 +41,12 @@ function loadUserData() {
         native_language: userData.native_language || 'ru',
         learning_languages: userData.learning_languages || ['en'],
         current_learning: userData.current_learning || userData.learning_languages?.[0] || 'en',
-        avatar: userData.avatar || {}
+        avatar: userData.avatar || {},
+        // Сохраняем настройки аудио в originalData
+        audio_start: userData.audio_start || '',
+        audio_typo: userData.audio_typo || '',
+        audio_success: userData.audio_success || '',
+        audio_repeats: userData.audio_repeats || 3
     };
 
     document.getElementById('username').value = originalData.username;
@@ -83,6 +89,47 @@ function initializeLanguageSelector() {
         container.innerHTML = `
             <div style="padding: 20px; background: #f8f9fa; border-radius: 5px; text-align: center;">
                 <p style="color: #dc3545;">Ошибка загрузки языковых настроек</p>
+            </div>
+        `;
+    }
+}
+
+// Инициализация панели настроек аудио
+let audioSettingsPanel = null;
+
+function initializeAudioSettings() {
+    const container = document.getElementById('userAudioSettingsContainer');
+    
+    if (!container) {
+        console.error('❌ Контейнер для AudioSettingsPanel не найден');
+        return;
+    }
+
+    try {
+        // Загружаем настройки пользователя
+        const userSettings = {
+            audio_start: UM.userData.audio_start,
+            audio_typo: UM.userData.audio_typo,
+            audio_success: UM.userData.audio_success,
+            audio_repeats: UM.userData.audio_repeats
+        };
+
+        audioSettingsPanel = new AudioSettingsPanel({
+            container: container,
+            mode: 'user-settings',
+            showExplanations: true,
+            onSettingsChange: (settings) => {
+                checkForChanges();
+            }
+        });
+
+        audioSettingsPanel.init(userSettings);
+
+    } catch (error) {
+        console.error('❌ Ошибка инициализации AudioSettingsPanel:', error);
+        container.innerHTML = `
+            <div style="padding: 20px; background: #f8f9fa; border-radius: 5px; text-align: center;">
+                <p style="color: #dc3545;">Ошибка загрузки настроек аудио</p>
             </div>
         `;
     }
@@ -133,12 +180,17 @@ function handleAvatarFileSelection(event) {
 // Проверка изменений данных
 function checkForChanges() {
     const currentValues = getCurrentFormValues();
+
     const hasChanges =
         currentValues.username !== originalData.username ||
         currentValues.password !== '' ||
         currentValues.native_language !== originalData.native_language ||
         JSON.stringify(currentValues.learning_languages) !== JSON.stringify(originalData.learning_languages) ||
-        currentValues.current_learning !== originalData.current_learning;
+        currentValues.current_learning !== originalData.current_learning ||
+        currentValues.audio_start !== (originalData.audio_start || '') ||
+        currentValues.audio_typo !== (originalData.audio_typo || '') ||
+        currentValues.audio_success !== (originalData.audio_success || '') ||
+        currentValues.audio_repeats !== (originalData.audio_repeats || 3);
 
     setUnsavedState(hasChanges);
 }
@@ -180,12 +232,32 @@ function getCurrentFormValues() {
         currentLearning: originalData.current_learning
     };
 
+    // Получаем настройки аудио из панели
+    let audioSettings = {
+        audio_start: '',
+        audio_typo: '',
+        audio_success: '',
+        audio_repeats: 3
+    };
+    
+    if (audioSettingsPanel) {
+        const settings = audioSettingsPanel.getSettings();
+        audioSettings.audio_start = settings.start || '';
+        audioSettings.audio_typo = settings.typo || '';
+        audioSettings.audio_success = settings.success || '';
+        audioSettings.audio_repeats = settings.repeats || 3;
+    }
+
     return {
         username: document.getElementById('username').value,
         password: document.getElementById('password').value,
         native_language: languageValues.nativeLanguage,
         learning_languages: languageValues.learningLanguages,
-        current_learning: languageValues.currentLearning
+        current_learning: languageValues.currentLearning,
+        audio_start: audioSettings.audio_start,
+        audio_typo: audioSettings.audio_typo,
+        audio_success: audioSettings.audio_success,
+        audio_repeats: audioSettings.audio_repeats
     };
 }
 
@@ -277,7 +349,19 @@ async function saveProfile(options = {}) {
 
     const { afterSave } = options;
 
-    if (!hasUnsavedChanges) {
+    // Получаем значения формы для проверки изменений
+    const formValues = getCurrentFormValues();
+    
+    // Проверяем, есть ли изменения в настройках аудио
+    const hasAudioChanges = audioSettingsPanel && (
+        (formValues.audio_start || '') !== (originalData.audio_start || '') ||
+        (formValues.audio_typo || '') !== (originalData.audio_typo || '') ||
+        (formValues.audio_success || '') !== (originalData.audio_success || '') ||
+        (formValues.audio_repeats || 3) !== (originalData.audio_repeats || 3)
+    );
+
+    // Если нет изменений вообще, выходим
+    if (!hasUnsavedChanges && !hasAudioChanges) {
         if (typeof afterSave === 'function') {
             afterSave();
         }
@@ -285,9 +369,7 @@ async function saveProfile(options = {}) {
     }
 
     isSavingProfile = true;
-    setUnsavedState(hasUnsavedChanges);
-
-    const formValues = getCurrentFormValues();
+    setUnsavedState(hasUnsavedChanges || hasAudioChanges);
 
     try {
         const updateData = {
@@ -301,23 +383,65 @@ async function saveProfile(options = {}) {
             updateData.password = formValues.password;
         }
 
+        // Добавляем настройки аудио - читаем напрямую из полей ввода
+        if (audioSettingsPanel) {
+            // Для режима user-settings префикс пустой
+            const prefix = audioSettingsPanel.options.mode === 'modal' ? 'modal-' : '';
+            const startInput = document.getElementById(`${prefix}playSequenceStart`);
+            const typoInput = document.getElementById(`${prefix}playSequenceTypo`);
+            const successInput = document.getElementById(`${prefix}playSequenceSuccess`);
+            const repeatsInput = document.getElementById(`${prefix}audioRepeatsInput`);
+            
+            updateData.audio_start = startInput ? (startInput.value || '') : '';
+            updateData.audio_typo = typoInput ? (typoInput.value || '') : '';
+            updateData.audio_success = successInput ? (successInput.value || '') : '';
+            updateData.audio_repeats = repeatsInput ? (parseInt(repeatsInput.value, 10) || 3) : 3;
+        }
+
         showInfo('Сохраняем изменения...');
 
         const updatedUser = await UM.updateProfile(updateData);
 
+        // Обновляем originalData полностью, включая настройки аудио из ответа сервера
         originalData = {
             ...originalData,
             username: updatedUser.username,
             native_language: updatedUser.native_language,
             learning_languages: updatedUser.learning_languages,
-            current_learning: updatedUser.current_learning
+            current_learning: updatedUser.current_learning,
+            // Сохраняем настройки аудио из ответа сервера (или из updateData, если их нет в ответе)
+            audio_start: updatedUser.audio_start !== undefined ? updatedUser.audio_start : (updateData.audio_start || ''),
+            audio_typo: updatedUser.audio_typo !== undefined ? updatedUser.audio_typo : (updateData.audio_typo || ''),
+            audio_success: updatedUser.audio_success !== undefined ? updatedUser.audio_success : (updateData.audio_success || ''),
+            audio_repeats: updatedUser.audio_repeats !== undefined ? updatedUser.audio_repeats : (updateData.audio_repeats || 3)
         };
+        
+        // Обновляем UM.userData, чтобы при следующей загрузке страницы данные были актуальными
+        if (UM && UM.userData) {
+            UM.userData.audio_start = originalData.audio_start;
+            UM.userData.audio_typo = originalData.audio_typo;
+            UM.userData.audio_success = originalData.audio_success;
+            UM.userData.audio_repeats = originalData.audio_repeats;
+        }
+        
+        // Обновляем панель настроек аудио с сохраненными значениями
+        if (audioSettingsPanel) {
+            audioSettingsPanel.setSettings({
+                start: originalData.audio_start,
+                typo: originalData.audio_typo,
+                success: originalData.audio_success,
+                repeats: originalData.audio_repeats
+            });
+        }
 
         if (formValues.password) {
             document.getElementById('password').value = '';
         }
 
+        // Проверяем изменения после сохранения (должно быть false)
         checkForChanges();
+        // Убеждаемся, что обработчик beforeunload удален
+        setUnsavedState(false);
         showSuccess('Профиль успешно сохранен!');
 
         if (typeof afterSave === 'function') {
@@ -329,7 +453,8 @@ async function saveProfile(options = {}) {
         showError('Ошибка сохранения: ' + error.message);
     } finally {
         isSavingProfile = false;
-        setUnsavedState(hasUnsavedChanges);
+        // После сохранения проверяем изменения еще раз, чтобы обновить hasUnsavedChanges
+        checkForChanges();
     }
 }
 
@@ -338,9 +463,14 @@ function handleProfileExit(event) {
         event.preventDefault();
     }
 
+    // Проверяем изменения еще раз перед выходом (на случай, если что-то изменилось)
+    checkForChanges();
+
+    // Показываем модальное окно только если есть несохраненные изменения
     if (hasUnsavedChanges) {
         toggleExitModal(true);
     } else {
+        // Если все сохранено, просто выходим
         proceedToExit();
     }
 }
@@ -374,7 +504,12 @@ function toggleExitModal(show) {
 }
 
 function proceedToExit() {
-    window.location.href = '/';
+    // Убеждаемся, что обработчик beforeunload удален перед редиректом
+    setUnsavedState(false);
+    // Небольшая задержка, чтобы обработчик точно удалился
+    setTimeout(() => {
+        window.location.href = '/';
+    }, 0);
 }
 
 // Вспомогательные функции для уведомлений

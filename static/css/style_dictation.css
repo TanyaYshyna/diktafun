@@ -1488,6 +1488,7 @@ body.playing-audio::after {
   border-collapse: collapse;
   margin: 15px 0;
   font-size: 14px;
+  table-layout: fixed;
 }
 
 #sentences-table th,
@@ -1507,29 +1508,80 @@ body.playing-audio::after {
   z-index: 10;
 }
 
-/* Уменьшаем ширину некоторых колонок */
+/* Фиксированные ширины для первых 5 видимых колонок */
+/* Колонка 1: Выбор */
 #sentences-table th:nth-child(1),
 #final-sentences-table th:nth-child(1),
 #sentences-table td:nth-child(1),
 #final-sentences-table td:nth-child(1) {
-  width: 30px;
-  /* Выбор */
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
 }
 
+/* Колонка 2: Номер строки */
 #sentences-table th:nth-child(2),
 #final-sentences-table th:nth-child(2),
 #sentences-table td:nth-child(2),
 #final-sentences-table td:nth-child(2) {
-  width: 50px;
-  /* Код */
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+  text-align: center;
 }
 
+/* Колонка 3: Код (скрытая) */
+#sentences-table th:nth-child(3),
 #final-sentences-table th:nth-child(3),
-#final-sentences-table td:nth-child(3),
+#sentences-table td:nth-child(3),
+#final-sentences-table td:nth-child(3) {
+  width: 0;
+  min-width: 0;
+  max-width: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Колонка 4: Звезда 1 (perfect) */
+#sentences-table th:nth-child(4),
 #final-sentences-table th:nth-child(4),
+#sentences-table td:nth-child(4),
 #final-sentences-table td:nth-child(4) {
   width: 60px;
-  /* Статусы */
+  min-width: 60px;
+  max-width: 60px;
+  text-align: center;
+}
+
+/* Колонка 5: Звезда 2 (corrected) */
+#sentences-table th:nth-child(5),
+#final-sentences-table th:nth-child(5),
+#sentences-table td:nth-child(5),
+#final-sentences-table td:nth-child(5) {
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+  text-align: center;
+}
+
+/* Колонка 6: Микрофон */
+#sentences-table th:nth-child(6),
+#final-sentences-table th:nth-child(6),
+#sentences-table td:nth-child(6),
+#final-sentences-table td:nth-child(6) {
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+  text-align: center;
+}
+
+/* Колонка 7: Текст (последняя, занимает весь остальной размер) */
+#sentences-table th:last-child,
+#final-sentences-table th:last-child,
+#sentences-table td:last-child,
+#final-sentences-table td:last-child {
+  width: auto;
+  min-width: 200px;
 }
 
 
@@ -1852,22 +1904,20 @@ body.playing-audio::after {
   height: 20px;
 }
 
-/* Уменьшаем отступы в ячейках таблицы */
+/* Отступы в ячейках таблицы */
 #sentences-table td:first-child {
   padding: 4px;
-  width: 40px;
   text-align: center;
 }
 
 #sentences-table td:nth-child(2) {
   padding: 4px 8px;
-  width: 50px;
 }
 
-#sentences-table td:nth-child(3),
-#sentences-table td:nth-child(4) {
+#sentences-table td:nth-child(4),
+#sentences-table td:nth-child(5),
+#sentences-table td:nth-child(6) {
   padding: 4px;
-  width: 60px;
   text-align: center;
 }
 
@@ -2100,6 +2150,11 @@ body.playing-audio::after {
   pointer-events: none;
 }
 
+/* Скрытая колонка "Код" в таблице предложений */
+.hidden-column {
+  display: none;
+}
+
 /* Поля ввода для аудио сначала ошибка и вкрнце ---------------------------------------------------*/
 .play-sequence-container {
     display: flex;
@@ -2131,7 +2186,7 @@ body.playing-audio::after {
     padding: 5px 8px;
     border: 1px solid var(--color-border-light);
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 20px !important;
     /* font-weight: 700;  */
     font-family: 'Inter', monospace;
     background-color: var(--color-background);
@@ -2146,6 +2201,7 @@ body.playing-audio::after {
     width: 60px;
     padding-right: 5px;
     text-transform: none;
+    font-size: 20px !important;
 }
 
 /* Скрываем стрелки у number input в Chrome, Safari, Edge */
@@ -2159,6 +2215,7 @@ body.playing-audio::after {
 .play-sequence-input[type="number"] {
     -moz-appearance: textfield;
     appearance: textfield;
+    font-size: 20px !important;
 }
 
 .play-sequence-input:focus {
@@ -2177,267 +2234,150 @@ body.playing-audio::after {
     opacity: 0.7;
 }
 
+/* ==================== СТИЛИ ДЛЯ НАСТРОЕК АУДИО В ПРОФИЛЕ ПОЛЬЗОВАТЕЛЯ ==================== */
+
+/* Главная таблица для двух колонок (настройки слева, обозначения справа) */
+.audio-settings-main-table {
+    width: auto;
+    border-collapse: collapse;
+    padding:10px;
+}
+
+/* Левая колонка - настройки (ширина по содержимому) */
+.audio-settings-column {
+    width: auto;
+    vertical-align: top;
+    padding: 10px;
+}
+
+/* Правая колонка - обозначения (минимальная ширина 200px) */
+.audio-explanations-column {
+    width: auto;
+    min-width: 200px;
+    vertical-align: top;
+    padding: 0;
+}
+
+/* Рамка для настроек (без обводки в профиле) */
+.audio-settings-frame {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    background-color: transparent;
+}
+
+.audio-settings-title {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 12px 0;
+}
+
+/* Таблица для выравнивания полей ввода */
+.audio-settings-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.audio-settings-table tr {
+    border-bottom: none;
+    margin-bottom: 8px;
+}
+
+.audio-settings-table tr:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.audio-settings-table td {
+    border: none !important;
+}
+
+.audio-settings-label {
+    padding: 8px 8px 8px 0;
+    vertical-align: middle;
+    width: auto;
+}
+
+.audio-settings-label label {
+    font-size: 14px;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.audio-settings-input {
+    padding: 8px 8px 8px 20px;
+    vertical-align: middle;
+}
+
+/* Отступы между полями ввода в строке */
+.audio-settings-input .play-sequence-input {
+    margin-right: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.audio-settings-input .play-sequence-input:focus {
+    outline: none;
+    border-color: var(--color-button-text-pink);
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.audio-settings-input .play-sequence-input:last-child {
+    margin-right: 0;
+}
+
+.audio-settings-input .play-sequence-input {
+    width: 60px !important;
+    max-width: 60px !important;
+    font-size: 20px !important;
+}
+
+
+.audio-explanations {
+    padding: 0;
+    background-color: transparent;
+    border-radius: 0;
+}
+
+.audio-explanations label {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 12px;
+}
+
+.explanations-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.explanations-list li {
+    padding: 6px 0;
+    font-size: 14px;
+    color: var(--color-text);
+    line-height: 1.5;
+}
+
+.explanations-list li strong {
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-right: 6px;
+}
+
 /* ==================== СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА СТАТИСТИКИ ==================== */
 
-.statistics-modal-content {
-    max-width: 900px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.statistics-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--color-border);
-}
-
-.statistics-header h2 {
-    margin: 0;
-    font-size: 24px;
-    color: var(--color-text);
-}
-
-.close-statistics-btn {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-text);
-    border-radius: 6px;
-    transition: background-color 0.2s;
-}
-
-.close-statistics-btn:hover {
-    background-color: var(--color-background-light);
-}
-
-.statistics-controls {
-    display: flex;
-    gap: 15px;
-    align-items: flex-end;
-    margin-bottom: 25px;
-    flex-wrap: wrap;
-}
-
-.date-range-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-    min-width: 300px;
-}
-
-.date-range-controls label {
-    font-size: 14px;
-    color: var(--color-text);
-    white-space: nowrap;
-}
-
-.date-input {
-    padding: 8px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    font-size: 14px;
-    background-color: var(--color-background);
-    color: var(--color-text);
-    flex: 1;
-}
-
-.date-input:focus {
-    outline: none;
-    border-color: var(--color-primary);
-}
-
-.group-by-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.group-by-controls label {
-    font-size: 14px;
-    color: var(--color-text);
-    white-space: nowrap;
-}
-
-.group-select {
-    padding: 8px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    font-size: 14px;
-    background-color: var(--color-background);
-    color: var(--color-text);
-    cursor: pointer;
-}
-
-.group-select:focus {
-    outline: none;
-    border-color: var(--color-primary);
-}
-
-#updateStatisticsBtn {
-    padding: 8px 20px;
-    white-space: nowrap;
-}
-
-.statistics-chart {
-    margin-bottom: 25px;
-}
-
-.chart-container {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.chart-row {
-    display: flex;
-    gap: 15px;
-    align-items: flex-start;
-    padding: 10px;
-    border-radius: 8px;
-    background-color: var(--color-background-light);
-    transition: background-color 0.2s;
-}
-
-.chart-row:hover {
-    background-color: var(--color-background);
-}
-
-.chart-date {
-    min-width: 100px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--color-text);
-    text-align: right;
-    padding-top: 5px;
-}
-
-.chart-bars {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.bar-container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    height: 10px;
-    position: relative;
-}
-
-.bar {
-    height: 10px;
-    min-width: 2px;
-    border-radius: 4px;
-    transition: opacity 0.2s;
-    cursor: pointer;
-}
-
-.bar:hover {
-    opacity: 0.8;
-}
-
-.bar-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--color-text);
-    min-width: 30px;
-    text-align: left;
-}
-
-.perfect-bar {
-    background-color: var(--color-button-mint);
-}
-
-.corrected-bar {
-    background-color: var(--color-button-lightgreen);
-}
-
-.audio-bar {
-    background-color: var(--color-button-purple);
-}
-
-.chart-values {
-    display: flex;
-    gap: 15px;
-    min-width: 150px;
-    justify-content: flex-end;
-    font-size: 13px;
-    font-weight: 500;
-}
-
-.value-perfect {
-    color: var(--color-button-text-mint);
-    min-width: 35px;
-    text-align: right;
-}
-
-.value-corrected {
-    color: var(--color-button-text-lightgreen);
-    min-width: 35px;
-    text-align: right;
-}
-
-.value-audio {
-    color: var(--color-button-text-purple);
-    min-width: 35px;
-    text-align: right;
-}
-
-.statistics-legend {
-    display: flex;
-    gap: 25px;
-    padding: 15px;
-    background-color: var(--color-background-light);
-    border-radius: 8px;
-    flex-wrap: wrap;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--color-text);
-}
-
-.legend-color {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    display: inline-block;
-}
-
-.perfect-color {
-    background-color: var(--color-button-mint);
-}
-
-.corrected-color {
-    background-color: var(--color-button-lightgreen);
-}
-
-.audio-color {
-    background-color: var(--color-button-purple);
-}
-
-.no-data {
-    text-align: center;
-    padding: 40px;
-    color: var(--color-text-secondary);
-    font-size: 16px;
-    font-style: italic;
+/* Стили статистики перенесены в style.css (общие для всех страниц) */
 }
 
 @media (max-width: 768px) {
