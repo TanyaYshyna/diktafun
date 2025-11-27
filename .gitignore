@@ -70,3 +70,8 @@ env/
 .idea/
 *.bak
 *.tmp
+
+# Application data
+static/data/dictations/
+static/data/temp/
+static/data/users/

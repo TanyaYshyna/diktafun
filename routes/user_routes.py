@@ -464,44 +464,116 @@ def api_save_history(month_identifier):
         filename = get_history_filename(month_identifier)
         filepath = os.path.join(history_folder, filename)
         
-        data = request.get_json()
+        incoming_data = request.get_json()
         
         print(f'📊 [API_SAVE_HISTORY] Сохранение истории для месяца: {month_identifier}')
-        print(f'📊 [API_SAVE_HISTORY] Полученные данные: statistics={len(data.get("statistics", []))} записей, statistics_sentenses={len(data.get("statistics_sentenses", []))} записей')
+        print(f'📊 [API_SAVE_HISTORY] Входящие данные: statistics={len(incoming_data.get("statistics", []))} записей, statistics_sentenses={len(incoming_data.get("statistics_sentenses", []))} записей')
         
-        # Убеждаемся что структура правильная
-        if 'id_user' not in data:
-            data['id_user'] = current_email
-        if 'month' not in data:
-            data['month'] = int(month_identifier)
-        if 'statistics' not in data:
-            data['statistics'] = []
-        elif not isinstance(data['statistics'], list):
-            data['statistics'] = []
-        # Убеждаемся, что statistics_sentenses всегда массив
-        if 'statistics_sentenses' not in data:
-            data['statistics_sentenses'] = []
-        elif not isinstance(data['statistics_sentenses'], list):
-            data['statistics_sentenses'] = []
-        
-        # Валидируем структуру перед сохранением
-        if not isinstance(data, dict):
-            print(f'❌ [API_SAVE_HISTORY] Некорректный формат данных: ожидается dict, получено {type(data)}')
-            return jsonify({'error': 'Invalid data format'}), 400
-        
-        # Убеждаемся, что директория существует перед созданием файла
+        # Убеждаемся, что директория существует
         os.makedirs(history_folder, exist_ok=True)
         
-        # Сохраняем файл (полная перезапись)
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f'✅ [API_SAVE_HISTORY] Файл успешно сохранен: {filepath}')
-        print(f'✅ [API_SAVE_HISTORY] Финальная структура: statistics={len(data.get("statistics", []))} записей, statistics_sentenses={len(data.get("statistics_sentenses", []))} записей')
+        # ЧИТАЕМ существующий файл (если есть)
+        if os.path.exists(filepath):
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    existing_data = json.load(f)
+                print(f'📊 [API_SAVE_HISTORY] Прочитан существующий файл: statistics={len(existing_data.get("statistics", []))} записей, statistics_sentenses={len(existing_data.get("statistics_sentenses", []))} записей')
+            except json.JSONDecodeError as e:
+                print(f'❌ [API_SAVE_HISTORY] Ошибка парсинга JSON в файле {filepath}: {e}')
+                # Пытаемся восстановить структуру - читаем файл как текст
+                try:
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    # Ищем последнюю валидную закрывающую скобку
+                    last_valid_brace = content.rfind('}')
+                    if last_valid_brace > 0:
+                        # Пытаемся извлечь валидную часть
+                        valid_content = content[:last_valid_brace + 1]
+                        existing_data = json.loads(valid_content)
+                        print(f'⚠️ [API_SAVE_HISTORY] Восстановлена структура из поврежденного файла')
+                    else:
+                        raise
+                except:
+                    # Если не удалось восстановить, создаем новую структуру
+                    print(f'❌ [API_SAVE_HISTORY] Не удалось восстановить файл, создаем новую структуру')
+                    existing_data = {
+                        'id_user': current_email,
+                        'month': int(month_identifier),
+                        'statistics': [],
+                        'statistics_sentenses': []
+                    }
+            except Exception as e:
+                print(f'❌ [API_SAVE_HISTORY] Ошибка чтения файла: {e}')
+                existing_data = {
+                    'id_user': current_email,
+                    'month': int(month_identifier),
+                    'statistics': [],
+                    'statistics_sentenses': []
+                }
+        else:
+            # Файл не существует, создаем новую структуру
+            existing_data = {
+                'id_user': current_email,
+                'month': int(month_identifier),
+                'statistics': [],
+                'statistics_sentenses': []
+            }
+            print(f'📊 [API_SAVE_HISTORY] Файл не существует, создаем новую структуру')
         
-        return jsonify({'message': 'History saved successfully', 'data': data})
+        # Убеждаемся, что все необходимые поля присутствуют в существующих данных
+        if 'id_user' not in existing_data:
+            existing_data['id_user'] = current_email
+        if 'month' not in existing_data:
+            existing_data['month'] = int(month_identifier)
+        if 'statistics' not in existing_data or not isinstance(existing_data['statistics'], list):
+            existing_data['statistics'] = []
+        if 'statistics_sentenses' not in existing_data or not isinstance(existing_data['statistics_sentenses'], list):
+            existing_data['statistics_sentenses'] = []
+        
+        # ОБЪЕДИНЯЕМ данные: берем существующие данные и добавляем/обновляем из входящих
+        # Для statistics_sentenses: добавляем новые записи из входящих данных
+        if 'statistics_sentenses' in incoming_data and isinstance(incoming_data['statistics_sentenses'], list):
+            # Добавляем новые записи из входящих данных в существующий массив
+            for new_entry in incoming_data['statistics_sentenses']:
+                # Проверяем, нет ли уже такой записи (по dictation_id и date)
+                dictation_id = new_entry.get('dictation_id')
+                date = new_entry.get('date')
+                if dictation_id and date:
+                    # Ищем существующую запись с таким же dictation_id и date
+                    found = False
+                    for i, existing_entry in enumerate(existing_data['statistics_sentenses']):
+                        if existing_entry.get('dictation_id') == dictation_id and existing_entry.get('date') == date:
+                            # Обновляем существующую запись
+                            existing_data['statistics_sentenses'][i] = new_entry
+                            found = True
+                            print(f'📊 [API_SAVE_HISTORY] Обновлена существующая запись: dictation_id={dictation_id}, date={date}')
+                            break
+                    if not found:
+                        # Добавляем новую запись
+                        existing_data['statistics_sentenses'].append(new_entry)
+                        print(f'📊 [API_SAVE_HISTORY] Добавлена новая запись: dictation_id={dictation_id}, date={date}')
+                else:
+                    # Если нет dictation_id или date, просто добавляем
+                    existing_data['statistics_sentenses'].append(new_entry)
+        
+        # Для statistics: обновляем из входящих данных
+        if 'statistics' in incoming_data and isinstance(incoming_data['statistics'], list):
+            # Обновляем statistics из входящих данных
+            existing_data['statistics'] = incoming_data['statistics']
+        
+        # ЗАПИСЫВАЕМ обновленные данные обратно в файл
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(existing_data, f, ensure_ascii=False, indent=2)
+        
+        print(f'✅ [API_SAVE_HISTORY] Файл успешно сохранен: {filepath}')
+        print(f'✅ [API_SAVE_HISTORY] Финальная структура: statistics={len(existing_data.get("statistics", []))} записей, statistics_sentenses={len(existing_data.get("statistics_sentenses", []))} записей')
+        
+        return jsonify({'message': 'History saved successfully', 'data': existing_data})
         
     except Exception as e:
-        print(f"Error saving history: {e}")
+        import traceback
+        print(f"❌ [API_SAVE_HISTORY] Error saving history: {e}")
+        print(f"❌ [API_SAVE_HISTORY] Traceback: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 @user_bp.route('/api/history/all', methods=['GET'])

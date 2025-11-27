@@ -1,9 +1,13 @@
 import os
 from flask import Flask, send_from_directory
 from flask_jwt_extended import JWTManager
-
+from dotenv import load_dotenv
 
 import datetime
+
+# Загружаем переменные окружения из .env файла
+# Путь относительно корня приложения (где находится app.py)
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 
 # app.config['SECRET_KEY'] = 'ваш-новый-секретный-ключ-12345'  # из app0.py
@@ -55,4 +59,8 @@ def serve_dictation_audio(filename):
 if __name__ == '__main__':    
     users_dir = os.path.join('static', 'data', 'users')
     os.makedirs(users_dir, exist_ok=True)
-    app.run(debug=True, port=int(os.getenv("FLASK_PORT", 5000)))
+    
+    # Получаем порт из переменных окружения
+    port = int(os.getenv("FLASK_PORT", 5000))
+    
+    app.run(debug=True, port=port)

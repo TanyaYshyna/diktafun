@@ -69,3 +69,6 @@ pip freeze > requirements.txt
 получить из гита
 git fetch --all
 git reset --hard origin/main
+
+
+git rm -r --cached static/data/dictations static/data/temp static/data/users
