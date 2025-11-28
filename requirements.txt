@@ -1,40 +1,52 @@
-blinker==1.9.0
-certifi==2025.6.15
-chardet==3.0.4
-charset-normalizer==3.4.2
-click==8.1.8
+# Основной фреймворк
 Flask==3.1.1
-Flask-Login==0.6.3
-Flask-SQLAlchemy==3.1.1
-Flask-WTF==1.2.2
+Werkzeug==3.1.3
+Jinja2==3.1.6
+MarkupSafe==3.0.2
+click==8.1.8
+itsdangerous==2.2.0
+blinker==1.9.0
+
+# WSGI сервер для production
+gunicorn==21.2.0
+
+# JWT аутентификация
+Flask-JWT-Extended==4.6.0
+PyJWT==2.9.0
+
+# Переменные окружения
+python-dotenv==1.2.1
+
+# HTTP запросы
+requests==2.32.4
+urllib3==2.5.0
+certifi==2025.6.15
+charset-normalizer==3.4.2
+idna==2.10
+
+# Переводы (googletrans использует httpx)
 googletrans==4.0.0rc1
-greenlet==3.2.3
-gTTS==2.5.4
+httpx==0.13.3
+httpcore==0.9.1
 h11==0.9.0
 h2==3.2.0
 hpack==3.0.0
-hstspreload==2025.1.1
-httpcore==0.9.1
-httpx==0.13.3
 hyperframe==5.2.0
-idna==2.10
-itsdangerous==2.2.0
-Jinja2==3.1.6
-MarkupSafe==3.0.2
-Pillow==10.4.0
-PyJWT==2.9.0
-requests==2.32.4
+hstspreload==2025.1.1
 rfc3986==1.5.0
-shortuuid==1.0.13
 sniffio==1.3.1
-SQLAlchemy==2.0.41
-typing_extensions==4.14.1
-urllib3==2.5.0
-Werkzeug==3.1.3
-WTForms==3.2.1
-Flask-JWT-Extended==4.6.0
-python-dotenv==1.2.1
+
+# Генерация речи
+gTTS==2.5.4
+
+# Обработка изображений
+Pillow==10.4.0
+
+# Обработка аудио
 librosa==0.11.0
 soundfile==0.13.1
 numpy>=1.21.0
-scipy>=1.7.0
+
+# Утилиты
+shortuuid==1.0.13
+typing_extensions==4.14.1

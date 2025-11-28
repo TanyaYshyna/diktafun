@@ -61,6 +61,10 @@ if __name__ == '__main__':
     os.makedirs(users_dir, exist_ok=True)
     
     # Получаем порт из переменных окружения
-    port = int(os.getenv("FLASK_PORT", 5000))
+    # Railway использует переменную PORT, но для локальной разработки можно использовать FLASK_PORT
+    port = int(os.getenv("PORT", os.getenv("FLASK_PORT", 5000)))
     
-    app.run(debug=True, port=port)
+    # В production режиме debug должен быть False
+    debug = os.getenv("FLASK_ENV") == "development"
+    
+    app.run(debug=debug, port=port, host='0.0.0.0')
