@@ -72,3 +72,10 @@ git reset --hard origin/main
 
 
 git rm -r --cached static/data/dictations static/data/temp static/data/users
+
+
+Railway - основной хостинг:
+🔗 https://railway.app/
+
+Backblaze B2 - хранилище для аудио:
+🔗 https://www.backblaze.com/b2/cloud-storage.html
