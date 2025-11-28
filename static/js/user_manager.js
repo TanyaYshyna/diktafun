@@ -46,10 +46,14 @@ class UserManager {
           localStorage.removeItem('jwt_token');
           this.token = null;
           this.setupGuestMode();
+          // Показываем модальное окно логина, если пользователь не авторизован
+          this.requireAuth();
         }
       } else {
         // console.log('👤 Гостевой режим');
         this.setupGuestMode();
+        // Показываем модальное окно логина, если пользователь не авторизован
+        this.requireAuth();
       }
 
       this.setupAuthHandlers();
@@ -59,6 +63,51 @@ class UserManager {
     } catch (error) {
       console.error('🚨 Ошибка инициализации пользователя:', error);
       this.setupGuestMode();
+      // Показываем модальное окно логина при ошибке
+      this.requireAuth();
+    }
+  }
+
+  // Требовать авторизацию - показываем модальное окно
+  requireAuth() {
+    // Не показываем модальное окно, если пользователь уже авторизован
+    if (this.isAuthenticated()) {
+      return;
+    }
+
+    // Загружаем скрипт модального окна, если он еще не загружен
+    if (typeof LoginModal === 'undefined') {
+      // Проверяем, не загружается ли уже скрипт
+      if (document.querySelector('script[src="/static/js/login_modal.js"]')) {
+        // Скрипт уже загружается, просто показываем модальное окно после загрузки
+        const existingScript = document.querySelector('script[src="/static/js/login_modal.js"]');
+        existingScript.addEventListener('load', () => {
+          if (window.loginModal) {
+            window.loginModal.show();
+          } else if (LoginModal) {
+            LoginModal.show();
+          }
+        });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = '/static/js/login_modal.js';
+      script.onload = () => {
+        if (window.loginModal) {
+          window.loginModal.show();
+        } else if (LoginModal) {
+          LoginModal.show();
+        }
+      };
+      document.head.appendChild(script);
+    } else {
+      // Модальное окно уже загружено, показываем его
+      if (window.loginModal) {
+        window.loginModal.show();
+      } else if (LoginModal) {
+        LoginModal.show();
+      }
     }
   }
 
@@ -118,7 +167,8 @@ class UserManager {
     this.token = null;
     this.userData = null;
     this.setupGuestMode();
-    window.location.href = '/';
+    // Показываем модальное окно логина после выхода
+    this.requireAuth();
   }
 
   // Настройка авторизованного пользователя
@@ -215,13 +265,27 @@ class UserManager {
 
     if (loginBtn) {
       loginBtn.addEventListener('click', () => {
-        window.location.href = 'user/login';
+        // Показываем модальное окно логина вместо перехода на страницу
+        if (window.loginModal) {
+          window.loginModal.show('login');
+        } else if (typeof LoginModal !== 'undefined') {
+          LoginModal.show('login');
+        } else {
+          window.location.href = 'user/login';
+        }
       });
     }
 
     if (registerBtn) {
       registerBtn.addEventListener('click', () => {
-        window.location.href = 'user/register';
+        // Показываем модальное окно регистрации вместо перехода на страницу
+        if (window.loginModal) {
+          window.loginModal.show('register');
+        } else if (typeof LoginModal !== 'undefined') {
+          LoginModal.show('register');
+        } else {
+          window.location.href = 'user/register';
+        }
       });
     }
 
@@ -312,6 +376,11 @@ class UserManager {
         // Обновляем UI
         this.setupAuthenticatedUser(this.userData);
 
+        // Скрываем модальное окно логина, если оно открыто
+        if (window.loginModal && window.loginModal.isVisible) {
+          window.loginModal.hide();
+        }
+
         return { success: true, user: this.userData };
       } else {
         return { success: false, error: data.error || 'Ошибка входа' };
@@ -365,6 +434,12 @@ class UserManager {
         this.userData = data.user;
 
         this.setupAuthenticatedUser(this.userData);
+        
+        // Скрываем модальное окно логина, если оно открыто
+        if (window.loginModal && window.loginModal.isVisible) {
+          window.loginModal.hide();
+        }
+        
         return { success: true, user: this.userData };
       } else {
         return { success: false, error: data.error || 'Ошибка регистрации' };

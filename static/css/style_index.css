@@ -50,7 +50,8 @@ body {
 
 /* Модальное окно статистики - должно быть поверх всего */
 #statistics-modal,
-#dictations-report-modal {
+#dictations-report-modal,
+#login-modal {
   display: flex;
   position: fixed !important;
   top: 0 !important;
@@ -60,13 +61,15 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 10000 !important;
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
   overflow-y: auto;
   overflow-x: hidden;
 }
 
 #statistics-modal .modal-content,
-#dictations-report-modal .modal-content {
+#dictations-report-modal .modal-content,
+#login-modal .modal-content {
   position: relative;
   z-index: 10001;
   margin: auto;

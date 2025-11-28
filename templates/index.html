@@ -24,8 +24,7 @@
         <div class="user-section" id="user-section">
             <!-- Для авторизованных пользователей (изначально скрыто) -->
             <div class="auth-buttons" style="display: none;">
-                <a href="/user/login">Войти</a>
-                <a href="/user/register">Регистрация</a>
+                <!-- Кнопки логина и регистрации обрабатываются через UserManager -->
             </div>
 
             <!-- Для авторизованных пользователей (изначально скрыто) -->
@@ -128,6 +127,8 @@
     <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/language_manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth_interceptor.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/login_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/language_selector.js') }}"></script>
     <script src="{{ url_for('static', filename='js/user_activity_history.js') }}"></script>
     <script src="{{ url_for('static', filename='js/statistics_report.js') }}"></script>

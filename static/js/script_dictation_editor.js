@@ -657,6 +657,9 @@ async function handleAudioPlayback(event) {
     let nameAudioFile = 'audio.mp3';
     let sentence = {};
     let audioUrl = null;
+    
+    // Определяем, является ли это кнопкой под волной (объявляем в начале, чтобы была доступна везде)
+    const isUnderWave = button && button.id === 'audioPlayBtn';
 
     // Кнопка воспроизведения созданного файла
      if (button.id === 'playCreatedAudioBtn') {
@@ -669,7 +672,6 @@ async function handleAudioPlayback(event) {
         sentence = getSentenceForButton(button);
 
         // Кнопка под волной: играем строго currentAudioFile (волна уже подготовлена внешними процедурами)
-        const isUnderWave = button && button.id === 'audioPlayBtn';
         if (isUnderWave) {
             const file = typeof currentAudioFileName !== 'undefined' ? currentAudioFileName : '';
             if (!file) {
@@ -690,11 +692,98 @@ async function handleAudioPlayback(event) {
         audioManager.stop();
     }
 
+    // Проверяем наличие файла для состояния 'ready' (не для кнопки под волной)
+    if (state === 'ready' && button.id !== 'audioPlayBtn' && button.id !== 'playCreatedAudioBtn') {
+        const hasFile = nameAudioFile && typeof nameAudioFile === 'string' && nameAudioFile.trim() !== '';
+        if (!hasFile) {
+            console.warn('⚠️ Файл не найден для воспроизведения, переключаем на создание', {
+                fieldName: fieldName,
+                sentence: sentence,
+                sentenceKey: sentence?.key,
+                sentenceFieldValue: sentence?.[fieldName],
+                buttonState: button.dataset.state,
+                buttonOriginalState: button.dataset.originalState,
+                nameAudioFile: nameAudioFile,
+                audioUrl: audioUrl,
+                workingDataSentence: sentence ? workingData.original.sentences.find(s => s.key === sentence.key) : null
+            });
+            
+            // Проверяем, может файл есть в workingData, но не найден в sentence
+            if (sentence && sentence.key) {
+                const workingSentence = workingData.original.sentences.find(s => s.key === sentence.key);
+                if (workingSentence && workingSentence[fieldName]) {
+                    nameAudioFile = workingSentence[fieldName];
+                    audioUrl = `${languageUrl}/${nameAudioFile}`;
+                    // Не переключаем на creating, продолжаем воспроизведение
+                } else {
+                    // Файл не найден - переключаем на создание
+                    button.dataset.state = 'creating';
+                    setButtonState(button);
+                    return;
+                }
+            } else {
+                // Файл не найден - переключаем на создание
+                button.dataset.state = 'creating';
+                setButtonState(button);
+                return;
+            }
+        }
+    }
+
     switch (state) {
         case 'ready':
+            // Для кнопки под волной (audioPlayBtn) проверяем только audioUrl, так как nameAudioFile для неё не используется
+            if (isUnderWave) {
+                if (!audioUrl || audioUrl.includes('undefined') || audioUrl.includes('null')) {
+                    console.error('❌ ОШИБКА: URL не найден для кнопки под волной!', {
+                        audioUrl: audioUrl,
+                        currentAudioFileName: typeof currentAudioFileName !== 'undefined' ? currentAudioFileName : 'undefined'
+                    });
+                    return;
+                }
+            } else {
+                // Для остальных кнопок проверяем и nameAudioFile
+                if (!nameAudioFile || !audioUrl || audioUrl.includes('undefined') || audioUrl.includes('null')) {
+                    console.error('❌ ОШИБКА: файл не найден при воспроизведении ready!', {
+                        nameAudioFile: nameAudioFile,
+                        audioUrl: audioUrl,
+                        sentence: sentence,
+                        fieldName: fieldName
+                    });
+                    button.dataset.state = 'creating';
+                    setButtonState(button);
+                    return;
+                }
+            }
+            
+            // Для кнопки под волной нужно передать waveformCanvas в audioManager
+            if (isUnderWave && window.waveformCanvas && typeof audioManager.setWaveformCanvas === 'function') {
+                audioManager.setWaveformCanvas(window.waveformCanvas);
+            }
+            
             audioManager.play(button, audioUrl);
             break;
         case 'ready-shared': {
+            // Кнопка под волной: играем строго currentAudioFile
+            if (button.id === 'audioPlayBtn') {
+                const file = typeof currentAudioFileName !== 'undefined' ? currentAudioFileName : '';
+                if (!file) {
+                    console.warn('⚠️ Нет текущего файла под волной — воспроизведение отменено');
+                    return;
+                }
+                audioUrl = `${languageUrl}/${file}`;
+            }
+            
+            // Проверяем наличие audioUrl
+            if (!audioUrl || audioUrl.includes('undefined') || audioUrl.includes('null')) {
+                console.error('❌ ОШИБКА: URL не найден для кнопки ready-shared!', {
+                    audioUrl: audioUrl,
+                    buttonId: button.id,
+                    currentAudioFileName: typeof currentAudioFileName !== 'undefined' ? currentAudioFileName : 'undefined'
+                });
+                return;
+            }
+            
             // Волна готовится извне; Play ничего не меняет
             if (window.waveformCanvas && typeof audioManager.setWaveformCanvas === 'function') {
                 audioManager.setWaveformCanvas(window.waveformCanvas);
@@ -708,7 +797,6 @@ async function handleAudioPlayback(event) {
             break;
         case 'creating':
             // в состоянии "создание"
-            console.log('🔄🔄🔄🔄🔄🔄🔄 creating',language, fieldName, languageUrl);
             await createAndPlayAudio(button, language, fieldName, languageUrl);
             break;
         case 'creating_user':
@@ -753,20 +841,49 @@ async function createAndPlayAudio(button, language, fieldName, languageUrl) {
             throw new Error('Не найдено предложение для кнопки');
         }
 
-        // Создаем аудио файл
-        const nameAudioFile = await generateAudioForSentence(sentence, language);
-        if (!nameAudioFile) {
-            throw new Error('Не удалось создать аудио файл');
+        // Проверяем режим и наличие start/end для вырезания из общего файла
+        const audioMode = document.querySelector('input[name="audioMode"]:checked');
+        const currentMode = audioMode ? audioMode.value : 'full';
+        let nameAudioFile = null;
+
+        // В режиме "sentence" для поля "audio_user" проверяем, можно ли вырезать из общего файла
+        if (currentMode === 'sentence' && fieldName === 'audio_user' && 
+            sentence.start !== undefined && sentence.end !== undefined &&
+            sentence.start >= 0 && sentence.end > sentence.start &&
+            currentAudioFileName) { // есть общий файл
+            
+            // Вырезаем кусочек из общего файла
+            nameAudioFile = await trimAudioForSentence(sentence, language, currentAudioFileName);
+            
+            if (!nameAudioFile) {
+                throw new Error('Не удалось вырезать аудио из общего файла');
+            }
+        } else {
+            // Для других режимов или если не удалось вырезать - генерируем TTS
+            nameAudioFile = await generateAudioForSentence(sentence, language);
+            
+            if (!nameAudioFile) {
+                throw new Error('Не удалось создать аудио файл');
+            }
         }
 
         // Обновляем данные предложения
         sentence[fieldName] = nameAudioFile;
+        console.log('✅ Файл создан и сохранен в предложение:', {
+            key: sentence.key,
+            fieldName: fieldName,
+            filename: nameAudioFile,
+            sentence: sentence
+        });
 
         // Меняем кнопку в режим готовности к воспроизведению (файл теперь существует)
         button.dataset.state = 'playing';
         button.dataset.originalState = 'ready';
         button.title = 'Воспроизвести аудио';
         setButtonState(button);
+        
+        // Обновляем видимость кнопки редактирования всех
+        updateEditAllCreatingButtonVisibility();
 
         // Устанавливаем текущую кнопку и проигрываем созданный файл
         currentPlayingButton = button;
@@ -776,7 +893,78 @@ async function createAndPlayAudio(button, language, fieldName, languageUrl) {
     } catch (error) {
         console.error('❌ Ошибка при создании аудио:', error);
         setButtonState(button, 'creating');
+        updateEditAllCreatingButtonVisibility();
         throw error;
+    }
+}
+
+/**
+ * Обработать редактирование всех строк с состоянием 'creating'
+ */
+async function handleEditAllCreating() {
+    const editAllBtn = document.getElementById('editAllCreatingBtn');
+    if (!editAllBtn) return;
+    
+    // Находим все кнопки с состоянием 'creating' и fieldName = 'audio_user'
+    const creatingButtons = document.querySelectorAll('button.audio-btn[data-field-name="audio_user"][data-state="creating"]');
+    
+    if (creatingButtons.length === 0) {
+        console.log('Нет строк с состоянием "creating" для редактирования');
+        return;
+    }
+    
+    showLoadingIndicator(`Создание аудио для ${creatingButtons.length} строк...`);
+    
+    try {
+        const language = currentDictation.language_original;
+        const languageUrl = `/static/data/temp/${currentDictation.id}/${language}`;
+        
+        // Создаем аудио для каждой кнопки последовательно
+        for (let i = 0; i < creatingButtons.length; i++) {
+            const button = creatingButtons[i];
+            
+            // Обновляем индикатор загрузки
+            showLoadingIndicator(`Создание аудио ${i + 1} из ${creatingButtons.length}...`);
+            
+            try {
+                await createAndPlayAudio(button, language, 'audio_user', languageUrl);
+                // Небольшая задержка между запросами, чтобы не перегружать сервер
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (error) {
+                console.error(`Ошибка при создании аудио для строки ${i + 1}:`, error);
+                // Продолжаем обработку остальных строк
+            }
+        }
+        
+        console.log(`✅ Обработано ${creatingButtons.length} строк`);
+    } catch (error) {
+        console.error('❌ Ошибка при обработке всех строк:', error);
+        alert('Произошла ошибка при создании аудио. Проверьте консоль для деталей.');
+    } finally {
+        hideLoadingIndicator();
+        updateEditAllCreatingButtonVisibility();
+    }
+}
+
+/**
+ * Обновить видимость кнопки "Отредактировать все отмеченные"
+ */
+function updateEditAllCreatingButtonVisibility() {
+    const editAllBtn = document.getElementById('editAllCreatingBtn');
+    if (!editAllBtn) return;
+    
+    // Находим все кнопки с состоянием 'creating' и fieldName = 'audio_user'
+    const creatingButtons = document.querySelectorAll('button.audio-btn[data-field-name="audio_user"][data-state="creating"]');
+    
+    // Показываем кнопку только если есть строки с состоянием 'creating'
+    // и если мы находимся в режиме, где видна колонка с кнопками
+    const table = document.getElementById('sentences-table');
+    const isUserColumnVisible = table && table.querySelector('.col-play-audio.panel-editing-user')?.style.display !== 'none';
+    
+    if (creatingButtons.length > 0 && isUserColumnVisible) {
+        editAllBtn.style.display = 'inline-block';
+    } else {
+        editAllBtn.style.display = 'none';
     }
 }
 
@@ -1544,6 +1732,12 @@ function setupCreateAudioHandlers() {
     const playCreatedAudioBtn = document.getElementById('playCreatedAudioBtn');
     if (playCreatedAudioBtn) {
         playCreatedAudioBtn.addEventListener('click', handleAudioPlayback);
+    }
+    
+    // Обработчик кнопки "Отредактировать все отмеченные"
+    const editAllCreatingBtn = document.getElementById('editAllCreatingBtn');
+    if (editAllCreatingBtn) {
+        editAllCreatingBtn.addEventListener('click', handleEditAllCreating);
     }
 }
 /**
@@ -3836,8 +4030,14 @@ function setRegionToSelectedSentence() {
             if (typeof setupWaveformRegionCallback === 'function') {
                 setupWaveformRegionCallback();
             }
+            // Устанавливаем флаг для программного обновления
+            isProgrammaticRegionUpdate = true;
             window.waveformCanvas.setRegion(start, end);
             window.waveformCanvas.setCurrentTime(start);
+            // Сбрасываем флаг после небольшой задержки
+            setTimeout(() => {
+                isProgrammaticRegionUpdate = false;
+            }, 100);
         }
     } catch (e) {
         console.warn('setRegionToSelectedSentence error', e);
@@ -3862,13 +4062,25 @@ function setRegionToFullShared() {
                 if (typeof setupWaveformRegionCallback === 'function') {
                     setupWaveformRegionCallback();
                 }
+                // Устанавливаем флаг для программного обновления
+                isProgrammaticRegionUpdate = true;
                 window.waveformCanvas.setRegion(start, end);
                 window.waveformCanvas.setCurrentTime(start);
+                // Сбрасываем флаг после небольшой задержки
+                setTimeout(() => {
+                    isProgrammaticRegionUpdate = false;
+                }, 100);
             } else if (typeof window.waveformCanvas.getDuration === 'function') {
                 const duration = window.waveformCanvas.getDuration();
                 if (duration > 0) {
+                    // Устанавливаем флаг для программного обновления
+                    isProgrammaticRegionUpdate = true;
                     window.waveformCanvas.setRegion(0, duration);
                     window.waveformCanvas.setCurrentTime(0);
+                    // Сбрасываем флаг после небольшой задержки
+                    setTimeout(() => {
+                        isProgrammaticRegionUpdate = false;
+                    }, 100);
                 }
             }
         }
@@ -3955,7 +4167,9 @@ function updateTableColumnsVisibility(audioMode) {
             });
             break;
     }
-
+    
+    // Обновляем видимость кнопки редактирования всех
+    updateEditAllCreatingButtonVisibility();
 }
 
 
@@ -4286,6 +4500,16 @@ function handleFieldChange(source, field, value, row = null) {
     // Запускаем логику цепочки (chain) для обновления соседних строк
     updateChain(key, field, value);
 
+    // Устанавливаем состояние 'creating' для audioBtnOriginalUser в целевой строке
+    if (targetRow) {
+        const audioBtnOriginalUser = targetRow.querySelector('button[data-field-name="audio_user"]');
+        if (audioBtnOriginalUser) {
+            audioBtnOriginalUser.dataset.state = 'creating';
+            setButtonState(audioBtnOriginalUser);
+            updateEditAllCreatingButtonVisibility();
+        }
+    }
+
     // Обновляем регион в волне
     const waveformCanvas = window.waveformCanvas;
     if (waveformCanvas) {
@@ -4608,11 +4832,25 @@ function updateChain(rowKey, field, value) {
         if (nextSentence && nextSentence.chain) {
             const nextStartInput = nextRow.querySelector('.start-input');
             if (nextStartInput) {
-                nextStartInput.value = value;
+                const oldValue = parseFloat(nextStartInput.value) || 0;
+                const newValue = parseFloat(value) || 0;
+                
+                // Обновляем только если значение действительно изменилось
+                if (Math.abs(oldValue - newValue) > 0.01) { // небольшой порог для сравнения float
+                    nextStartInput.value = value;
 
-                // Обновить данные в workingData
-                const nextRowKey = nextRow.dataset.key;
-                updateSentenceData(nextRowKey, 'original', 'start', parseFloat(value));
+                    // Обновить данные в workingData
+                    const nextRowKey = nextRow.dataset.key;
+                    updateSentenceData(nextRowKey, 'original', 'start', newValue);
+                    
+                    // Устанавливаем состояние 'creating' для audioBtnOriginalUser в следующей строке
+                    const nextAudioBtnOriginalUser = nextRow.querySelector('button[data-field-name="audio_user"]');
+                    if (nextAudioBtnOriginalUser) {
+                        nextAudioBtnOriginalUser.dataset.state = 'creating';
+                        setButtonState(nextAudioBtnOriginalUser);
+                        updateEditAllCreatingButtonVisibility();
+                    }
+                }
             }
         }
     } else if (field === 'start' && currentIndex > 0) {
@@ -4624,11 +4862,25 @@ function updateChain(rowKey, field, value) {
         if (prevSentence && prevSentence.chain) {
             const prevEndInput = prevRow.querySelector('.end-input');
             if (prevEndInput) {
-                prevEndInput.value = value;
+                const oldValue = parseFloat(prevEndInput.value) || 0;
+                const newValue = parseFloat(value) || 0;
+                
+                // Обновляем только если значение действительно изменилось
+                if (Math.abs(oldValue - newValue) > 0.01) { // небольшой порог для сравнения float
+                    prevEndInput.value = value;
 
-                // Обновить данные в workingData
-                const prevRowKey = prevRow.dataset.key;
-                updateSentenceData(prevRowKey, 'original', 'end', parseFloat(value));
+                    // Обновить данные в workingData
+                    const prevRowKey = prevRow.dataset.key;
+                    updateSentenceData(prevRowKey, 'original', 'end', newValue);
+                    
+                    // Устанавливаем состояние 'creating' для audioBtnOriginalUser в предыдущей строке
+                    const prevAudioBtnOriginalUser = prevRow.querySelector('button[data-field-name="audio_user"]');
+                    if (prevAudioBtnOriginalUser) {
+                        prevAudioBtnOriginalUser.dataset.state = 'creating';
+                        setButtonState(prevAudioBtnOriginalUser);
+                        updateEditAllCreatingButtonVisibility();
+                    }
+                }
             }
         }
     }
@@ -4681,13 +4933,47 @@ async function loadWaveformForFile(filepath) {
         const url = `${filepath}${filepath.includes('?') ? '&' : '?'}ts=${Date.now()}`;
         await waveformCanvas.loadAudio(url);
 
-        // Устанавливаем регион на всю длительность
-        const duration = waveformCanvas.getDuration();
-        waveformCanvas.setRegion(0, duration);
+        // Настраиваем callback для обновления региона
+        setupWaveformRegionCallback();
+        
+        // Устанавливаем callback для окончания воспроизведения (когда волна останавливает воспроизведение при достижении конца региона)
+        waveformCanvas.onPlaybackEnd(() => {
+            const audioPlayBtn = document.getElementById('audioPlayBtn');
+            if (audioPlayBtn && (audioPlayBtn.dataset.state === 'playing-shared' || audioPlayBtn.dataset.state === 'playing')) {
+                const originalState = audioPlayBtn.dataset.originalState || 'ready-shared';
+                audioPlayBtn.dataset.state = originalState;
+                if (typeof setButtonState === 'function') {
+                    setButtonState(audioPlayBtn, originalState);
+                }
+                console.log('✅ Состояние кнопки под волной обновлено в:', originalState);
+            }
+        });
 
-        // Обновляем поля ввода
-        if (startInput) startInput.value = '0.00';
-        if (endInput) endInput.value = duration.toFixed(2);
+        // Восстанавливаем регион в зависимости от текущего режима
+        // Устанавливаем флаг, чтобы не устанавливать 'creating' при программном обновлении
+        isProgrammaticRegionUpdate = true;
+        const audioModeEl = document.querySelector('input[name="audioMode"]:checked');
+        const currentMode = audioModeEl ? audioModeEl.value : 'full';
+        const duration = waveformCanvas.getDuration();
+        
+        if (currentMode === 'sentence') {
+            // В режиме "sentence" устанавливаем регион по текущей выбранной строке
+            setRegionToSelectedSentence();
+        } else if (currentMode === 'full') {
+            // В режиме "full" устанавливаем регион по сохраненным границам
+            setRegionToFullShared();
+        } else {
+            // Для других режимов устанавливаем регион на всю длительность
+            waveformCanvas.setRegion(0, duration);
+            
+            // Обновляем поля ввода
+            if (startInput) startInput.value = '0.00';
+            if (endInput) endInput.value = duration.toFixed(2);
+        }
+        // Сбрасываем флаг после небольшой задержки, чтобы callback успел сработать
+        setTimeout(() => {
+            isProgrammaticRegionUpdate = false;
+        }, 100);
 
     } catch (error) {
         console.error('❌ Ошибка загрузки волны:', error);
@@ -5010,7 +5296,18 @@ function selectSentenceRow(row) {
     }
 
     // Также останавливаем через AudioManager
-    //AudioManager.stopAll();
+    if (audioManager && audioManager.currentButton) {
+        audioManager.stop();
+    }
+    
+    // Сбрасываем состояние кнопки под волной в ready-shared при выборе новой строки
+    const audioPlayBtn = document.getElementById('audioPlayBtn');
+    if (audioPlayBtn && (audioPlayBtn.dataset.state === 'playing-shared' || audioPlayBtn.dataset.state === 'playing')) {
+        audioPlayBtn.dataset.state = 'ready-shared';
+        if (typeof setButtonState === 'function') {
+            setButtonState(audioPlayBtn, 'ready-shared');
+        }
+    }
 
     // Убираем выделение с других строк
     document.querySelectorAll('#sentences-table tbody tr').forEach(r => {
@@ -5097,6 +5394,100 @@ function updateCurrentSentenceInfo(sentence) {
     }
 }
 
+
+/**
+ * Вырезать кусочек аудио из общего файла для конкретного предложения
+ * @param {Object} sentence - объект предложения с полями start, end, key
+ * @param {string} language - язык аудио
+ * @param {string} sourceAudioFileName - имя исходного общего аудио файла
+ * @returns {Promise<string|null>} - имя созданного файла или null при ошибке
+ */
+async function trimAudioForSentence(sentence, language, sourceAudioFileName) {
+    if (sentence.start === undefined || sentence.end === undefined || 
+        sentence.start < 0 || sentence.end <= sentence.start) {
+        console.warn('⚠️ Неверные значения start/end для предложения:', sentence.key);
+        return null;
+    }
+
+    if (!sourceAudioFileName) {
+        console.warn('⚠️ Не указан исходный аудио файл');
+        return null;
+    }
+
+    try {
+        const filePath = `/static/data/temp/${currentDictation.id}/${language}/${sourceAudioFileName}`;
+        const outputFileName = `${sentence.key}_${language}_user.mp3`;
+        
+        // Используем эндпоинт /split-audio с одним предложением для создания отдельного файла
+        const response = await fetch('/split-audio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                filename: sourceAudioFileName,
+                filepath: filePath,
+                sentences: [{
+                    key: sentence.key,
+                    start_time: sentence.start,
+                    end_time: sentence.end,
+                    language: language
+                }],
+                dictation_id: currentDictation.id
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ Ошибка вырезания аудио: HTTP ${response.status}: ${errorText}`);
+            return null;
+        }
+
+        const data = await response.json();
+        console.log('📦 Ответ сервера при вырезании аудио:', JSON.stringify(data, null, 2));
+
+        if (data.success) {
+            // Проверяем разные возможные форматы ответа
+            let filename = null;
+            
+            // Вариант 1: файлы в массиве files
+            if (data.files && Array.isArray(data.files) && data.files.length > 0) {
+                const createdFile = data.files.find(f => f.key === sentence.key);
+                if (createdFile && createdFile.filename) {
+                    filename = createdFile.filename;
+                }
+            }
+            
+            // Вариант 2: имя файла прямо в ответе
+            if (!filename && data.filename) {
+                filename = data.filename;
+            }
+            
+            // Вариант 3: имя файла в поле с ключом предложения
+            if (!filename && data[sentence.key]) {
+                filename = data[sentence.key];
+            }
+            
+            if (filename) {
+                console.log(`✅ Вырезан кусочек для предложения ${sentence.key}: ${filename}`);
+                return filename;
+            } else {
+                // Сервер вернул success: true, но не вернул имя файла - это ошибка на сервере
+                console.error('❌ ОШИБКА СЕРВЕРА: success=true, но имя файла отсутствует в ответе');
+                console.error('Ожидаемый ключ предложения:', sentence.key);
+                console.error('Полный ответ сервера:', JSON.stringify(data, null, 2));
+                return null;
+            }
+        } else {
+            // Сервер вернул success: false
+            console.error('❌ Сервер вернул ошибку при вырезании аудио:', data.error || 'Неизвестная ошибка');
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Ошибка при вырезании аудио для предложения:', error);
+        return null;
+    }
+}
 
 /**
  * Обрезать аудиофайл ножницами
@@ -5353,20 +5744,60 @@ function setupStartModalHandlers() {
     // Кнопка "Сохранить диктант"
     const saveBtn = document.getElementById('saveBtn');
     if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
-            saveDictationOnly();
+        saveBtn.addEventListener('click', async () => {
+            await handleSave();
         });
     }
 
-    // Кнопка "Сохранить диктант и выйти"
-    const saveAndExitBtn = document.getElementById('saveAndExitBtn');
-    if (saveAndExitBtn) {
-        saveAndExitBtn.addEventListener('click', () => {
-            if (confirm('Сохранить диктант и вернуться на главную страницу?')) {
-                saveDictationAndExit();
+    // Кнопка "Вернуться к списку диктантов"
+    const exitToIndexBtn = document.getElementById('exitToIndexBtn');
+    if (exitToIndexBtn) {
+        exitToIndexBtn.addEventListener('click', () => {
+            showExitModal();
+        });
+    }
+
+    // Обработчики модального окна выхода
+    const exitModal = document.getElementById('exitModal');
+    const exitStayBtn = document.getElementById('exitStayBtn');
+    const exitWithoutSavingBtn = document.getElementById('exitWithoutSavingBtn');
+    const exitWithSavingBtn = document.getElementById('exitWithSavingBtn');
+
+    if (exitStayBtn) {
+        exitStayBtn.addEventListener('click', () => {
+            if (exitModal) exitModal.style.display = 'none';
+        });
+    }
+
+    if (exitWithoutSavingBtn) {
+        exitWithoutSavingBtn.addEventListener('click', () => {
+            if (exitModal) exitModal.style.display = 'none';
+            cleanupTempAndExit();
+        });
+    }
+
+    if (exitWithSavingBtn) {
+        exitWithSavingBtn.addEventListener('click', async () => {
+            if (exitModal) exitModal.style.display = 'none';
+            await handleSaveAndExit();
+        });
+    }
+
+    // Закрытие модального окна по клику вне его
+    if (exitModal) {
+        exitModal.addEventListener('click', (e) => {
+            if (e.target === exitModal) {
+                exitModal.style.display = 'none';
             }
         });
     }
+
+    // Обработка клавиши Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && exitModal && exitModal.style.display === 'flex') {
+            exitModal.style.display = 'none';
+        }
+    });
 
     // Закрытие модального окна по клику вне его
     const startModal = document.getElementById('startModal');
@@ -5587,11 +6018,84 @@ window.addEventListener('beforeunload', function (event) {
  * Обработчик клика по логотипу - проверяет несохраненные изменения
  */
 function handleLogoClick() {
-    if (hasUnsavedChanges()) {
-        showExitConfirmation();
-    } else {
-        goToMainPage();
+    showExitModal();
+}
+
+/**
+ * Показывает модальное окно выхода
+ */
+function showExitModal() {
+    const exitModal = document.getElementById('exitModal');
+    if (!exitModal) return;
+
+    const hasUnsaved = hasUnsavedChanges();
+    const exitModalMessage = document.getElementById('exitModalMessage');
+    const exitWithSavingBtn = document.getElementById('exitWithSavingBtn');
+
+    if (exitModalMessage) {
+        exitModalMessage.textContent = hasUnsaved
+            ? 'Есть несохранённые изменения. Сохранить перед выходом?'
+            : 'Все изменения уже сохранены. Что сделать дальше?';
     }
+
+    if (exitWithSavingBtn) {
+        if (hasUnsaved) {
+            exitWithSavingBtn.style.display = '';
+        } else {
+            exitWithSavingBtn.style.display = 'none';
+        }
+    }
+
+    exitModal.style.display = 'flex';
+    const stayBtn = document.getElementById('exitStayBtn');
+    if (stayBtn) stayBtn.focus();
+}
+
+/**
+ * Обработчик кнопки "Сохранить" с индикацией процесса
+ */
+async function handleSave() {
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        const originalHTML = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i data-lucide="loader-2"></i>';
+        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+            lucide.createIcons();
+        }
+        
+        try {
+            await saveDictationOnly();
+            updateUnsavedStar();
+        } catch (error) {
+            console.error('[Save] error', error);
+        } finally {
+            saveBtn.innerHTML = originalHTML;
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+            saveBtn.disabled = false;
+        }
+    }
+}
+
+/**
+ * Обновляет отображение звездочки несохраненных изменений
+ */
+function updateUnsavedStar() {
+    const unsavedStar = document.getElementById('unsavedStar');
+    if (unsavedStar) {
+        const hasUnsaved = hasUnsavedChanges();
+        unsavedStar.style.display = hasUnsaved ? 'inline-flex' : 'none';
+    }
+}
+
+/**
+ * Обработчик сохранения и выхода
+ */
+async function handleSaveAndExit() {
+    await saveDictationOnly();
+    cleanupTempAndExit();
 }
 
 /**
@@ -5619,6 +6123,16 @@ function hasUnsavedChanges() {
     );
 
     return hasAudio;
+}
+
+/**
+ * Вызывается при изменении данных - обновляет звездочку и флаг сохраненности
+ */
+function markAsUnsaved() {
+    if (currentDictation.isSaved) {
+        currentDictation.isSaved = false;
+    }
+    updateUnsavedStar();
 }
 
 /**
@@ -5674,6 +6188,9 @@ async function saveDictationOnly() {
 
             // Отмечаем диктант как сохраненный
             currentDictation.isSaved = true;
+
+            // Обновляем звездочку
+            updateUnsavedStar();
 
             // Скрываем индикатор загрузки
             hideLoadingIndicator();
@@ -6276,8 +6793,11 @@ async function createTable() {
     const hasExplanation = translationSentences.some(s => s.explanation && s.explanation.trim());
     if (hasExplanation) {
         explanationVisible = true;
-        updateExplanationColumnVisibility();
     }
+    
+    // Обновляем видимость кнопки редактирования всех
+    updateEditAllCreatingButtonVisibility();
+    updateExplanationColumnVisibility();
 
     // Автоматически выбираем первую строку при создании таблицы
     setTimeout(() => {
@@ -6975,18 +7495,46 @@ async function initWaveform(audioUrl) {
 
         // Получаем длительность аудио
         const duration = waveformCanvas.getDuration();
-
-        // Создаем регион по умолчанию на всю длительность аудио
         const roundedDuration = Math.floor(duration * 100) / 100;
-
-        waveformCanvas.setRegion(0, roundedDuration);
-
-        // Обновляем поля в DOM
-        if (startInput) startInput.value = '0.00';
-        if (endInput) endInput.value = roundedDuration.toFixed(2);
 
         // Настраиваем callback для обновления региона
         setupWaveformRegionCallback();
+        
+        // Устанавливаем callback для окончания воспроизведения (когда волна останавливает воспроизведение при достижении конца региона)
+        waveformCanvas.onPlaybackEnd(() => {
+            const audioPlayBtn = document.getElementById('audioPlayBtn');
+            if (audioPlayBtn && (audioPlayBtn.dataset.state === 'playing-shared' || audioPlayBtn.dataset.state === 'playing')) {
+                const originalState = audioPlayBtn.dataset.originalState || 'ready-shared';
+                audioPlayBtn.dataset.state = originalState;
+                if (typeof setButtonState === 'function') {
+                    setButtonState(audioPlayBtn, originalState);
+                }
+                console.log('✅ Состояние кнопки под волной обновлено в:', originalState);
+            }
+        });
+
+        // Восстанавливаем регион в зависимости от текущего режима
+        // Устанавливаем флаг, чтобы не устанавливать 'creating' при программном обновлении
+        isProgrammaticRegionUpdate = true;
+        const audioModeEl = document.querySelector('input[name="audioMode"]:checked');
+        const currentMode = audioModeEl ? audioModeEl.value : 'full';
+        
+        if (currentMode === 'sentence') {
+            // В режиме "sentence" устанавливаем регион по текущей выбранной строке
+            setRegionToSelectedSentence();
+        } else if (currentMode === 'full') {
+            // В режиме "full" устанавливаем регион по сохраненным границам
+            setRegionToFullShared();
+        } else {
+            // Для других режимов (mic, auto) устанавливаем регион по умолчанию на всю длительность
+            waveformCanvas.setRegion(0, roundedDuration);
+            if (startInput) startInput.value = '0.00';
+            if (endInput) endInput.value = roundedDuration.toFixed(2);
+        }
+        // Сбрасываем флаг после небольшой задержки, чтобы callback успел сработать
+        setTimeout(() => {
+            isProgrammaticRegionUpdate = false;
+        }, 100);
 
     } catch (error) {
         console.error('❌ Ошибка инициализации WaveformCanvas:', error);
@@ -6996,6 +7544,9 @@ async function initWaveform(audioUrl) {
 /**
  * Установить callback для обновления региона волны
  */
+// Флаг для предотвращения установки 'creating' при программном обновлении региона
+let isProgrammaticRegionUpdate = false;
+
 function setupWaveformRegionCallback() {
     const waveformCanvas = window.waveformCanvas;
     if (!waveformCanvas) return;
@@ -7016,6 +7567,86 @@ function setupWaveformRegionCallback() {
             if (workingData && workingData.translation) {
                 workingData.translation.audio_user_shared_start = region.start;
                 workingData.translation.audio_user_shared_end = region.end;
+            }
+        } else if (currentMode === 'sentence') {
+            // В режиме "sentence" обновляем поля в таблице и устанавливаем состояние 'creating'
+            // НО только если это НЕ программное обновление (например, при инициализации или загрузке)
+            const selectedRow = document.querySelector('#sentences-table tbody tr.selected');
+            if (selectedRow && !isProgrammaticRegionUpdate) {
+                const key = selectedRow.dataset.key;
+                
+                // Получаем текущие значения для сравнения
+                const rowStartInput = selectedRow.querySelector('.start-input');
+                const rowEndInput = selectedRow.querySelector('.end-input');
+                const oldStart = rowStartInput ? parseFloat(rowStartInput.value) : 0;
+                const oldEnd = rowEndInput ? parseFloat(rowEndInput.value) : 0;
+                
+                // Обновляем поля start/end в таблице
+                if (rowStartInput) rowStartInput.value = region.start.toFixed(2);
+                if (rowEndInput) rowEndInput.value = region.end.toFixed(2);
+                
+                // Обновляем данные в workingData
+                const sentenceIndex = workingData.original.sentences.findIndex(s => s.key === key);
+                if (sentenceIndex !== -1) {
+                    workingData.original.sentences[sentenceIndex].start = region.start;
+                    workingData.original.sentences[sentenceIndex].end = region.end;
+                }
+                
+                // Устанавливаем состояние 'creating' ТОЛЬКО если значения реально изменились
+                const startChanged = Math.abs(oldStart - region.start) > 0.01;
+                const endChanged = Math.abs(oldEnd - region.end) > 0.01;
+                
+                if (startChanged || endChanged) {
+                    // Устанавливаем состояние 'creating' для audioBtnOriginalUser
+                    const audioBtnOriginalUser = selectedRow.querySelector('button[data-field-name="audio_user"]');
+                    if (audioBtnOriginalUser) {
+                        // НЕ устанавливаем 'creating' если кнопка уже играет
+                        const currentState = audioBtnOriginalUser.dataset.state;
+                        // Также проверяем, не играет ли сейчас какой-то другой аудио (через audioManager)
+                        const audioManagerButton = window.audioManager?.currentButton;
+                        const isThisButtonPlaying = audioManagerButton === audioBtnOriginalUser;
+                        
+                        if (currentState === 'playing' || isThisButtonPlaying) {
+                            // Не меняем состояние во время воспроизведения, но продолжаем обновление цепочки
+                        } else {
+                            audioBtnOriginalUser.dataset.state = 'creating';
+                            setButtonState(audioBtnOriginalUser);
+                            updateEditAllCreatingButtonVisibility();
+                        }
+                    }
+                    
+                    // Запускаем логику цепочки для обновления соседних строк
+                    // НО только если кнопка не играет сейчас
+                    if (key) {
+                        const shouldUpdateChain = !audioBtnOriginalUser || 
+                                                 (audioBtnOriginalUser.dataset.state !== 'playing' && 
+                                                  window.audioManager?.currentButton !== audioBtnOriginalUser);
+                        
+                        if (shouldUpdateChain) {
+                            // Обновляем цепочку для start и end, но только если они изменились
+                            if (endChanged) {
+                                updateChain(key, 'end', region.end.toFixed(2));
+                            }
+                            if (startChanged) {
+                                updateChain(key, 'start', region.start.toFixed(2));
+                            }
+                        }
+                    }
+                }
+            } else if (selectedRow) {
+                // Программное обновление - просто синхронизируем значения без установки 'creating'
+                const key = selectedRow.dataset.key;
+                const rowStartInput = selectedRow.querySelector('.start-input');
+                const rowEndInput = selectedRow.querySelector('.end-input');
+                if (rowStartInput) rowStartInput.value = region.start.toFixed(2);
+                if (rowEndInput) rowEndInput.value = region.end.toFixed(2);
+                
+                // Обновляем данные в workingData
+                const sentenceIndex = workingData.original.sentences.findIndex(s => s.key === key);
+                if (sentenceIndex !== -1) {
+                    workingData.original.sentences[sentenceIndex].start = region.start;
+                    workingData.original.sentences[sentenceIndex].end = region.end;
+                }
             }
         }
 

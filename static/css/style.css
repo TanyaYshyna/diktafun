@@ -310,6 +310,8 @@ body {
     color: var(--color-text);
     margin: 0;
     /* padding: 20px; */
+    height: 100vh;
+    overflow: hidden; /* Убираем скроллбар на всей странице */
 }
 
 h2 {
@@ -332,9 +334,9 @@ h2 {
     font-family: sans-serif;
     padding-left: 5vw;
     padding-right: 5vw;
-    overflow-x: hidden;
+    overflow: hidden; /* Убираем скролл у панели */
 
-    min-height: calc(100vh - 80px); /* 80px = высота header */
+    height: calc(100vh - 80px); /* 80px = высота header, фиксированная высота */
     box-sizing: border-box;
 
     display: flex;  
@@ -1552,4 +1554,193 @@ select {
     padding: 40px;
     color: var(--color-button-text-gray, #6b7280);
     font-size: 16px;
+}
+
+/* ============================================
+   Стили для модального окна логина
+   ============================================ */
+
+.login-modal-content {
+    max-width: 440px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--color-background, #ffffff);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+}
+
+.login-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--color-border, #e5e7eb);
+}
+
+.login-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--color-text, #1f2933);
+}
+
+.close-login-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text, #1f2933);
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.close-login-btn:hover {
+    background-color: var(--color-background-soft, #f8f9fa);
+}
+
+.login-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.login-message {
+    margin: 0 0 20px 0;
+    font-size: 14px;
+    color: var(--color-text-secondary, #6b7280);
+    text-align: center;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.login-form .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.login-form .form-row label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text, #1f2933);
+}
+
+.login-form .auth-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border, #dee2e6);
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.login-form .auth-input:focus {
+    outline: none;
+    border-color: var(--color-primary, #3b82f6);
+}
+
+.login-form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.login-form-actions .auth-submit {
+    flex: 1;
+    justify-content: center;
+}
+
+.login-form-actions .button-color-gray {
+    flex: 1;
+    justify-content: center;
+}
+
+.login-form .form-message {
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.login-form .error-message {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.login-form .form-note {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.login-form .form-note a {
+    color: var(--color-primary, #3b82f6);
+    text-decoration: none;
+}
+
+.login-form .form-note a:hover {
+    text-decoration: underline;
+}
+
+.login-form .form-note a {
+    cursor: pointer;
+}
+
+/* Стили для селектора языков в модальном окне регистрации */
+.login-modal-content .language-selector-wrapper {
+    margin: 16px 0;
+}
+
+.login-modal-content .language-selector-wrapper .language-selector-group {
+    margin-bottom: 12px;
+}
+
+/* Лейблы для селектора языков - такой же стиль, как у обычных лейблов формы */
+.login-modal-content .language-selector-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 0;
+    max-width: 100%;
+}
+
+.login-modal-content .language-selector-wrapper .language-selector-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+.login-modal-content .language-selector-wrapper .language-selector-group[data-label]::before,
+.login-modal-content .language-selector-wrapper .language-selector-group::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text, #1f2933);
+    margin-bottom: 0;
+    min-width: auto;
+}
+
+.login-modal-content .language-selector-wrapper .custom-select-wrapper {
+    width: 100%;
+    flex: 1;
 }

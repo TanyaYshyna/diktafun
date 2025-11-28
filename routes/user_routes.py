@@ -175,16 +175,6 @@ def api_logout():
 
 # ==================== СТРАНИЦЫ ====================
 
-@user_bp.route('/login')
-def login():
-    """Страница логина через JWT"""
-    return render_template('user_login_jwt.html')
-
-@user_bp.route('/register')
-def register():
-    """Страница регистрации через JWT (заглушка)"""
-    return render_template('user_register.html', language_data=load_language_data())
-
 @user_bp.route('/profile')
 def profile_page():
     """Страница профиля пользователя"""

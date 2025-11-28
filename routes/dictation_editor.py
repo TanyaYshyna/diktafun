@@ -1102,6 +1102,8 @@ def split_audio_file():
             output_dir = os.path.dirname(physical_path)
             
             # Разрезаем аудио на предложения
+            created_files = []  # Список созданных файлов для ответа
+            
             for sentence in sentences:
                 key = sentence.get('key')
                 start_time = sentence.get('start_time', 0)
@@ -1125,6 +1127,14 @@ def split_audio_file():
                 # Сохраняем обрезанный файл
                 sf.write(segment_path, y_segment, sr)
                 
+                # Добавляем информацию о созданном файле
+                created_files.append({
+                    'key': key,
+                    'filename': segment_filename,
+                    'start_time': start_time,
+                    'end_time': end_time
+                })
+                
                 logger.info(f"Создан файл: {segment_filename} ({start_time:.2f}s - {end_time:.2f}s)")
             
             logger.info(f"Аудиофайл успешно разрезан на {len(sentences)} предложений")
@@ -1138,8 +1148,9 @@ def split_audio_file():
         
         return jsonify({
             'success': True,
-            'message': f'Аудиофайл успешно разрезан на {len(sentences)} предложений',
-            'sentences_count': len(sentences)
+            'message': f'Аудиофайл успешно разрезан на {len(created_files)} предложений',
+            'sentences_count': len(created_files),
+            'files': created_files  # Возвращаем информацию о созданных файлах
         })
         
     except Exception as e:

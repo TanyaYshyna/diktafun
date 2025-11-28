@@ -1,9 +1,44 @@
 /* Основной контейнер для центрирования содержимого */
 .profile-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 20px;
+    padding-left: 5vw;
+    padding-right: 5vw;
     box-sizing: border-box;
+    background-color: var(--color-panel-bg);
+    font-family: sans-serif;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: calc(100vh - 80px); /* 80px = высота topbar */
+    border-radius: 0;
+}
+
+/* Стилизация скроллбара для профиля */
+.profile-container::-webkit-scrollbar {
+    width: 12px;
+}
+
+.profile-container::-webkit-scrollbar-track {
+    background: var(--color-hover-panel, #f7f6f5);
+    border-radius: 6px;
+}
+
+.profile-container::-webkit-scrollbar-thumb {
+    background: var(--color-border-light, #dcdcdc);
+    border-radius: 6px;
+    border: 2px solid var(--color-hover-panel, #f7f6f5);
+}
+
+.profile-container::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border, #bdbdbd);
+}
+
+/* Для Firefox */
+.profile-container {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-light, #dcdcdc) var(--color-hover-panel, #f7f6f5);
 }
 
 .user-actions {
@@ -37,10 +72,10 @@
 }
 
 .profile-panel {
-    background: #f8f9fa;
+    background: var(--color-panel-bg);
     border-radius: 10px;
     padding: 20px;
-    border: 1px solid #e9ecef;
+    border: 1px solid var(--color-border-light, #e9ecef);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
@@ -476,6 +511,56 @@ body .form-section #userAudioSettingsContainer .audio-explanations-column {
 }
 
 /* Модальное окно подтверждения выхода */
+.modal {
+    display: flex;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: var(--color-panel-bg);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    margin: 15px;
+    position: relative;
+    z-index: 1001;
+}
+
+.exit-modal-content {
+    max-width: 420px;
+    text-align: center;
+    padding: 20px;
+}
+
+.exit-modal-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.exit-modal-buttons button {
+    flex: 1 1 160px;
+    min-width: 140px;
+}
+
+.exit-modal-buttons button.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 .profile-modal {
     position: fixed;
     inset: 0;

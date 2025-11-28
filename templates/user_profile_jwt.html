@@ -13,12 +13,17 @@
 <body>
     <div class="topbar">
         <img src="/static/icons/logo.svg" class="logo" onclick="window.location.href='/'">
-        <div class="user-actions">
+        <div class="user-section" id="user-section">
+            <!-- Заполнится JavaScript -->
+            <div class="username">
+                <span class="user-avatar-small"></span>
+                <span class="username-text"></span>
+            </div>
             <div class="button-group topbar-save-group">
-                <button id="saveButton" class="button-color-yellow" type="button" title="Сохранить профиль" disabled>
+                <button id="saveButton" class="button-color-yellow" type="button" title="Сохранить" disabled>
                     <i data-lucide="save"></i>
                 </button>
-                <button id="exitButton" class="button-color-yellow" type="button" title="На главную">
+                <button id="exitToIndexBtn" class="button-color-yellow" type="button" title="Вернуться к списку диктантов">
                     <i data-lucide="log-out"></i>
                 </button>
             </div>
@@ -90,30 +95,14 @@
         </div>
 
         <!-- Модальное окно подтверждения выхода -->
-        <div id="exitModal" class="profile-modal" style="display: none;">
-            <div class="profile-modal__backdrop"></div>
-            <div class="profile-modal__content">
-                <div class="profile-modal__header">
-                    <h3>Сохранить изменения перед выходом?</h3>
-                    <button type="button" class="profile-modal__close" aria-label="Закрыть" onclick="toggleExitModal(false)">
-                        <i data-lucide="x"></i>
-                    </button>
-                </div>
-                <div class="profile-modal__body">
-                    <p>Есть несохраненные изменения. Хотите сохранить их перед выходом?</p>
-                </div>
-                <div class="profile-modal__footer">
-                    <button type="button" class="button-color-yellow" onclick="handleModalSave()">
-                        <i data-lucide="save"></i>
-                        Сохранить
-                    </button>
-                    <button type="button" class="button-color-lightgreen" onclick="handleModalDiscard()">
-                        <i data-lucide="log-out"></i>
-                        Выйти без сохранения
-                    </button>
-                    <button type="button" class="btn-secondary" onclick="toggleExitModal(false)">
-                        Отмена
-                    </button>
+        <div id="exitModal" class="modal" style="display: none;">
+            <div class="modal-content exit-modal-content">
+                <h2>Вернуться к списку диктантов?</h2>
+                <p id="exitModalMessage">Что сделать с текущими изменениями?</p>
+                <div class="exit-modal-buttons">
+                    <button id="exitStayBtn" class="button-secondary">Остаться</button>
+                    <button id="exitWithoutSavingBtn" class="button-color-yellow">Выйти</button>
+                    <button id="exitWithSavingBtn" class="button-color-green" style="display: none;">Сохранить и выйти</button>
                 </div>
             </div>
         </div>

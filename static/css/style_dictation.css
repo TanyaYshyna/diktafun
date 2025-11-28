@@ -504,8 +504,10 @@ body.playing-audio::after {
 }
 
 .exit-modal-content {
-  max-width: 420px;
+  max-width: 420px !important;
+  width: 90% !important;
   text-align: center;
+  padding: 20px;
 }
 
 .exit-modal-buttons {
@@ -1750,13 +1752,24 @@ body.playing-audio::after {
 /* Контейнер для верхней части (без прокрутки) */
 .modal-content {
   background-color: var(--color-panel-bg);
-  border-radius: 10px;
-  max-height: 80vh;
-  /* сохраняем общую высоту */
-  overflow-y: hidden;
-  /* убираем общую прокрутку */
-  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
   width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  margin: 15px;
+  position: relative;
+  z-index: 1001;
+}
+
+/* Для модальных окон без header/footer добавляем padding */
+.modal-content:not(.has-modal-header):not(.has-modal-footer) {
+  padding: 20px;
+}
+
+/* Специальные стили для модального окна выбора предложений */
+.modal-content:has(table) {
   max-width: 1000px;
   display: flex;
   flex-direction: column;

@@ -353,13 +353,23 @@ function setupAuthHandlers() {
 
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
-            window.location.href = '/user/login';
+            // Показываем модальное окно логина
+            if (window.loginModal) {
+                window.loginModal.show('login');
+            } else if (typeof LoginModal !== 'undefined') {
+                LoginModal.show('login');
+            }
         });
     }
 
     if (registerBtn) {
         registerBtn.addEventListener('click', () => {
-            window.location.href = '/user/register';
+            // Показываем модальное окно регистрации
+            if (window.loginModal) {
+                window.loginModal.show('register');
+            } else if (typeof LoginModal !== 'undefined') {
+                LoginModal.show('register');
+            }
         });
     }
 
@@ -427,18 +437,30 @@ async function loadGeneratorData() {
 // ===== Управление выходом =====
 function setupExitHandlers() {
     const exitModal = document.getElementById('exitModal');
-    const backButtons = document.querySelectorAll('#btnBackToList, #btnBackToMain');
     const stayExitBtn = document.getElementById('exitStayBtn');
     const exitWithoutSavingBtn = document.getElementById('exitWithoutSavingBtn');
     const exitWithSavingBtn = document.getElementById('exitWithSavingBtn');
     window.pendingExitAction = null;
 
-    // Обработчики для кнопок "На главную"
-    backButtons.forEach(btn => {
-        if (btn) {
-            btn.addEventListener('click', () => showExitModal(() => window.location.href = "/"));
-        }
-    });
+    // Обработчик для кнопки "На главную" (только для #btnBackToMain, #btnBackToList имеет свою функцию clickBtnBackToList)
+    const btnBackToMain = document.getElementById('btnBackToMain');
+    if (btnBackToMain) {
+        btnBackToMain.addEventListener('click', () => showExitModal(() => window.location.href = "/"));
+    }
+
+    // Обработчик кнопки "Сохранить"
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            await handleSave();
+        });
+    }
+
+    // Обработчик кнопки "Вернуться к списку диктантов"
+    const exitToIndexBtn = document.getElementById('exitToIndexBtn');
+    if (exitToIndexBtn) {
+        exitToIndexBtn.addEventListener('click', () => showExitModal(() => window.location.href = "/"));
+    }
 
     // Обработчики для модального окна выхода
     if (stayExitBtn) {
@@ -478,12 +500,6 @@ function setupExitHandlers() {
             hideExitModal();
         }
     });
-
-    // Обработчик желтой кнопки выхода из диктанта
-    const exitDictationBtn = document.getElementById('exitDictationBtn');
-    if (exitDictationBtn) {
-        exitDictationBtn.addEventListener('click', () => showExitModal(() => window.location.href = "/"));
-    }
 }
 
 function showExitModal(action) {
@@ -504,13 +520,18 @@ function showExitModal(action) {
 
     const exitWithoutBtn = document.getElementById('exitWithoutSavingBtn');
     if (exitWithoutBtn) {
-        exitWithoutBtn.textContent = hasPending ? 'Выйти без сохранения' : 'Просто выйти';
+        exitWithoutBtn.textContent = hasPending ? 'Выйти' : 'Выйти';
     }
 
     const exitWithBtn = document.getElementById('exitWithSavingBtn');
     if (exitWithBtn) {
-        exitWithBtn.disabled = !hasPending;
-        exitWithBtn.classList.toggle('disabled', !hasPending);
+        if (hasPending) {
+            exitWithBtn.style.display = '';
+            exitWithBtn.disabled = false;
+            exitWithBtn.classList.remove('disabled');
+        } else {
+            exitWithBtn.style.display = 'none';
+        }
     }
 
     exitModal.style.display = 'flex';
@@ -5304,6 +5325,51 @@ function clickBtnBackToList() {
     // Просто закрываем модальное окно
     if (startModal) {
         startModal.style.display = 'none';
+    }
+}
+
+async function handleSave() {
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        const originalHTML = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i data-lucide="loader-2"></i>';
+        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+            lucide.createIcons();
+        }
+        
+        try {
+            const panel = getProgressPanelInstance();
+            const historySavePromise = panel
+                ? panel.save().then(() => true).catch(error => {
+                    console.error('[Draft] history save error', error);
+                    return false;
+                })
+                : Promise.resolve(true);
+
+            const draftSaved = await saveDictationDraft();
+            const historySaved = await historySavePromise;
+            const success = !!draftSaved && historySaved !== false;
+            
+            if (panel && success) {
+                panel.markClean();
+            }
+            
+            if (success) {
+                showSaveToast('Прогресс сохранён', 'success');
+            } else {
+                showSaveToast('Не удалось сохранить прогресс', 'error');
+            }
+        } catch (error) {
+            console.error('[Save] error', error);
+            showSaveToast('Ошибка при сохранении', 'error');
+        } finally {
+            saveBtn.innerHTML = originalHTML;
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+            saveBtn.disabled = false;
+        }
     }
 }
 

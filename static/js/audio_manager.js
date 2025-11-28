@@ -32,47 +32,182 @@ class AudioManagerClass {
             this.stop();
         }
 
+        // Создаем новый аудио элемент
+        const previousAudio = this.audio;
         this.audio = new Audio(audioUrl);
         this.currentButton = button || null;
+        
+        // Сохраняем ссылки в локальные переменные для использования в замыканиях
+        const currentAudio = this.audio;
+        const currentButton = this.currentButton;
+        
+        // Если был предыдущий аудио элемент, убеждаемся что он остановлен
+        if (previousAudio && previousAudio !== this.audio) {
+            try {
+                previousAudio.pause();
+                previousAudio.src = '';
+                previousAudio.load();
+            } catch (e) {
+                // Игнорируем ошибки при очистке предыдущего элемента
+            }
+        }
 
         if (this.currentButton) {
-            this.updateButtonIcon(this.currentButton, "pause");
+            // Определяем правильное состояние для кнопки
+            // Если кнопка была в состоянии 'ready-shared', то устанавливаем 'playing-shared'
+            const originalState = this.currentButton.dataset.state || this.currentButton.dataset.originalState || 'ready';
+            const newState = (originalState === 'ready-shared' || originalState === 'playing-shared') ? 'playing-shared' : 'playing';
+            
+            // Обновляем состояние кнопки
+            this.currentButton.dataset.state = newState;
+            // Обновляем иконку через setButtonState если функция доступна
+            if (typeof setButtonState === 'function') {
+                setButtonState(this.currentButton, newState);
+            } else {
+                // Fallback: просто обновляем иконку
+                this.updateButtonIcon(this.currentButton, "pause");
+            }
         }
+
+        // Обработка ошибок загрузки/воспроизведения
+        currentAudio.onerror = (error) => {
+            console.error('❌ Ошибка загрузки/воспроизведения аудио:', error, audioUrl);
+            // Проверяем, что это действительно текущий аудио элемент
+            if (this.audio === currentAudio && currentButton) {
+                // При ошибке возвращаем состояние на 'ready' (не на 'creating'!)
+                const originalState = currentButton.dataset.originalState || 'ready';
+                currentButton.dataset.state = originalState;
+                if (typeof setButtonState === 'function') {
+                    setButtonState(currentButton, originalState);
+                } else {
+                    this.updateButtonIcon(currentButton, "play");
+                }
+            }
+            // Очищаем только если это текущий аудио элемент
+            if (this.audio === currentAudio) {
+                this.currentButton = null;
+                this.audio = null;
+            }
+        };
 
         // Определяем, управление идёт из кнопки под волной/общего файла
         const isUnderWave = !!(button && (button.id === 'audioPlayBtn' || (button.dataset && (button.dataset.state === 'ready-shared' || button.dataset.state === 'playing-shared'))));
 
         // Если управляет волна – стартуем с её текущей позиции (в пределах региона)
+        // Устанавливаем currentTime после загрузки аудио
         if (isUnderWave) {
             const wf = this.waveformCanvas;
             if (wf) {
-            const region = wf.region || { start: 0, end: wf.duration || 0 };
-            const startTime = Math.max(region.start || 0, Math.min(wf.currentTime || 0, region.end || 0));
-            if (isFinite(startTime) && startTime > 0) {
-                this.audio.currentTime = startTime;
-            }
+                const region = wf.region || { start: 0, end: wf.duration || 0 };
+                const wfCurrentTime = wf.currentTime || 0;
+                // Вычисляем стартовое время: с позиции курсора, если он внутри региона, иначе с начала региона
+                const startTime = Math.max(region.start || 0, Math.min(wfCurrentTime, region.end || wf.duration || 0));
+                
+                const setStartTime = () => {
+                    if (this.audio === currentAudio && currentAudio && isFinite(startTime) && startTime >= 0) {
+                        currentAudio.currentTime = startTime;
+                    }
+                };
+                
+                // Устанавливаем время после загрузки метаданных
+                if (currentAudio.readyState >= 1) { // HAVE_METADATA
+                    setStartTime();
+                } else {
+                    currentAudio.addEventListener('loadedmetadata', setStartTime, { once: true });
+                }
             }
         }
 
-        this.audio.play();
+        // Функция для нормализации URL (убирает протокол и домен, оставляет только путь)
+        const normalizeUrl = (url) => {
+            if (!url) return '';
+            try {
+                const urlObj = new URL(url, window.location.origin);
+                return urlObj.pathname + urlObj.search;
+            } catch (e) {
+                // Если не удалось распарсить как URL, возвращаем как есть
+                return url.replace(/^https?:\/\/[^\/]+/, '');
+            }
+        };
+        
+        // Функция для запуска воспроизведения
+        const startPlayback = () => {
+            // Проверяем, что currentAudio существует
+            if (!currentAudio) {
+                return;
+            }
+            
+            // Проверяем, что URL совпадает
+            const currentAudioSrc = normalizeUrl(currentAudio.src);
+            const expectedAudioUrl = normalizeUrl(audioUrl);
+            
+            if (currentAudioSrc !== expectedAudioUrl) {
+                return;
+            }
+            
+            currentAudio.play().catch((error) => {
+                // AbortError - нормальная ошибка, обычно означает что загрузка еще не завершена
+                // Браузер сам запустит воспроизведение когда будет готов
+                if (error.name === 'AbortError' || error.message === 'The operation was aborted.') {
+                    return;
+                }
+                
+                console.error('❌ Ошибка при запуске воспроизведения:', error, audioUrl);
+                if (currentButton) {
+                    // При ошибке возвращаем состояние на 'ready' (не на 'creating'!)
+                    const originalState = currentButton.dataset.originalState || 'ready';
+                    currentButton.dataset.state = originalState;
+                    if (typeof setButtonState === 'function') {
+                        setButtonState(currentButton, originalState);
+                    } else {
+                        this.updateButtonIcon(currentButton, "play");
+                    }
+                }
+            });
+        };
+        
+        // Запускаем воспроизведение, когда аудио готово
+        if (this.audio.readyState >= 2) {
+            // HAVE_CURRENT_DATA или выше - можем начинать воспроизведение
+            startPlayback();
+        } else if (this.audio.readyState >= 1) {
+            // HAVE_METADATA - ждем загрузки данных
+            this.audio.addEventListener('canplay', startPlayback, { once: true });
+            // Также запускаем сразу на всякий случай
+            startPlayback();
+        } else {
+            // Аудио еще не загружено - ждем метаданных, а потом данных
+            currentAudio.addEventListener('canplay', startPlayback, { once: true });
+            // Fallback: если canplay не сработает, попробуем при loadeddata
+            currentAudio.addEventListener('loadeddata', () => {
+                if (currentAudio.readyState >= 2) {
+                    startPlayback();
+                }
+            }, { once: true });
+            // Запускаем сразу на всякий случай, браузер может начать воспроизведение асинхронно
+            startPlayback();
+        }
 
         if (isUnderWave) {
            const wf = this.waveformCanvas;
             if (wf) {
             const startSync = () => {
-                // Сообщаем волне актуальный audio-элемент и запускаем её собственный контроль
-                if (typeof wf.startAudioControl === "function") {
-                    wf.startAudioControl(this.audio);
-                }
-                // Дополнительно запускаем наш rAF-синк (не мешает внутреннему)
-                if (typeof wf.updatePlayheadFromAudio === "function") {
-                    this.startPlayheadSync();
+                // Проверяем, что это все еще текущий аудио элемент
+                if (this.audio === currentAudio && currentAudio) {
+                    // Сообщаем волне актуальный audio-элемент и запускаем её собственный контроль
+                    if (typeof wf.startAudioControl === "function") {
+                        wf.startAudioControl(currentAudio);
+                    }
+                    // Дополнительно запускаем наш rAF-синк (не мешает внутреннему)
+                    if (typeof wf.updatePlayheadFromAudio === "function") {
+                        this.startPlayheadSync();
+                    }
                 }
             };
-            if (isFinite(this.audio.duration) && this.audio.duration > 0) {
+            if (currentAudio && isFinite(currentAudio.duration) && currentAudio.duration > 0) {
                 startSync();
-            } else {
-                this.audio.addEventListener('loadedmetadata', startSync, { once: true });
+            } else if (currentAudio) {
+                currentAudio.addEventListener('loadedmetadata', startSync, { once: true });
             }
             }
         } else {
@@ -113,7 +248,21 @@ class AudioManagerClass {
                 }
             }
 
-            this.updateButtonIcon(button, "play");
+            // Обновляем состояние кнопки на 'ready' после окончания воспроизведения
+            if (button) {
+                // Сохраняем originalState если он был установлен
+                const originalState = button.dataset.originalState || 'ready';
+                button.dataset.state = originalState;
+                
+                // Обновляем иконку через setButtonState если функция доступна
+                if (typeof setButtonState === 'function') {
+                    setButtonState(button, originalState);
+                } else {
+                    // Fallback: просто обновляем иконку
+                    this.updateButtonIcon(button, "play");
+                }
+            }
+            
             if (this.onPlayStateChangeCallback) {
                 this.onPlayStateChangeCallback(false); // isPlaying = false
             }
@@ -132,7 +281,20 @@ class AudioManagerClass {
             this.audio.pause();
         }
         if (this.currentButton) {
-            this.updateButtonIcon(this.currentButton, "play");
+            // Определяем правильное состояние для возврата кнопки
+            // Если кнопка была в состоянии 'playing-shared', возвращаем 'ready-shared'
+            const currentState = this.currentButton.dataset.state || 'playing';
+            const originalState = this.currentButton.dataset.originalState || 
+                                (currentState === 'playing-shared' ? 'ready-shared' : 'ready');
+            this.currentButton.dataset.state = originalState;
+            
+            // Обновляем иконку через setButtonState если функция доступна
+            if (typeof setButtonState === 'function') {
+                setButtonState(this.currentButton, originalState);
+            } else {
+                // Fallback: просто обновляем иконку
+                this.updateButtonIcon(this.currentButton, "play");
+            }
         }
         if (this.waveformCanvas && typeof this.waveformCanvas.stopAudioControl === "function") {
             this.waveformCanvas.stopAudioControl();

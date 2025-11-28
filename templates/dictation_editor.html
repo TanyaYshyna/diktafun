@@ -29,11 +29,10 @@
                     подряд</button>
             </div>
             <div class="button-group topbar-save-group">
-                <button id="saveBtn" class="button-color-yellow" title="Сохранить диктант">
+                <button id="saveBtn" class="button-color-yellow" title="Сохранить">
                     <i data-lucide="save"></i>
                 </button>
-                <button id="saveAndExitBtn" class="button-color-yellow" title="Сохранить диктант и выйти">
-                    <i data-lucide="save"></i>
+                <button id="exitToIndexBtn" class="button-color-yellow" title="Вернуться к списку диктантов">
                     <i data-lucide="log-out"></i>
                 </button>
             </div>
@@ -46,7 +45,7 @@
                 <!-- Флаги будут добавлены через language_selector.js -->
             </div>
             <div>
-                <h2 id="dictation-name">Новый диктант: </h2>
+                <h2 id="dictation-name">Новый диктант: <span id="unsavedStar" class="unsaved-star" style="display: none;">*</span></h2>
             </div>
         </div>
 
@@ -415,7 +414,11 @@
                             <th class="col-start panel-editing-user">Start</th>
                             <th class="col-end panel-editing-user">End</th>
                             <th class="col-chain panel-editing-user"><i data-lucide="link"></i></th>
-                            <th class="col-play-audio panel-editing-user panel-create-audio">f</th>
+                            <th class="col-play-audio panel-editing-user panel-create-audio">f
+                                <button id="editAllCreatingBtn" class="button-header-edit-all" title="Отредактировать все отмеченные" style="display: none;">
+                                    <i data-lucide="wand-2"></i>
+                                </button>
+                            </th>
                             <th class="col-apply-user panel-editing-user" title="Применить">
                                 <i data-lucide="arrow-big-left-dash"></i>
                             </th>
@@ -647,6 +650,19 @@
         </div>
     </div>
 
+    <!-- Модальное окно выхода -->
+    <div id="exitModal" class="modal" style="display: none;">
+        <div class="modal-content exit-modal-content">
+            <h2>Вернуться к списку диктантов?</h2>
+            <p id="exitModalMessage">Что сделать с текущими изменениями?</p>
+            <div class="exit-modal-buttons">
+                <button id="exitStayBtn" class="button-secondary">Остаться</button>
+                <button id="exitWithoutSavingBtn" class="button-color-yellow">Выйти</button>
+                <button id="exitWithSavingBtn" class="button-color-green" style="display: none;">Сохранить и выйти</button>
+            </div>
+        </div>
+    </div>
+
 
 
     <!--------- СКРИПТЫ и ИНИЦИАЛИЗАЦИЯ ---------------------------------------->
@@ -662,6 +678,8 @@
 
     <!-- Добавляем скрипты UserManager -->
     <script src="{{ url_for('static', filename='js/user_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth_interceptor.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/login_modal.js') }}"></script>
 
     <script>
         // Инициализируем Lucide иконки

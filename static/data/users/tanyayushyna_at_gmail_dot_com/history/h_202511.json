@@ -136,6 +136,15 @@
       "id_diktation": "dicta_1760946618800",
       "perfect": 0,
       "timer_seconds": 0
+    },
+    {
+      "audio": 0,
+      "corrected": 0,
+      "date": 20251128,
+      "end": 0,
+      "id_diktation": "dicta_1761748765243",
+      "perfect": 0,
+      "timer_seconds": 0
     }
   ],
   "statistics_sentenses": [

@@ -154,18 +154,59 @@ function initializeTopbarControls() {
 
     const saveButton = document.getElementById('saveButton');
     if (saveButton) {
-        saveButton.addEventListener('click', () => saveProfile());
+        saveButton.addEventListener('click', async () => {
+            await handleSave();
+        });
     }
 
-    const exitButton = document.getElementById('exitButton');
-    if (exitButton) {
-        exitButton.addEventListener('click', handleProfileExit);
+    const exitToIndexBtn = document.getElementById('exitToIndexBtn');
+    if (exitToIndexBtn) {
+        exitToIndexBtn.addEventListener('click', () => {
+            showExitModal();
+        });
     }
 
-    const backdrop = document.querySelector('#exitModal .profile-modal__backdrop');
-    if (backdrop) {
-        backdrop.addEventListener('click', () => toggleExitModal(false));
+    // Обработчики модального окна выхода
+    const exitModal = document.getElementById('exitModal');
+    const exitStayBtn = document.getElementById('exitStayBtn');
+    const exitWithoutSavingBtn = document.getElementById('exitWithoutSavingBtn');
+    const exitWithSavingBtn = document.getElementById('exitWithSavingBtn');
+
+    if (exitStayBtn) {
+        exitStayBtn.addEventListener('click', () => {
+            if (exitModal) exitModal.style.display = 'none';
+        });
     }
+
+    if (exitWithoutSavingBtn) {
+        exitWithoutSavingBtn.addEventListener('click', () => {
+            if (exitModal) exitModal.style.display = 'none';
+            proceedToExit();
+        });
+    }
+
+    if (exitWithSavingBtn) {
+        exitWithSavingBtn.addEventListener('click', async () => {
+            if (exitModal) exitModal.style.display = 'none';
+            await handleSaveAndExit();
+        });
+    }
+
+    // Закрытие модального окна по клику вне его
+    if (exitModal) {
+        exitModal.addEventListener('click', (e) => {
+            if (e.target === exitModal) {
+                exitModal.style.display = 'none';
+            }
+        });
+    }
+
+    // Обработка клавиши Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && exitModal && exitModal.style.display === 'flex') {
+            exitModal.style.display = 'none';
+        }
+    });
 }
 
 function handleAvatarFileSelection(event) {
@@ -458,31 +499,70 @@ async function saveProfile(options = {}) {
     }
 }
 
-function handleProfileExit(event) {
-    if (event) {
-        event.preventDefault();
-    }
+/**
+ * Показывает модальное окно выхода
+ */
+function showExitModal() {
+    const exitModal = document.getElementById('exitModal');
+    if (!exitModal) return;
 
-    // Проверяем изменения еще раз перед выходом (на случай, если что-то изменилось)
+    // Проверяем изменения еще раз перед выходом
     checkForChanges();
 
-    // Показываем модальное окно только если есть несохраненные изменения
-    if (hasUnsavedChanges) {
-        toggleExitModal(true);
-    } else {
-        // Если все сохранено, просто выходим
-        proceedToExit();
+    const exitModalMessage = document.getElementById('exitModalMessage');
+    const exitWithSavingBtn = document.getElementById('exitWithSavingBtn');
+
+    if (exitModalMessage) {
+        exitModalMessage.textContent = hasUnsavedChanges
+            ? 'Есть несохранённые изменения. Сохранить перед выходом?'
+            : 'Все изменения уже сохранены. Что сделать дальше?';
+    }
+
+    if (exitWithSavingBtn) {
+        if (hasUnsavedChanges) {
+            exitWithSavingBtn.style.display = '';
+        } else {
+            exitWithSavingBtn.style.display = 'none';
+        }
+    }
+
+    exitModal.style.display = 'flex';
+    const stayBtn = document.getElementById('exitStayBtn');
+    if (stayBtn) stayBtn.focus();
+}
+
+/**
+ * Обработчик сохранения с индикацией процесса
+ */
+async function handleSave() {
+    const saveButton = document.getElementById('saveButton');
+    if (saveButton) {
+        saveButton.disabled = true;
+        const originalHTML = saveButton.innerHTML;
+        saveButton.innerHTML = '<i data-lucide="loader-2"></i>';
+        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+            lucide.createIcons();
+        }
+        
+        try {
+            await saveProfile();
+        } catch (error) {
+            console.error('[Save] error', error);
+        } finally {
+            saveButton.innerHTML = originalHTML;
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+            saveButton.disabled = false;
+        }
     }
 }
 
-function handleModalSave() {
-    toggleExitModal(false);
-    saveProfile({ afterSave: proceedToExit });
-}
-
-function handleModalDiscard() {
-    toggleExitModal(false);
-    proceedToExit();
+/**
+ * Обработчик сохранения и выхода
+ */
+async function handleSaveAndExit() {
+    await saveProfile({ afterSave: proceedToExit });
 }
 
 function toggleExitModal(show) {

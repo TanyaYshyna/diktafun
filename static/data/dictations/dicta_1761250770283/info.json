@@ -6,5 +6,6 @@
   "is_dialog": false,
   "speakers": {
     "1": "Спикер 1"
-  }
+  },
+  "sentences_count": 11
 }
