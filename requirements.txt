@@ -17,8 +17,8 @@ Jinja2==3.1.2
 gunicorn==21.2.0
 
 # JWT аутентификация
-# Flask-JWT-Extended==4.6.0
-# PyJWT==2.9.0
+Flask-JWT-Extended==4.6.0
+PyJWT==2.9.0
 
 # Переменные окружения
 python-dotenv==1.2.1
@@ -46,12 +46,12 @@ python-dotenv==1.2.1
 # gTTS==2.5.4
 
 # Обработка изображений
-# Pillow==10.4.0
+Pillow==10.4.0
 
 # Обработка аудио
-# librosa==0.11.0
-# soundfile==0.13.1
-# numpy>=1.21.0
+librosa==0.11.0
+soundfile==0.13.1
+numpy>=1.21.0
 
 # Утилиты
 # shortuuid==1.0.13
