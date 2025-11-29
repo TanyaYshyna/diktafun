@@ -17,8 +17,8 @@ Jinja2==3.1.2
 gunicorn==21.2.0
 
 # JWT аутентификация
-Flask-JWT-Extended==4.6.0
-PyJWT==2.9.0
+# Flask-JWT-Extended==4.6.0
+# PyJWT==2.9.0
 
 # Переменные окружения
 python-dotenv==1.2.1
