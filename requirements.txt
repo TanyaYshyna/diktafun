@@ -1,11 +1,11 @@
 # Основной фреймворк
 Flask==3.1.1
-# Werkzeug==3.1.3
-# Jinja2==3.1.6
-# MarkupSafe==3.0.2
-# click==8.1.8
-# itsdangerous==2.2.0
-# blinker==1.9.0
+Werkzeug==3.1.3
+Jinja2==3.1.6
+MarkupSafe==3.0.2
+click==8.1.8
+itsdangerous==2.2.0
+blinker==1.9.0
 # Основной фреймворк
 # Flask==2.3.3
 # Werkzeug==2.3.7
