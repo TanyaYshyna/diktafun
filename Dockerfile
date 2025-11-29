@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 6. Указываем команду запуска для контейнера
-CMD waitress-serve --listen=0.0.0.0:8080 app:app
+CMD python app.py
