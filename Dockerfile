@@ -14,4 +14,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 6. Указываем команду запуска для контейнера
-CMD waitress-serve --port=${PORT:-8000} app:app
+# 6. Указываем команду запуска для контейнера с расширенными логами (debug)
+CMD gunicorn --log-level debug --access-logfile - --error-logfile - --bind 0.0.0.0:${PORT:-8000} app:app
