@@ -1,12 +1,5 @@
-# 1. Используем официальный образ Python 3.11 (соответствует runtime.txt)
+# 1. Используем официальный, стабильный образ Python 3.11 (не slim)
 FROM python:3.11
-
-# НОВЫЙ ШАГ: Устанавливаем системные зависимости, необходимые для Gunicorn и библиотек Python
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libffi-dev \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
 
 # 2. Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /app
@@ -20,5 +13,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 5. Копируем остальной код (включая app.py)
 COPY . .
 
-# 6. Указываем команду запуска для контейнера
-CMD gunicorn --workers 4 --bind 0.0.0.0:${PORT:-8000} app:app
+# 6. Указываем команду запуска для контейнера, используя стабильный gthread worker
+CMD gunicorn --workers 4 --worker-class gthread --bind 0.0.0.0:${PORT:-8000} app:app

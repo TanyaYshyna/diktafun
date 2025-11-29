@@ -13,12 +13,12 @@ def health_check():
 
 
 # ================================
-# import os
+import os
 # from flask import Flask, send_from_directory
 from flask_jwt_extended import JWTManager
 # from dotenv import load_dotenv
 
-# import datetime
+import datetime
 
 # Загружаем переменные окружения из .env файла
 # Путь относительно корня приложения (где находится app.py)
@@ -31,11 +31,11 @@ from flask_jwt_extended import JWTManager
 # app = Flask(__name__)
 
 # Настройки JWT
-# app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "fallback-secret-key-change-me")
-# app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(days=7)  # Токен живет 7 дней
-# app.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
-# app.config["JWT_COOKIE_CSRF_PROTECT"] = False
-# app.config["JWT_ACCESS_COOKIE_NAME"] = "access_token_cookie"
+app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "fallback-secret-key-change-me")
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(days=7)  # Токен живет 7 дней
+app.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
+app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+app.config["JWT_ACCESS_COOKIE_NAME"] = "access_token_cookie"
 jwt = JWTManager(app) 
 
 # app.config['AUDIO_BASE_DIR'] = 'static/data/temp'
