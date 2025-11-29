@@ -1,5 +1,14 @@
-# 1. Используем официальный, стабильный образ Python 3.11 (не slim)
+# 1. Используем официальный, стабильный образ Python 3.11
 FROM python:3.11
+
+# НОВЫЙ ШАГ: Устанавливаем системные зависимости для Pillow, librosa и аудио
+RUN apt-get update && apt-get install -y \
+    libsndfile1 \
+    libatlas-base-dev \
+    libjpeg-dev \
+    zlib1g-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 # 2. Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /app
