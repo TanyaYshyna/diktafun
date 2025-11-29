@@ -4,7 +4,8 @@ FROM python:3.11
 # НОВЫЙ ШАГ: Устанавливаем системные зависимости для Pillow, librosa и аудио
 RUN apt-get update && apt-get install -y \
     libsndfile1 \
-    libatlas-base-dev \
+    libblas-dev \       
+    liblapack-dev \      
     libjpeg-dev \
     zlib1g-dev \
     build-essential \
