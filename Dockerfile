@@ -1,5 +1,5 @@
 # 1. Используем официальный образ Python 3.11 (соответствует runtime.txt)
-FROM python:3.11-slim
+FROM python:3.11
 
 # НОВЫЙ ШАГ: Устанавливаем системные зависимости, необходимые для Gunicorn и библиотек Python
 RUN apt-get update && apt-get install -y \
