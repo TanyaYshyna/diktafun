@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 6. Указываем команду запуска для контейнера
-CMD python app.py
+CMD waitress-serve --port=${PORT:-8000} app:app
