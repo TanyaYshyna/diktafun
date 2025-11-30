@@ -35,4 +35,5 @@ COPY . .
 # 7. Указываем команду запуска для контейнера, используя Waitress
 # CMD waitress-serve --host=0.0.0.0 --port=${PORT:-8000} app:app
 
-CMD ["gunicorn", "--workers", "2", "--threads", "2", "--bind", "0.0.0.0:${PORT:-8000}", "app:app"]
+# CMD ["gunicorn", "--workers", "2", "--threads", "2", "--bind", "0.0.0.0:${PORT:-8000}", "app:app"]
+CMD python -m gunicorn --workers 2 --threads 2 --bind 0.0.0.0:${PORT:-8000} app:app
