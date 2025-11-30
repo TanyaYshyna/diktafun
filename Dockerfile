@@ -6,14 +6,14 @@ WORKDIR /app
 
 # 3. Устанавливаем системные зависимости для librosa, numpy, Pillow
 # (Исправленный список пакетов!)
-RUN apt-get update && apt-get install -y \
-    libsndfile1 \
-    libblas-dev \       
-    liblapack-dev \      
-    libjpeg-dev \
-    zlib1g-dev \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# RUN apt-get update && apt-get install -y \
+#     libsndfile1 \
+#     libblas-dev \       
+#     liblapack-dev \      
+#     libjpeg-dev \
+#     zlib1g-dev \
+#     build-essential \
+#     && rm -rf /var/lib/apt/lists/*
 
 # 4. Копируем файл зависимостей
 COPY requirements.txt .
