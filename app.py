@@ -17,10 +17,6 @@ def health_check():
         "service": "dictafan"
     }), 200
 
-@app.route('/')
-def hello():
-    return "Сайт работает! (Успех!)"
-
 
 # ================================
 # import os
