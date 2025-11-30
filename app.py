@@ -1,7 +1,14 @@
 from flask import Flask, jsonify
 import os
+import sys
 
 app = Flask(__name__)
+
+# Логируем при запуске
+print("=" * 50, file=sys.stderr)
+print("Flask app starting...", file=sys.stderr)
+print(f"PORT: {os.getenv('PORT', 'not set')}", file=sys.stderr)
+print("=" * 50, file=sys.stderr)
 
 @app.route('/')
 def hello():
@@ -11,6 +18,7 @@ def hello():
 def health_check():
     """Health check endpoint для Railway"""
     port = os.getenv("PORT", "unknown")
+    print(f"Health check called, port: {port}", file=sys.stderr)
     return jsonify({
         "status": "ok", 
         "port": port,
