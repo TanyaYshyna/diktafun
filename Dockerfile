@@ -25,4 +25,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 7. Указываем команду запуска для контейнера (самая стабильная из последних версий)
-CMD python -m gunicorn --workers 2 --bind 0.0.0.0:8000 app:app
+# CMD python -m gunicorn --workers 2 --bind 0.0.0.0:8000 app:app
+CMD gunicorn --workers 4 --bind 0.0.0.0:${PORT:-8000} app:app
