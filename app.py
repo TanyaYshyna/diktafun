@@ -1,5 +1,5 @@
-from flask import Flask
-
+from flask import Flask, jsonify
+import os
 
 app = Flask(__name__)
 
@@ -9,7 +9,7 @@ def hello():
 
 @app.route('/health')
 def health_check():
-    return "OK", 200
+    return jsonify({"status": "ok", "port": os.getenv("PORT", "unknown")}), 200
 
 
 # ================================

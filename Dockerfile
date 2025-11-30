@@ -38,7 +38,7 @@ COPY . .
 # CMD ["gunicorn", "--workers", "2", "--threads", "2", "--bind", "0.0.0.0:${PORT:-8000}", "app:app"]
 # CMD python -m gunicorn --workers 2 --threads 2 --bind 0.0.0.0:${PORT:-8000} app:app
 
-# 7. Указываем команду запуска для контейнера с подробным логированием и большим таймаутом
-# Используем 8080, так как это часто используемый порт по умолчанию для платформ
-# CMD python -m gunicorn --workers 1 --threads 8 --bind 0.0.0.0:8080 --timeout 60 --log-level debug app:app
-CMD python -m gunicorn --workers 2 --threads 2 --bind 0.0.0.0:${PORT:-8080} --log-level debug app:app
+# 7. Указываем команду запуска для контейнера
+# Railway автоматически устанавливает переменную PORT
+# Используем конфиг файл для более надежной работы
+CMD gunicorn -c gunicorn.conf.py app:app
