@@ -40,5 +40,5 @@ COPY . .
 
 # 7. Указываем команду запуска для контейнера
 # Railway автоматически устанавливает переменную PORT
-# Используем конфиг файл для более надежной работы
-CMD gunicorn -c gunicorn.conf.py app:app
+# Используем простую команду для максимальной стабильности
+CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --timeout 120 --access-logfile - --error-logfile - --log-level info app:app
