@@ -12,7 +12,7 @@ print("=" * 50, file=sys.stderr)
 
 @app.route('/')
 def hello():
-    return "Сайт работает! (Успех 065!)"
+    return "Сайт работает! (Успех 066!)"
 
 @app.route('/health')
 def health_check():

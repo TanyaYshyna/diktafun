@@ -14,7 +14,7 @@ Flask-JWT-Extended==4.6.0
 PyJWT==2.9.0
 
 # Переменные окружения
-# python-dotenv==1.2.1
+python-dotenv==1.2.1
 
 # HTTP запросы
 # requests==2.32.4
@@ -47,5 +47,5 @@ PyJWT==2.9.0
 # numpy>=1.21.0
 
 # Утилиты
-# shortuuid==1.0.13
-# typing_extensions==4.14.1
+shortuuid==1.0.13
+typing_extensions==4.14.1
