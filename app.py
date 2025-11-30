@@ -9,7 +9,17 @@ def hello():
 
 @app.route('/health')
 def health_check():
-    return jsonify({"status": "ok", "port": os.getenv("PORT", "unknown")}), 200
+    """Health check endpoint для Railway"""
+    port = os.getenv("PORT", "unknown")
+    return jsonify({
+        "status": "ok", 
+        "port": port,
+        "service": "dictafan"
+    }), 200
+
+@app.route('/')
+def hello():
+    return "Сайт работает! (Успех!)"
 
 
 # ================================
