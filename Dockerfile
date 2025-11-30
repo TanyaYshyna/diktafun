@@ -30,5 +30,7 @@ COPY . .
 # CMD python -m gunicorn --workers 2 --threads 2 --bind 0.0.0.0:${PORT:-8000} app:app
 # CMD python -m gunicorn --workers 2 --threads 2 --bind 0.0.0.0:${PORT:-8080} --log-level debug app:app
 # CMD gunicorn --workers 2 --threads 2 --worker-class gthread --bind 0.0.0.0:${PORT:-8080} app:app
-# 7. Указываем команду запуска для контейнера (Самый стабильный синхронный режим)
-CMD gunicorn --workers 4 --bind 0.0.0.0:${PORT:-8000} app:app
+# CMD gunicorn --workers 4 --bind 0.0.0.0:${PORT:-8000} app:app
+
+# 7. Указываем команду запуска для контейнера, используя Waitress
+CMD waitress-serve --host=0.0.0.0 --port=${PORT:-8000} app:app
