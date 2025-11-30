@@ -17,11 +17,11 @@ PyJWT==2.9.0
 python-dotenv==1.2.1
 
 # HTTP запросы
-# requests==2.32.4
-# urllib3==2.5.0
-# certifi==2025.6.15
-# charset-normalizer==3.4.2
-# idna==2.10
+requests==2.32.4
+urllib3==2.5.0
+certifi==2025.6.15
+charset-normalizer==3.4.2
+idna==2.10
 
 # Переводы (googletrans использует httpx)
 # googletrans==4.0.0rc1
