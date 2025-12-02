@@ -1,18 +1,15 @@
 .level-select-group {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
     gap: 12px;
-    margin-top: 8px;
-    width: 100%;
 }
 
 .level-select-group label {
-    min-width: 90px;
+    min-width: auto; /* Убираем фиксированную ширину для компактности */
     font-weight: 500;
     font-size: 16px;
     color: var(--color-button-text-transparent);
-    text-align: right;
+    white-space: nowrap;
 }
 
 .level-select-group .level-label {
@@ -21,7 +18,8 @@
 
 .level-select-group .level-select {
     position: relative;
-    min-width: 140px;
+    min-width: 84px; /* Уменьшено на 40%: 140px * 0.6 = 84px */
+    width: 84px;
 }
 
 .level-select-group .level-select-value {
@@ -148,18 +146,18 @@
 .editor-header {
     display: flex;
     gap: 20px;
-    margin-bottom: 20px;
+    /* margin-bottom: 20px; */
     align-items: flex-start;
 }
 
 /* Стили для контейнера с заголовком и кнопкой */
-/* Верхняя строка панели: 4 колонки: флаги | центр (название) | кнопка 1 | кнопка 2 */
+/* Верхняя строка панели: флаги (слева) | название (центр) | id (справа) */
 .panel .header-container {
     display: grid;
-    grid-template-columns: max-content 1fr;
+    grid-template-columns: max-content 1fr max-content;
     align-items: center;
     width: 100%;
-    column-gap: 8px;
+    column-gap: 12px;
     padding: 0; /* убираем внутренние отступы чтобы крайние элементы были у краев */
 }
 
@@ -168,10 +166,15 @@
     justify-self: start; /* у левого края */
 }
 
-/* Центральный блок (заголовок) — по центру */
-.panel .header-container > div:nth-child(2) {
-    display: flex;
-    justify-content: center; /* по центру */
+/* Центральный блок (название) — по центру */
+.panel .header-container > #dictation-name {
+    justify-self: center; /* по центру */
+    margin: 0;
+}
+
+/* Правый блок (id) — фиксированный, у правого края */
+.panel .header-container > #dictation-id {
+    justify-self: end; /* у правого края */
 }
 
 #dictation-id {
@@ -179,9 +182,7 @@
     font-size: 16px;
     font-weight: 500;
     margin: 0;
-    display: block;
-    text-align: right; /* прижать вправо внутри вкладки Общие данные */
-    margin-left: auto;
+    white-space: nowrap;
 }
 
 
@@ -210,6 +211,32 @@
     margin-bottom: 0;
 }
 
+
+/* Контейнер для размещения второго поля и уровня в одну строку */
+.form-group-single-line {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+/* Второе поле (ru) растягиваем на всю доступную ширину */
+.form-group-single-line .form-group-line:first-child {
+    flex: 1 1 auto;
+}
+
+.form-group-single-line .form-group-line:first-child .text-input {
+    width: 100%;
+    max-width: none;
+    flex: 1 1 auto;
+    margin: 0; /* Убираем вертикальные отступы для компактности */
+}
+
+/* Уровень прижимаем вправо */
+.form-group-single-line .level-select-group {
+    margin-left: auto;
+}
 
 .form-group-line {
     display: flex;
@@ -250,7 +277,6 @@ button i[data-lucide] {
     border-radius: 6px;
     border: 1px solid var(--color-button-gray);
     padding: 8px 3px;
-    margin-bottom: 10px;
 }
 #langPair .flag-combo {
     display: flex;
@@ -614,6 +640,7 @@ label[for="startTextInput"] {
     border: none;
     padding: 0;
     gap: 16px;
+    flex-shrink: 0;
 }
 
 .table-control-btn {
@@ -1183,18 +1210,38 @@ label[for="startTextInput"] {
     display: none;
 }
 
-/* Контейнер для таблицы предложений - без скролла */
+/* Основной контейнер с таблицей - должен занимать оставшееся пространство в панели */
+.main-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Контейнер для таблицы предложений - должен быть flex и ограничен по высоте */
 .sentences-table-wrapper {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
 }
 
-/* Кастомная полоса прокрутки для tbody */
-#sentences-table tbody {
-    display: block;
-    max-height: calc(100vh - 300px);
-    overflow-y: auto;
-    overflow-x: hidden;
+/* Основная таблица предложений */
+#sentences-table {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    border-collapse: collapse;
+    margin-top: 0;
+    background: var(--color-panel-bg);
+    border: none;
+    border-radius: 0;
+    overflow: hidden;
 }
 
 /* Для правильного отображения ячеек в блоке */
@@ -1202,6 +1249,18 @@ label[for="startTextInput"] {
     display: table;
     width: 100%;
     table-layout: fixed;
+    flex-shrink: 0;
+}
+
+#sentences-table tbody {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Для Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-light) var(--color-panel-bg);
 }
 
 #sentences-table tbody tr {
@@ -1210,7 +1269,7 @@ label[for="startTextInput"] {
     table-layout: fixed;
 }
 
-/* Кастомная полоса прокрутки */
+/* Кастомная полоса прокрутки для WebKit браузеров */
 #sentences-table tbody::-webkit-scrollbar {
     width: 12px;
     height: 12px;
@@ -1229,24 +1288,6 @@ label[for="startTextInput"] {
 
 #sentences-table tbody::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-secondary);
-}
-
-/* Для Firefox */
-#sentences-table tbody {
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-border-light) var(--color-panel-bg);
-}
-
-/* Основная таблица предложений */
-#sentences-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 0;
-    background: var(--color-panel-bg);
-    border: none;
-    border-radius: 0;
-    overflow: hidden;
-    table-layout: fixed;
 }
 
 #sentences-table th,
@@ -2368,7 +2409,7 @@ td.col-speaker {
 }
 
 .tab-btn {
-    padding: 12px 20px;
+    padding: 9px 20px; /* Уменьшено с 12px до 9px (на 25% для более заметного эффекта) */
     background: var(--color-hover);
     border: 1px solid var(--color-border-light); 
     /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); */
@@ -2384,32 +2425,18 @@ td.col-speaker {
     margin-right: 4px; /* Gap только справа */
 
 }
-/* Убираем отступ слева у первой кнопки */
-/* 
-.tab-btn:first-child {
-    margin-left: 0; 
-}
-
-.tab-btn:last-child {
-    margin-right: 0; 
-} */
-/* Убираем margin у последней кнопки */
 
 .tab-btn:hover {
     color: var(--color-button-text-transparent);
-    /* font-weight: 600; */
     background: var(--color-hover);
-    /* border: 1px solid var(--color-button-text-transparent); Сохраняем обводку при hover */
     border: 1px solid var(--color-border-light); /* Сохраняем обводку при hover */
     border-bottom: 2px solid transparent; /* Сохраняем нижнюю границу */
 }
 
 .tab-btn.active {
     color: var(--color-button-text-transparent);
-    /* font-weight: 800; */
     background: var(--color-panel-bg);
     border-bottom: 2px solid var(--color-panel-bg);
-    /* border-bottom: 2px solid var(--color-primary); */
     margin-bottom: -1px; /* Наезжаем на tabs-body на 1px */
     z-index: 2;
 }
@@ -2537,11 +2564,126 @@ td.col-speaker {
     gap: 15px;
 }
 
+/* Новая структура - все элементы в одну строку */
+.create-audio-controls-single-line {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+/* Поле ввода шифра - фиксированная ширина для 7-8 букв */
+.create-audio-controls-single-line .audio-code-input {
+    width: 120px; /* Примерно для 7-8 букв */
+    min-width: 120px;
+    max-width: 120px;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+/* Стили для выпадающего списка обозначений (аналогично level-select-group) */
+.audio-notations-select-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.audio-notations-select-group .audio-notations-label {
+    min-width: auto;
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--color-button-text-transparent);
+    white-space: nowrap;
+}
+
+.audio-notations-select {
+    position: relative;
+    min-width: 200px;
+    width: 200px;
+}
+
+.audio-notations-select-value {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.audio-notations-select .speed-select-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border-light, #ddd);
+    border-radius: 14px;
+    background: var(--color-panel-bg, #fff);
+    color: var(--color-text, #224156);
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.audio-notations-select .speed-select-button:hover,
+.audio-notations-select .speed-select-button:focus-visible {
+    border-color: var(--color-border-light, #ddd);
+    box-shadow: 0 0 0 2px var(--color-button-text-yellow, #f9c609);
+}
+
+.audio-notations-select .speed-arrow {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+}
+
+.audio-notations-select.open .speed-arrow {
+    transform: rotate(180deg);
+}
+
+.audio-notations-select .speed-options {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+    background: var(--color-white, #fff);
+    border: 1px solid var(--color-border-light, #ddd);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    display: none;
+    z-index: 500;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.audio-notations-select.open .speed-options {
+    display: block;
+}
+
+.audio-notations-select .speed-options li {
+    padding: 10px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-text, #224156);
+    transition: background 0.15s ease, color 0.15s ease;
+    font-size: 14px;
+}
+
+.audio-notations-select .speed-options li:hover {
+    background: var(--color-hover, #eeede8);
+}
+
+.audio-notations-select .speed-options li.selected {
+    color: var(--color-button-text-lightgreen, #366f40);
+}
+
 .audio-file-name-container {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    margin-left: 10px;
 }
 
 .audio-file-name-label {

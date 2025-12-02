@@ -27,16 +27,16 @@
                 </div>
                 <button class="streak"><i data-lucide="flame"></i> <span class="streak-days">0</span> дней
                     подряд</button>
-            </div>
-            <div class="button-group topbar-save-group">
-                <button id="saveBtn" class="button-color-yellow" title="Сохранить">
-                    <i data-lucide="save"></i>
-                </button>
-                <button id="exitToIndexBtn" class="button-color-yellow" title="Вернуться к списку диктантов">
-                    <i data-lucide="log-out"></i>
-                </button>
-            </div>
         </div>
+        <div class="button-group topbar-save-group">
+            <button id="saveBtn" class="button-color-yellow" title="Сохранить">
+                <i data-lucide="save"></i>
+            </button>
+            <button id="exitToIndexBtn" class="button-color-yellow" title="Вернуться к списку диктантов">
+                <i data-lucide="log-out"></i>
+            </button>
+        </div>
+    </div>
     </div>
 
     <div class="panel">
@@ -44,16 +44,11 @@
             <div id="langPair" data-original="{{ original_language }}" data-translation="{{ translation_language }}">
                 <!-- Флаги будут добавлены через language_selector.js -->
             </div>
-            <div>
-                <h2 id="dictation-name">Новый диктант: <span id="unsavedStar" class="unsaved-star" style="display: none;">*</span></h2>
-            </div>
+            <h2 id="dictation-name">Назва диктанту: <span id="unsavedStar" class="unsaved-star"
+                    style="display: none;">*</span></h2>
+            <span id="dictation-id">id: </span>
         </div>
 
-
-        <!-- Кнопка "Внести текст заново" (появляется после создания диктанта) -->
-        <!-- <div id="reenterTextSection" style="display: none;">
-            <button id="reenterTextBtn" class="button-color-yellow">🔄 Внести текст заново</button>
-        </div> -->
 
         <!-- Панель с вкладками (корешки) -->
         <div id="settingsTabsPanel" class="settings-tabs-panel">
@@ -101,29 +96,30 @@
                                         }}:</label>
                                     <input class="text-input" type="text" id="title" required>
                                 </div>
-                                <div class="form-group-line">
-                                    <label style="color: var(--color-button-text-yellow);">{{ translation_language
-                                        }}:</label>
-                                    <input class="text-input" type="text" id="title_translation" required>
-                                </div>
-                                <div class="form-group-line level-select-group">
-                                    <label for="levelSelectControl" class="level-label">Уровень:</label>
-                                    <div id="levelSelectControl" class="custom-speed-select level-select">
-                                        <button type="button" class="speed-select-button">
-                                            <span class="level-select-value">{{ level or 'A1' }}</span>
-                                            <span class="speed-arrow" data-lucide="chevron-down"></span>
-                                        </button>
-                                        <ul class="speed-options">
-                                            {% set levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] %}
-                                            {% for option in levels %}
-                                            <li data-value="{{ option }}"
-                                                class="{% if (level or 'A1') == option %}selected{% endif %}">
-                                                {{ option }}
-                                            </li>
-                                            {% endfor %}
-                                        </ul>
+                                <div class="form-group-single-line">
+                                    <div class="form-group-line">
+                                        <label style="color: var(--color-button-text-yellow);">{{ translation_language
+                                            }}:</label>
+                                        <input class="text-input" type="text" id="title_translation" required>
                                     </div>
-                                    <span id="dictation-id">Новый диктант: </span>
+                                    <div class="form-group-line level-select-group">
+                                        <label for="levelSelectControl" class="level-label">Уровень:</label>
+                                        <div id="levelSelectControl" class="custom-speed-select level-select">
+                                            <button type="button" class="speed-select-button">
+                                                <span class="level-select-value">{{ level or 'A1' }}</span>
+                                                <span class="speed-arrow" data-lucide="chevron-down"></span>
+                                            </button>
+                                            <ul class="speed-options">
+                                                {% set levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] %}
+                                                {% for option in levels %}
+                                                <li data-value="{{ option }}"
+                                                    class="{% if (level or 'A1') == option %}selected{% endif %}">
+                                                    {{ option }}
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
 
                             </div>
@@ -276,69 +272,64 @@
                 <!-- Вкладка 4: Создание аудио -->
                 <div id="tab-create-audio" class="tab-content">
                     <div class="create-audio-content">
-                        <table id="create-audio-table">
-                            <tr>
-                                <td class="create-cell">
-                                    <div class="create-audio-controls">
-                                        <div class="form-group-line">
-                                            <label for="audioTypeInput">Аудио-шифр:</label>
-                                            <input type="text" id="audioTypeInput" class="text-input" value="op"
-                                                placeholder="op">
-                                            <button id="createAudioFileBtn" class="button-color-yellow"
-                                                title="Создать файл">
-                                                <i data-lucide="file-plus"></i>
-                                            </button>
-                                        </div>
-                                        <div class="form-group-line">
-                                            <button id="playCreatedAudioBtn" class="button-standard audio-btn"
-                                                data-state="disabled">
-                                                <i data-lucide="play"></i>
-                                            </button>
-                                            <div class="audio-file-name-container">
-                                                <label id="audioFileNameLabel" class="audio-file-name-label">
-                                                    Имя файла:-
-                                                </label>
-                                                <div class="audio-file-dropdown-wrapper" style="display: none;">
-                                                    <button id="audioFileDropdownBtn" class="audio-file-dropdown-btn">
-                                                        <i data-lucide="chevron-down"></i>
-                                                    </button>
-                                                    <div id="audioFileDropdown" class="audio-file-dropdown"
-                                                        style="display: none;">
-                                                        <!-- Список файлов будет добавлен через JavaScript -->
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group-line">
-                                            <button id="saveAudioFileBtn" class="button-color-yellow"
-                                                title="Сохранить файл на диск">
-                                                <i data-lucide="download"></i>
-                                            </button>
-                                        </div>
+                        <div class="create-audio-controls-single-line">
+                            <div class="form-group-line">
+                                <label for="audioTypeInput">Аудио-шифр:</label>
+                                <input type="text" id="audioTypeInput" class="text-input audio-code-input" value="op"
+                                    placeholder="op">
+                            </div>
+                            <div class="form-group-line audio-notations-select-group">
+                                <div id="audioNotationsSelect" class="custom-speed-select audio-notations-select">
+                                    <button type="button" class="speed-select-button">
+                                        <span class="audio-notations-select-value">Обозначения</span>
+                                        <span class="speed-arrow" data-lucide="chevron-down"></span>
+                                    </button>
+                                    <ul class="speed-options">
+                                        <li data-value="o" data-text="o">o - аудио оригинала (по умолчанию)</li>
+                                        <li data-value="t" data-text="t">t - аудио перевода</li>
+                                        <li data-value="a" data-text="a">a - аудио созданное автоматически</li>
+                                        <li data-value="f" data-text="f">f - аудио вырезанное из файла</li>
+                                        <li data-value="m" data-text="m">m - аудио с микрофона</li>
+                                        <li data-value="p" data-text="p">p - пауза 1с</li>
+                                        <li data-value="p_o" data-text="p_o">p_o - пауза длинной в o</li>
+                                        <li data-value="p_t" data-text="p_t">p_t - пауза длинной в t</li>
+                                        <li data-value="p_a" data-text="p_a">p_a - пауза длинной в a</li>
+                                        <li data-value="p_f" data-text="p_f">p_f - пауза длинной в f</li>
+                                        <li data-value="p_m" data-text="p_m">p_m - пауза длинной в m</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <button id="playCreatedAudioBtn" class="button-standard audio-btn"
+                                data-state="disabled" title="Воспроизвести" style="display: none;">
+                                <i data-lucide="play"></i>
+                            </button>
+                            <div class="audio-file-name-container">
+                                <label id="audioFileNameLabel" class="audio-file-name-label">
+                                    Имя файла:-
+                                </label>
+                                <div class="audio-file-dropdown-wrapper" style="display: none;">
+                                    <button id="audioFileDropdownBtn" class="audio-file-dropdown-btn">
+                                        <i data-lucide="chevron-down"></i>
+                                    </button>
+                                    <div id="audioFileDropdown" class="audio-file-dropdown"
+                                        style="display: none;">
+                                        <!-- Список файлов будет добавлен через JavaScript -->
                                     </div>
-                                </td>
-                                <td class="explanations-cell">
-                                    <div class="audio-explanations">
-                                        <label>Обозначения:</label>
-                                        <ul class="explanations-list">
-                                            <li><strong>o</strong> - аудио оригинала</li>
-                                            <li><strong>t</strong> - аудио перевода</li>
-                                            <li><strong>a</strong> - аудио созданное автоматически</li>
-                                            <li><strong>f</strong> - аудио вырезанное из файла</li>
-                                            <li><strong>m</strong> - аудио с микрофона</li>
-                                            <li><strong>p</strong> - пауза</li>
-                                            <li><strong>p_a</strong> - пауза длинной в автоматическое аудио</li>
-                                        </ul>
-                                    </div>
-
-                                </td>
-                            </tr>
-                        </table>
+                                </div>
+                            </div>
+                            <button id="createAudioFileBtn" class="button-color-yellow"
+                                title="Создать файл">
+                                <i data-lucide="file-plus"></i>
+                            </button>
+                            <button id="saveAudioFileBtn" class="button-color-yellow"
+                                title="Сохранить файл на диск" style="display: none;">
+                                <i data-lucide="download"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
 
 
         <!-- Основная таблица предложений -->
@@ -415,7 +406,8 @@
                             <th class="col-end panel-editing-user">End</th>
                             <th class="col-chain panel-editing-user"><i data-lucide="link"></i></th>
                             <th class="col-play-audio panel-editing-user panel-create-audio">f
-                                <button id="editAllCreatingBtn" class="button-header-edit-all" title="Отредактировать все отмеченные" style="display: none;">
+                                <button id="editAllCreatingBtn" class="button-header-edit-all"
+                                    title="Отредактировать все отмеченные" style="display: none;">
                                     <i data-lucide="wand-2"></i>
                                 </button>
                             </th>
@@ -658,7 +650,8 @@
             <div class="exit-modal-buttons">
                 <button id="exitStayBtn" class="button-secondary">Остаться</button>
                 <button id="exitWithoutSavingBtn" class="button-color-yellow">Выйти</button>
-                <button id="exitWithSavingBtn" class="button-color-green" style="display: none;">Сохранить и выйти</button>
+                <button id="exitWithSavingBtn" class="button-color-green" style="display: none;">Сохранить и
+                    выйти</button>
             </div>
         </div>
     </div>

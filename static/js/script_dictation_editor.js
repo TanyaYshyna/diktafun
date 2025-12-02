@@ -270,8 +270,8 @@ function initNewDictation(safe_email, initData) {
     document.getElementById('title_translation').value = '';
     // document.getElementById('text').value = ''; // TODO: Добавить элемент text в шаблон
     // document.querySelector('#sentences-table tbody').innerHTML = ''; // TODO: Добавить таблицу sentences в шаблон
-    document.getElementById('dictation-id').textContent = `Новый диктант: ` +categoryInfo.title || '';
-    document.getElementById('dictation-name').textContent = `Новый диктант: ` + dictation_id;
+    document.getElementById('dictation-id').textContent = `id: ` +categoryInfo.title || '';
+    document.getElementById('dictation-name').textContent = ``;
     
     // ==================== Открываем стартовое модальное окно для нового диктанта ========================================
 
@@ -419,8 +419,8 @@ async function loadExistingDictation(initData) {
     };
 
     // Обновляем заголовки
-    document.getElementById('dictation-name').textContent = `Редактируем: ` + title;
-    document.getElementById('dictation-id').textContent = `Редактируем: ` + dictation_id;
+    document.getElementById('dictation-name').textContent = title;
+    document.getElementById('dictation-id').textContent = `id: ` + dictation_id;
     document.getElementById('title').value = title;
     document.getElementById('title_translation').value = translation_data?.title || "";
 
@@ -1739,6 +1739,56 @@ function setupCreateAudioHandlers() {
     if (editAllCreatingBtn) {
         editAllCreatingBtn.addEventListener('click', handleEditAllCreating);
     }
+    
+    // Обработчик выпадающего списка обозначений
+    const audioNotationsSelect = document.getElementById('audioNotationsSelect');
+    const audioTypeInput = document.getElementById('audioTypeInput');
+    
+    if (audioNotationsSelect && audioTypeInput) {
+        const button = audioNotationsSelect.querySelector('.speed-select-button');
+        const list = audioNotationsSelect.querySelector('.speed-options');
+        const optionElements = Array.from(list.querySelectorAll('li'));
+        
+        if (button && list && optionElements.length > 0) {
+            // Обработчик открытия/закрытия списка
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                audioNotationsSelect.classList.toggle('open');
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            });
+            
+            // Обработчик выбора элемента из списка
+            optionElements.forEach(li => {
+                li.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    const textToAdd = li.dataset.text || '';
+                    if (textToAdd) {
+                        // Добавляем текст в поле ввода (в конец)
+                        const currentValue = audioTypeInput.value || '';
+                        audioTypeInput.value = currentValue + textToAdd;
+                    }
+                    
+                    // Закрываем список
+                    audioNotationsSelect.classList.remove('open');
+                });
+            });
+            
+            // Закрываем список при клике вне его
+            if (!audioNotationsSelect.dataset.initialized) {
+                document.addEventListener('click', function(e) {
+                    if (audioNotationsSelect && !audioNotationsSelect.contains(e.target)) {
+                        audioNotationsSelect.classList.remove('open');
+                    }
+                });
+                audioNotationsSelect.dataset.initialized = 'true';
+            }
+        }
+    }
 }
 /**
  * Создать комбинированный аудио файл из выбранных предложений
@@ -1963,6 +2013,7 @@ function updateAudioFileList() {
 function selectAudioFileFromList(fileInfo) {
     const audioFileNameLabel = document.getElementById('audioFileNameLabel');
     const playBtn = document.getElementById('playCreatedAudioBtn');
+    const saveBtn = document.getElementById('saveAudioFileBtn');
     
     if (!audioFileNameLabel || !fileInfo) return;
     
@@ -1973,11 +2024,17 @@ function selectAudioFileFromList(fileInfo) {
     window.createdAudioFileName = fileInfo.filename;
     window.createdAudioFilePath = fileInfo.filepath;
     
-    // Обновляем кнопку воспроизведения
+    // Показываем и обновляем кнопку воспроизведения, когда файл создан/выбран
     if (playBtn) {
+        playBtn.style.display = 'inline-flex';
         playBtn.dataset.state = 'ready';
         playBtn.dataset.audioUrl = fileInfo.filepath;
         setButtonState(playBtn, 'ready');
+    }
+    
+    // Показываем кнопку сохранения, когда файл создан/выбран
+    if (saveBtn) {
+        saveBtn.style.display = 'inline-flex';
     }
 }
 
