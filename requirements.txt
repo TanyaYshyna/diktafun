@@ -46,6 +46,9 @@ librosa==0.11.0
 soundfile==0.13.1
 numpy>=1.21.0
 
+# Облачное хранилище
+b2sdk==1.25.0
+
 # Утилиты
 shortuuid==1.0.13
 typing_extensions==4.14.1

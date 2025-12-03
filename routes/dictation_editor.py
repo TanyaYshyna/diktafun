@@ -24,6 +24,7 @@ from PIL import Image
 from helpers.language_data import load_language_data
 from helpers.user_helpers import get_safe_email_from_token, get_current_user 
 from routes.index import get_cover_url_for_id
+from helpers.b2_storage import b2_storage
 
 
 # Настройка логгера
@@ -97,9 +98,22 @@ def generate_audio():
             tts.save(filepath)
             logging.info(f"Аудиофайл успешно сохранен: {filepath}")
             
-            # Формируем URL для доступа к файлу
-            # Возвращаем относительный URL до сгенерированного файла
-            audio_url = f"/static/data/temp/{dictation_id}/{lang}/{filename_audio}"
+            # Загружаем в B2, если включено
+            audio_url = None
+            if b2_storage.enabled:
+                remote_path = f"audio/{dictation_id}/{lang}/{filename_audio}"
+                b2_url = b2_storage.upload_file(filepath, remote_path)
+                
+                if b2_url:
+                    audio_url = b2_url
+                    logging.info(f"Сгенерированное аудио загружено в B2: {remote_path}")
+                else:
+                    # Fallback на локальный путь
+                    audio_url = f"/static/data/temp/{dictation_id}/{lang}/{filename_audio}"
+                    logging.warning(f"Не удалось загрузить в B2, используется локальный путь")
+            else:
+                # Локальный путь, если B2 не включен
+                audio_url = f"/static/data/temp/{dictation_id}/{lang}/{filename_audio}"
 
             return jsonify({
                 "success": True,
@@ -706,9 +720,19 @@ def save_dictation_final():
                         # Создаем папку назначения если нужно
                         os.makedirs(os.path.dirname(dst_file), exist_ok=True)
                         
-                        # Копируем файл
+                        # Копируем файл локально
                         shutil.copy2(src_file, dst_file)
                         logger.info(f"Скопирован аудиофайл: {rel_path}")
+                        
+                        # Загружаем в B2, если включено
+                        if b2_storage.enabled:
+                            # Формируем путь в B2: dictations/{dictation_id}/{rel_path}
+                            remote_path = f"dictations/{dictation_id}/{rel_path.replace(os.sep, '/')}"
+                            b2_url = b2_storage.upload_file(dst_file, remote_path)
+                            if b2_url:
+                                logger.info(f"Аудиофайл загружен в B2: {remote_path}")
+                            else:
+                                logger.warning(f"Не удалось загрузить в B2: {remote_path}")
             
             # Копируем аватар если есть
             avatar_src = os.path.join(temp_path, 'cover.webp')
@@ -904,8 +928,26 @@ def upload_audio_file():
         filepath = os.path.join(temp_path, filename)
         audio.save(filepath)
         
-        # Путь для браузера
-        browser_path = f"/static/data/temp/{os.path.basename(os.path.dirname(temp_path))}/{language}/{filename}"
+        # Загружаем в B2, если включено
+        browser_path = None
+        if b2_storage.enabled:
+            # Формируем путь в B2: audio/{dictation_id}/{language}/{filename}
+            dictation_folder = os.path.basename(os.path.dirname(temp_path))
+            remote_path = f"audio/{dictation_folder}/{language}/{filename}"
+            b2_url = b2_storage.upload_file(filepath, remote_path)
+            
+            if b2_url:
+                # Используем URL из B2
+                browser_path = b2_url
+                logger.info(f"Аудиофайл загружен в B2: {remote_path}")
+            else:
+                # Fallback на локальный путь, если загрузка в B2 не удалась
+                browser_path = f"/static/data/temp/{dictation_folder}/{language}/{filename}"
+                logger.warning(f"Не удалось загрузить в B2, используется локальный путь: {browser_path}")
+        else:
+            # Локальный путь, если B2 не включен
+            dictation_folder = os.path.basename(os.path.dirname(temp_path))
+            browser_path = f"/static/data/temp/{dictation_folder}/{language}/{filename}"
         
         logger.info(f"Аудиофайл загружен: {filename} в {filepath}")
         
@@ -951,8 +993,24 @@ def upload_mic_audio():
         filepath = os.path.join(temp_path, filename)
         audio.save(filepath)
         
-        # Путь для браузера
-        browser_path = f"/static/data/temp/{dictation_id}/{language}/{filename}"
+        # Загружаем в B2, если включено
+        browser_path = None
+        if b2_storage.enabled:
+            # Формируем путь в B2: audio/{dictation_id}/{language}/{filename}
+            remote_path = f"audio/{dictation_id}/{language}/{filename}"
+            b2_url = b2_storage.upload_file(filepath, remote_path)
+            
+            if b2_url:
+                # Используем URL из B2
+                browser_path = b2_url
+                logger.info(f"Аудио с микрофона загружено в B2: {remote_path}")
+            else:
+                # Fallback на локальный путь, если загрузка в B2 не удалась
+                browser_path = f"/static/data/temp/{dictation_id}/{language}/{filename}"
+                logger.warning(f"Не удалось загрузить в B2, используется локальный путь: {browser_path}")
+        else:
+            # Локальный путь, если B2 не включен
+            browser_path = f"/static/data/temp/{dictation_id}/{language}/{filename}"
         
         logger.info(f"Аудио с микрофона загружено: {filename} в {filepath}")
         
@@ -980,12 +1038,39 @@ def delete_audio_file():
         if not filename or not filepath:
             return jsonify({'success': False, 'error': 'Не указан файл для удаления'}), 400
         
-        # Получаем физический путь к файлу
-        physical_path = filepath.replace('/static/', 'static/')
+        deleted = False
         
-        if os.path.exists(physical_path):
-            os.remove(physical_path)
-            logger.info(f"Аудиофайл удален: {filename}")
+        # Проверяем, это URL из B2 или локальный путь
+        if filepath.startswith('http://') or filepath.startswith('https://'):
+            # Это URL из B2, нужно удалить из B2
+            if b2_storage.enabled:
+                # Извлекаем путь из URL (например, из https://.../file/audio/.../file.mp3)
+                # Пытаемся найти путь после /file/
+                if '/file/' in filepath:
+                    remote_path = filepath.split('/file/')[1].split('?')[0]  # Убираем query параметры
+                    if b2_storage.delete_file(remote_path):
+                        deleted = True
+                        logger.info(f"Аудиофайл удален из B2: {remote_path}")
+        else:
+            # Локальный путь
+            physical_path = filepath.replace('/static/', 'static/')
+            
+            if os.path.exists(physical_path):
+                os.remove(physical_path)
+                deleted = True
+                logger.info(f"Аудиофайл удален локально: {filename}")
+                
+                # Также удаляем из B2, если файл был загружен туда
+                if b2_storage.enabled:
+                    # Пытаемся определить remote_path из локального пути
+                    # Формат: static/data/temp/{dictation_id}/{language}/{filename}
+                    if 'temp/' in physical_path:
+                        parts = physical_path.split('temp/')[1].split('/')
+                        if len(parts) >= 3:
+                            remote_path = f"audio/{'/'.join(parts)}"
+                            b2_storage.delete_file(remote_path)  # Пытаемся удалить, но не критично если не найдено
+        
+        if deleted:
             return jsonify({'success': True, 'message': 'Файл успешно удален'})
         else:
             return jsonify({'success': False, 'error': 'Файл не найден'}), 404
