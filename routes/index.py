@@ -45,6 +45,8 @@ def get_app_cache_revision() -> str:
             'sw.js',
             # os.path.join('static', 'js', 'script_dictation.js'),
             os.path.join('static', 'js', 'user_manager.js'),
+            os.path.join('static', 'js', 'desktop.js'),
+            os.path.join('static', 'css', 'desktop.css'),
             # os.path.join('static', 'css', 'style_dictation.css'),
         ]
         parts = []
