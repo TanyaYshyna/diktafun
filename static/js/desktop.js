@@ -186,6 +186,7 @@ window.Desktop = window.Desktop || {
 
       const cards = grid.querySelectorAll('.desk-card[data-desk-item-id]');
       let maxBottom = 0;
+      let maxRight = 0;
 
       cards.forEach((card, idx) => {
         const deskItemId = card.getAttribute('data-desk-item-id');
@@ -205,9 +206,12 @@ window.Desktop = window.Desktop || {
 
         try {
           const rect = card.getBoundingClientRect();
+          const w = rect && rect.width ? rect.width : 180;
           const h = rect && rect.height ? rect.height : 220;
+          maxRight = Math.max(maxRight, x + w);
           maxBottom = Math.max(maxBottom, y + h);
         } catch (e) {
+          maxRight = Math.max(maxRight, x + 180);
           maxBottom = Math.max(maxBottom, y + 220);
         }
       });
@@ -215,10 +219,55 @@ window.Desktop = window.Desktop || {
       if (maxBottom > 0) {
         grid.style.minHeight = `${Math.ceil(maxBottom + 40)}px`;
       }
+      if (maxRight > 0) {
+        grid.style.minWidth = `${Math.ceil(maxRight + 40)}px`;
+      }
+
+      // В свободном режиме карточки могут уезжать за правый/нижний край видимой
+      // области — включаем прокрутку у скролл-контейнера, чтобы до них можно было дотащиться.
+      const scroll = container.closest('.desk-scroll-container') || container.parentElement;
+      if (scroll) {
+        scroll.style.overflowX = 'auto';
+        scroll.style.overflowY = 'auto';
+      }
 
       return grid;
     } catch (e) {
       return null;
+    }
+  },
+
+  disableDeskFreeLayout(container) {
+    try {
+      const grid = container.querySelector('.shorts-grid');
+      if (!grid) return;
+
+      grid.dataset.deskLayoutMode = 'grid';
+      grid.dataset.deskDndInstalled = '';
+      grid.style.position = '';
+      grid.style.display = '';
+      grid.style.minHeight = '';
+      grid.style.minWidth = '';
+
+      grid.querySelectorAll('.desk-card[data-desk-item-id]').forEach((card) => {
+        card.style.position = '';
+        card.style.left = '';
+        card.style.top = '';
+        card.style.transform = '';
+        card.style.willChange = '';
+        card.style.touchAction = '';
+        card.style.zIndex = '';
+        delete card.dataset.deskX;
+        delete card.dataset.deskY;
+        delete card.dataset.deskJustDragged;
+      });
+
+      const scroll = container.closest('.desk-scroll-container') || container.parentElement;
+      if (scroll) {
+        scroll.style.overflowX = '';
+        scroll.style.overflowY = '';
+      }
+    } catch (e) {
     }
   },
 
@@ -248,9 +297,10 @@ window.Desktop = window.Desktop || {
       let dragging = null;
 
       const onPointerDown = (e) => {
-        try {
-          if (!e || (e.button !== undefined && e.button !== 0)) return;
-          const thumb = e.target && e.target.closest ? e.target.closest('.desk-card .short-thumb') : null;
+       try {
+         if (!e || (e.button !== undefined && e.button !== 0)) return;
+         if (grid.dataset.deskLayoutMode !== 'free') return;
+         const thumb = e.target && e.target.closest ? e.target.closest('.desk-card .short-thumb') : null;
           if (!thumb) return;
           const card = thumb.closest('.desk-card[data-desk-item-id]');
           if (!card) return;
@@ -309,6 +359,23 @@ window.Desktop = window.Desktop || {
             dragging.card.style.transform = `translate(${Math.round(nx)}px, ${Math.round(ny)}px)`;
             dragging.card.dataset.deskX = String(nx);
             dragging.card.dataset.deskY = String(ny);
+
+            // Расширяем область стола, если карточку тянут за правый/нижний край,
+            // чтобы она не уезжала в невидимую зону и появлялась прокрутка.
+            try {
+              const cardRect = dragging.card.getBoundingClientRect();
+              const gridRect = grid.getBoundingClientRect();
+              const right = nx + (cardRect && cardRect.width ? cardRect.width : 180);
+              const bottom = ny + (cardRect && cardRect.height ? cardRect.height : 220);
+              if (right + 40 > gridRect.width) {
+                grid.style.minWidth = `${Math.ceil(right + 40)}px`;
+              }
+              if (bottom + 40 > gridRect.height) {
+                grid.style.minHeight = `${Math.ceil(bottom + 40)}px`;
+              }
+            } catch (err) {
+            }
+
             e.preventDefault();
           }
         } catch (err) {
@@ -367,9 +434,11 @@ window.Desktop = window.Desktop || {
       const btn = document.getElementById('btnDeskFreeLayoutToggle');
       if (btn) this.updateDeskLayoutToggleButtonState(btn);
 
-      if (this.isDeskFreeLayoutEnabled() || this.hasAnyDeskCardPositions(container)) {
+      if (this.isDeskFreeLayoutEnabled()) {
         this.enableDeskFreeLayout(container);
         this.installDeskDragAndDrop(container);
+      } else {
+        this.disableDeskFreeLayout(container);
       }
     } catch (e) {
     }
