@@ -318,7 +318,7 @@
   min-height: 0;
   height: auto;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 .page-index .desk-cards-container {
