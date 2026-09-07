@@ -325,6 +325,36 @@
   height: auto;
   overflow-y: auto;
   overflow-x: auto;
+  /* Firefox: показывать классические (не overlay) полосы прокрутки */
+  scrollbar-width: auto;
+  scrollbar-color: var(--color-border, #bdbdbd) var(--color-hover-panel, #f7f6f5);
+}
+
+/* В Chrome/Safari (macOS) родные overlay-полосы скрыты, пока не скроллишь.
+   Стилизованный ::-webkit-scrollbar принудительно делает полосу всегда видимой —
+   именно поэтому раньше её было видно, а теперь кажется, что её нет. */
+.page-index .desk-scroll-container::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.page-index .desk-scroll-container::-webkit-scrollbar-track {
+  background: var(--color-hover-panel, #f7f6f5);
+  border-radius: 6px;
+}
+
+.page-index .desk-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--color-border-light, #dcdcdc);
+  border-radius: 6px;
+  border: 2px solid var(--color-hover-panel, #f7f6f5);
+}
+
+.page-index .desk-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border, #bdbdbd);
+}
+
+.page-index .desk-scroll-container::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .page-index .desk-cards-container {
