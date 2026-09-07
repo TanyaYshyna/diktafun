@@ -51,6 +51,12 @@
 }
 
 .page-index .panel {
+  /* ВАЖНО: инфострока (swStatusBarGlobal) висит fixed внизу (~28px) и
+     перекрывает низ панели. Раньше здесь переопределялся только min-height,
+     а базовый height: calc(100vh - 80px) из style.css оставался — панель
+     упиралась в самый низ вьюпорта, и горизонтальную полосу прокрутки
+     скрывала инфострока. Теперь вычитаем её высоту из height. */
+  height: calc(100vh - 80px - var(--sw-status-bar-height, 28px));
   min-height: calc(100vh - 80px - var(--sw-status-bar-height, 28px));
   display: flex;
   flex-direction: column;
