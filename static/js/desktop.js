@@ -1510,89 +1510,9 @@ window.Desktop = window.Desktop || {
     this.ensureDictationKartDeps();
     this.renderLucide(document.body);
     this.toggleAdminSection();
-    this.installDeskDebugProbe();
 
     // Предзагружаем таблицы чисел для языков пользователя
     this._preloadNumberTables();
-  },
-
-  /**
-   * Диагностический индикатор в правом нижнем углу (над инфострокой).
-   * Показывает фактические размеры скролл-контейнера и полей прокрутки,
-   * чтобы понять, почему не появляется горизонтальная полоса прокрутки.
-   */
-  installDeskDebugProbe() {
-    try {
-      if (document.getElementById('deskDebugProbe')) return;
-
-      const probe = document.createElement('div');
-      probe.id = 'deskDebugProbe';
-      probe.setAttribute('role', 'status');
-      probe.style.cssText = [
-        'position:fixed',
-        'right:10px',
-        'bottom:44px',
-        'z-index:2147483647',
-        'background:rgba(17,24,39,0.92)',
-        'color:#e5e7eb',
-        'font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace',
-        'padding:8px 10px',
-        'border-radius:8px',
-        'white-space:pre',
-        'pointer-events:none',
-        'box-shadow:0 2px 10px rgba(0,0,0,0.25)',
-        'max-width:360px'
-      ].join(';');
-      document.body.appendChild(probe);
-
-      const fmt = (v) => Math.round(Number(v) || 0);
-
-      const tick = () => {
-        try {
-          const scroll = document.querySelector('.desk-scroll-container');
-          const grid = document.querySelector('.shorts-grid');
-          const zone = document.getElementById('desktopDeskZone');
-          const lines = [];
-
-          if (scroll) {
-            const cs = getComputedStyle(scroll);
-            lines.push(`scroll: ${fmt(scroll.clientWidth)}x${fmt(scroll.clientHeight)}`);
-            lines.push(`scroll-поле: ${fmt(scroll.scrollWidth)}x${fmt(scroll.scrollHeight)}`);
-            lines.push(`overflowX=${cs.overflowX}  overflowY=${cs.overflowY}`);
-            lines.push(`scrollLeft=${fmt(scroll.scrollLeft)}  scrollTop=${fmt(scroll.scrollTop)}`);
-          }
-          if (grid) {
-            lines.push(`grid: minW=${grid.style.minWidth || '-'}  minH=${grid.style.minHeight || '-'}`);
-            lines.push(`grid offset=${fmt(grid.offsetWidth)}x${fmt(grid.offsetHeight)}  zoom=${getComputedStyle(grid).zoom}  mode=${grid.dataset.deskLayoutMode || '-'}`);
-          }
-          if (zone) {
-            lines.push(`zone: ${fmt(zone.clientWidth)}x${fmt(zone.clientHeight)}  scrollW=${fmt(zone.scrollWidth)}`);
-          }
-          lines.push(`win=${fmt(window.innerWidth)}  doc=${fmt(document.documentElement.clientWidth)}  body=${fmt(document.body && document.body.clientWidth)}`);
-          if (!scroll && !grid && !zone) {
-            lines.push('нет .desk-scroll-container / .shorts-grid');
-          }
-
-          probe.textContent = lines.join('\n');
-        } catch (e) {
-          probe.textContent = 'probe error: ' + e;
-        }
-      };
-
-      tick();
-      setInterval(tick, 400);
-      window.addEventListener('resize', tick);
-
-      if (typeof ResizeObserver !== 'undefined') {
-        try {
-          const ro = new ResizeObserver(() => tick());
-          const target = document.querySelector('.desk-scroll-container');
-          if (target) ro.observe(target);
-        } catch (e) {
-        }
-      }
-    } catch (e) {
-    }
   },
 
   /**
