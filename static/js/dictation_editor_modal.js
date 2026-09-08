@@ -2649,6 +2649,23 @@ function _initFormFields() {
     titleInput.value = state.config.title;
   }
 
+  // Обработчик изменения названия диктанта: синхронизируем state.config.title,
+  // обновляем заголовок в шапке модалки и зажигаем зелёную звезду (db dirty).
+  if (titleInput && !titleInput.getAttribute('data-title-handler')) {
+    titleInput.setAttribute('data-title-handler', '1');
+    titleInput.addEventListener('input', function () {
+      var newTitle = this.value;
+      if (state.config) {
+        state.config.title = newTitle;
+      }
+      var titleSpan = document.getElementById('dictationEditorModalTitle');
+      if (titleSpan) {
+        titleSpan.textContent = newTitle || '';
+      }
+      _setDirtyFlags({ db: true });
+    });
+  }
+
   const idEl = document.getElementById('dictation-editor-modal-id');
   if (idEl) {
     var displayId = state.config.dictationId || '';
