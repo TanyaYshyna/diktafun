@@ -5901,6 +5901,22 @@
     // Обновляем текст кнопки в зависимости от контекста
     updateStartButton();
 
+    // Устанавливаем фокус на кнопку СТАРТ при открытии модалки выбора предложений
+    try {
+      const startBtn = document.getElementById('confirmStartBtn');
+      if (startBtn && typeof startBtn.focus === 'function') {
+        setTimeout(() => {
+          try {
+            startBtn.focus();
+          } catch (eFocus) {
+            console.warn('[DM:showStartModal] не удалось установить фокус на confirmStartBtn:', eFocus);
+          }
+        }, 0);
+      }
+    } catch (e) {
+      console.warn('[DM:showStartModal] ошибка при установке фокуса на confirmStartBtn:', e);
+    }
+
     // Останавливаем таймер при открытии start-modal
     _pauseDictationTimer();
   }
