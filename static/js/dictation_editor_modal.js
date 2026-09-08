@@ -3821,11 +3821,6 @@ async function _handleSave() {
   } catch (e) {}
 
   saveBtn.disabled = true;
-  var originalHTML = saveBtn.innerHTML;
-  saveBtn.innerHTML = '<i data-lucide="loader-2"></i>';
-  if (typeof lucide !== 'undefined' && lucide.createIcons) {
-    lucide.createIcons();
-  }
 
   var saved = false;
 
@@ -4295,10 +4290,6 @@ async function _handleSave() {
       state._savedInSession = true;
     }
     window.__DICTATION_EDITOR_SAVE_IN_PROGRESS = false;
-    saveBtn.innerHTML = originalHTML;
-    if (typeof lucide !== 'undefined' && lucide.createIcons) {
-      lucide.createIcons();
-    }
     saveBtn.disabled = false;
 
     // Скрываем универсальный лоадер
@@ -5745,12 +5736,38 @@ window.NewDictationFillModal = {
         }
       } catch (e) {}
 
+      // Показываем универсальный жёлтый лоадер на всё время создания диктанта
+      var audioCreated = 0;
+      var audioTotal = 0;
+      var updateFillLoading = function (message) {
+        try {
+          if (window.DesktopLoadingModal && typeof window.DesktopLoadingModal.show === 'function') {
+            window.DesktopLoadingModal.show(message);
+          }
+        } catch (e) {}
+      };
+      updateFillLoading('Створення диктанту...');
+
       // Парсим текст на предложения (по образу parseInputText из script_dictation_editor.js)
       var normalizedText = text.replace(/\u2028/g, '\n');
       var lines = normalizedText.split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return l.length > 0; });
       // Плоский массив предложений с language_code
       var flatSentences = [];
       var keyCounter = 0;
+
+      // Предварительный подсчёт общего количества аудио для индикатора прогресса
+      for (var pi = 0; pi < lines.length; pi++) {
+        var pline = lines[pi];
+        if (pline.startsWith(delimiter)) continue;
+        if (shouldGenerateAudio) audioTotal++;
+        if (pi + 1 < lines.length && lines[pi + 1].startsWith(delimiter)) {
+          var pTrText = lines[pi + 1].substring(delimiter.length).trim();
+          if (pTrText) audioTotal++;
+          pi++;
+        } else if (langTr) {
+          audioTotal++;
+        }
+      }
 
       for (var i = 0; i < lines.length; i++) {
         var line = lines[i];
@@ -5846,6 +5863,8 @@ window.NewDictationFillModal = {
                 // так что _handleAudioPlayback() сможет найти аудио без поиска в CacheStorage.
               }
               audioOrig = newFilename;
+              audioCreated++;
+              updateFillLoading('Створення диктанту... Аудіо ' + audioCreated + ' з ' + audioTotal);
               console.log('[NewDictationFillModal] generated audio for original:', key, audioOrig);
             } else {
               console.warn('[NewDictationFillModal] generate_audio API error:', genData.error);
@@ -5885,6 +5904,8 @@ window.NewDictationFillModal = {
                 var savedKeyTr = await am2.saveDictationAudioBlob(dictationId, langTr, newFilenameTr, blobTr, genTrData.mime || 'audio/mpeg');
               }
               audioTr = newFilenameTr;
+              audioCreated++;
+              updateFillLoading('Створення диктанту... Аудіо ' + audioCreated + ' з ' + audioTotal);
               console.log('[NewDictationFillModal] generated audio for translation:', key, audioTr);
             } else {
               console.warn('[NewDictationFillModal] generate_audio API error for translation:', genTrData.error);
@@ -5978,6 +5999,12 @@ window.NewDictationFillModal = {
     } catch (e) {
       console.error('[NewDictationFillModal] create error:', e);
       alert('Помилка при створенні диктанту: ' + (e.message || e));
+    } finally {
+      try {
+        if (window.DesktopLoadingModal && typeof window.DesktopLoadingModal.hide === 'function') {
+          window.DesktopLoadingModal.hide();
+        }
+      } catch (e) {}
     }
   },
 
