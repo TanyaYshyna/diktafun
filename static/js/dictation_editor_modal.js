@@ -768,7 +768,23 @@ function _renderTable() {
     var tdExpl = document.createElement('td');
     tdExpl.className = 'col-explanation';
     tdExpl.style.display = 'none';
-    tdExpl.textContent = s.explanation || '';
+    var explInput = document.createElement('input');
+    explInput.type = 'text';
+    explInput.className = 'table-input';
+    explInput.value = s.explanation || '';
+    explInput.dataset.key = key;
+    explInput.dataset.field = 'explanation';
+    explInput.dataset.lang = langOrig;
+    explInput.addEventListener('change', function () {
+      if (state.content) {
+        var sentence = state.content.getSentenceForLang(key, langOrig);
+        if (sentence) {
+          sentence.explanation = this.value;
+          _setDirtyFlags({ db: true });
+        }
+      }
+    });
+    tdExpl.appendChild(explInput);
     tr.appendChild(tdExpl);
 
     // Start
