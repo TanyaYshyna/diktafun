@@ -1097,8 +1097,30 @@
    * mistake_count_current сбрасывается в 0 (см. строку ~1064).
    * @param {Object} session - сессия диктанта
    */
+  function renderSentenceExplanation(session) {
+    try {
+      const el = document.getElementById('userInputExplanation');
+      if (!el) return;
+      const view = getCurrentSentenceViewFromSession(session);
+      const explanation = view ? String(view.explanation != null ? view.explanation : '') : '';
+      if (explanation) {
+        el.textContent = explanation;
+        el.style.display = 'block';
+      } else {
+        el.textContent = '';
+        el.style.display = 'none';
+      }
+    } catch (e) {
+    }
+  }
+
   function resetSentenceUiFromSession(session) {
     try {
+      // Пояснение к предложению показываем над полем ввода (если оно задано)
+      try {
+        renderSentenceExplanation(session);
+      } catch (eExpl) {
+      }
       // If user navigates to an already completed sentence, show it as completed instead of
       // wiping the input/state. (Repeat button starts a new attempt and will reset anyway.)
       const view = getCurrentSentenceViewFromSession(session);
